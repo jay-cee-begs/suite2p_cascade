@@ -1,0 +1,4 @@
+*.ipynb
+configurations.py
+*.npy
+*.csv
