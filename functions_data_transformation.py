@@ -2,9 +2,9 @@
 import os
 import pandas as pd
 import numpy as np
-from functions_general import *
-from configurations import *
-from functions_plots import *
+from functions_general import calculate_deltaF, basic_stats_per_cell, basic_estimated_stats_per_cell, summed_spike_probs_per_cell, return_baseline_F
+from configurations import groups, main_folder, EXPERIMENT_DURATION, FRAME_INTERVAL, BIN_WIDTH, FILTER_NEURONS
+from functions_plots import getImg, getStats, dispPlot
 
 SUITE2P_STRUCTURE = {
     "F": ["suite2p", "plane0", "F.npy"],
@@ -91,7 +91,7 @@ def create_df(suite2p_dict): ## creates df structure for single sample (e.g. wel
  
     estimated_spike_total = np.array(summed_spike_probs_per_cell(suite2p_dict["cascade_predictions"]))
     # estimated_spike_std = np.std(np.array(summed_spike_probs_per_cell(suite2p_dict["cascade_predictions"])))
-    basic_stats = basic_estimated_stats_per_cell(suite2p_dict['cascade_predictions'])
+    basic_cell_stats = basic_estimated_stats_per_cell(suite2p_dict['cascade_predictions'])
     F_baseline = return_baseline_F(suite2p_dict["F"], suite2p_dict["Fneu"])
     avg_instantaneous_spike_rate, avg_cell_sds, avg_cell_cvs, avg_time_stamp_mean, avg_time_stamp_sds, avg_time_stamp_cvs = basic_stats_per_cell(suite2p_dict["cascade_predictions"])
    
@@ -105,8 +105,8 @@ def create_df(suite2p_dict): ## creates df structure for single sample (e.g. wel
                     #    "Skew": suite2p_dict["stat"]["skew"],
                        "Baseline_F": F_baseline,
                        "EstimatedSpikes": estimated_spike_total,
-                       "SD_Estimated_Spks":basic_stats[1],
-                       "cv_Estimated_Spks":basic_stats[2],
+                       "SD_Estimated_Spks":basic_cell_stats[1],
+                       "cv_Estimated_Spks":basic_cell_stats[2],
                        "Total Frames": len(suite2p_dict["F"].T)-64,
                        "SpikesFreq": avg_instantaneous_spike_rate, ## -64 because first and last entries in cascade are NaN, thus not considered in estimated spikes)
                     #    "Baseline_F": F_baseline,
