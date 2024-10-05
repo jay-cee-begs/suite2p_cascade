@@ -2,3 +2,4 @@
 configurations.py
 *.npy
 *.csv
+__pycache__
