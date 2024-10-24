@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.io as sio
-
+import os, warnings
 
 #%matplotlib widget # can be commented back in to make plots interactive
 import pandas as pd
@@ -10,7 +10,7 @@ from statannotations.Annotator import Annotator
 import scipy.stats as stats
 import pickle
 import matplotlib.pyplot as plt
-from configurations import main_folder, TimePoints, Groups22, pairs
+from configurations import main_folder, TimePoints, Groups, pairs
 
 def load_and_adjust(TimePoints, Groups):
     df = pd.read_csv(main_folder + r'\new_experiment_summary.csv')
@@ -91,7 +91,10 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
             annotator.configure(test=stat_test, text_format='star', loc=location, hide_non_significant=True)
             annotator.apply_and_annotate()   
         print("Statistical test applied, n.s. bars hidden, change in function if needed")
-
+    
+    save_path = os.path.join(main_folder, 'exp_significance.png')
+    plt.savefig(save_path)
+    print(f'Your significance plot saved under {save_path}')
     plt.show()
 
     return fig 
