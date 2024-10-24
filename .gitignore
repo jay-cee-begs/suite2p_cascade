@@ -3,3 +3,5 @@ configurations.py
 *.npy
 *.csv
 __pycache__
+jd_gui_test.py
+gui_configurations.py
