@@ -1,13 +1,13 @@
 import tkinter as tk
-from tkinter import messagebox, filedialog
+from tkinter import messagebox
+from tkinter import filedialog
 import os
 import subprocess
 
 class ConfigEditor:
     def __init__(self, master):
-        # Load existing configurations
         self.master = master
-        self.master.title("Ultimate Suite2P + Cascade Pipeline GUI")
+        self.master.title("GUI Configurations Editor")
         self.master.geometry("700x900")  # Set initial window size
 
         # Create a canvas and a scrollbar
@@ -62,35 +62,73 @@ class ConfigEditor:
         tk.Entry(self.scrollable_frame, textvariable=self.frame_rate_var).pack(padx=10)
 
         # Ops path input
-        tk.Label(self.scrollable_frame, text="Select Ops Path:").pack(anchor='w', padx=10, pady=5)
-        tk.Entry(self.scrollable_frame, textvariable=self.ops_path_var, width=50).pack(padx=10)
+        tk.Label(self.scrollable_frame, text="Ops Path Options:").pack(anchor='w', padx=10, pady=5)
+        #tk.Entry(self.scrollable_frame, textvariable=self.ops_path_var, width=50).pack(padx=10)
+        
+        # Option a: Insert file path
+        ops_frame = tk.Frame(self.scrollable_frame)
+        ops_frame.pack(padx=10, pady=5)
+        tk.Entry(ops_frame, textvariable=self.ops_path_var, width=40).pack(side=tk.LEFT)
+        tk.Button(ops_frame, text="Browse", command=self.browse_ops_file).pack(side=tk.LEFT)
 
-        # Option to skip Suite2P
-        self.skip_suite2p_var = tk.BooleanVar()
-        tk.Checkbutton(self.scrollable_frame, text="Skip Suite2P", variable=self.skip_suite2p_var).pack(anchor='w', padx=10, pady=5)
+        # Option b: Edit default ops
+        tk.Button(self.scrollable_frame, text="Edit Default Ops", command=self.edit_default_ops).pack(pady=5)
 
-        # Buttons for Suite2P options
-        tk.Button(self.scrollable_frame, text="Proceed", command=self.proceed).pack(pady=10)
+        # Option c: Create new ops file
+        tk.Button(self.scrollable_frame, text="Create New Ops File", command=self.create_new_ops_file).pack(pady=5)
+        
+        # TimePoints input
+        self.timepoint_frame = tk.Frame(self.scrollable_frame)
+        self.timepoint_frame.pack(padx=10, pady=5)
+        tk.Label(self.scrollable_frame, text="In case you need to rename your Baseconditions:").pack(anchor='w')
+        self.timepoint_key_var = tk.StringVar()
+        self.timepoint_value_var = tk.StringVar()
+        tk.Entry(self.timepoint_frame, textvariable=self.timepoint_key_var, width=20).pack(side=tk.LEFT)
+        tk.Entry(self.timepoint_frame, textvariable=self.timepoint_value_var, width=20).pack(side=tk.LEFT)
+        tk.Button(self.scrollable_frame, text="Add TimePoint", command=self.add_timepoint).pack(padx=10)
 
         # Editable Groups22
         self.groups22_frame = tk.Frame(self.scrollable_frame)
         self.groups22_frame.pack(padx=10, pady=5)
-        self.create_dict_entries(self.scrollable_frame, "Groups22", self.groups22)
+        self.create_dict_entries(self.groups22_frame, "Groups22", self.groups22)
+
+        # Editable parameters
+        self.parameters_frame = tk.Frame(self.scrollable_frame)
+        self.parameters_frame.pack(padx=10, pady=5)
+        self.create_parameters_entries()
 
         # Save button
         tk.Button(self.scrollable_frame, text="Save Configurations", command=self.save_config).pack(pady=10)
 
+        # Skip Suite2P option
+        self.skip_suite2p_var = tk.BooleanVar()
+        tk.Checkbutton(self.scrollable_frame, text="Skip Suite2P", variable=self.skip_suite2p_var).pack(anchor='w', padx=10, pady=5)
+
+        # Processing button
+        tk.Button(self.scrollable_frame, text="Process", command=self.proceed).pack(pady=10)
+
         # Initialize empty TimePoints dictionary
         self.timepoints = {}
+    
+    def edit_default_ops(self):
+        # Call the function to edit default ops
+        default_ops_suite2p()
+
+    def create_new_ops_file(self):
+        # Call the function to create new ops file
+        run_suite2p()
+
+    def browse_ops_file(self):
+        file_selected = filedialog.askopenfilename(filetypes=[("Ops Files", "*.ops")])
+        if file_selected:
+            self.ops_path_var.set(file_selected)
 
     def browse_folder(self):
-        """Open a file dialog to select a folder and set the main folder path."""
         folder_selected = filedialog.askdirectory()
         if folder_selected:
             self.main_folder_var.set(folder_selected)
 
     def load_config(self, filepath):
-        """Load configurations from a file."""
         config = {}
         try:
             with open(filepath) as f:
@@ -101,105 +139,37 @@ class ConfigEditor:
         return config
 
     def add_group(self):
-        """Add all subfolders in the main folder, excluding certain names."""
-        main_folder = self.main_folder_var.get().strip()  # Get the main folder path from the input
-
+        main_folder = self.main_folder_var.get().strip()
         if not os.path.exists(main_folder):
             messagebox.showerror("Error", "Main folder does not exist.")
             return
 
-        # List all directories in the main folder
         all_folders = [f for f in os.listdir(main_folder) if os.path.isdir(os.path.join(main_folder, f))]
-
-        # Filter out folders with specific substrings
         excluded_substrings = ['csv_files', 'pkl_files', 'csv_files_deltaF']
         unique_folders = [folder for folder in all_folders if not any(excluded in folder for excluded in excluded_substrings)]
 
         for folder_name in unique_folders:
             group_path = f"\\{folder_name}" if not folder_name.startswith("\\") else folder_name
             
-            # Add to Groups22 if not already present
             if folder_name not in self.groups22:
                 self.groups22[folder_name] = ''
             
-            # Prevent duplicates in groups
             if group_path not in self.groups:
                 self.groups.append(group_path)
 
         self.update_groups22_entries()
         messagebox.showinfo("Groups Added", f"Added Groups: {', '.join(unique_folders)}")
 
-    def proceed(self):
-        """Proceed based on whether to skip Suite2P or not."""
-        if self.skip_suite2p_var.get():
-            self.skip_suite2p_flow()
+    def add_timepoint(self):
+        key = self.timepoint_key_var.get().strip()
+        value = self.timepoint_value_var.get().strip()
+        if key and value:
+            self.timepoints[key] = value
+            self.timepoint_key_var.set('')  # Clear input
+            self.timepoint_value_var.set('')  # Clear input
+            messagebox.showinfo("TimePoint Added", f"Added TimePoint: {key} -> {value}")
         else:
-            self.suite2p_flow()
-
-    def skip_suite2p_flow(self):
-        """Handle the flow when Suite2P is skipped."""
-        # Prompt for TimePoints, Group22 values, and parameters
-        self.prompt_timepoints()
-        self.run_batch_file("run_plots.bat")
-
-    def suite2p_flow(self):
-        """Handle the flow when Suite2P is not skipped."""
-        # Adjust data extension and frame rate
-        data_extension = self.data_extension_var.get()
-        frame_rate = self.frame_rate_var.get()
-        
-        if not data_extension or not frame_rate:
-            messagebox.showwarning("Input Error", "Please specify both Data Extension and Frame Rate.")
-            return
-
-        # Options for ops file
-        ops_options_frame = tk.Toplevel(self.master)
-        ops_options_frame.title("Ops File Options")
-
-        tk.Label(ops_options_frame, text="Select Ops File Option:").pack(pady=5)
-
-        tk.Button(ops_options_frame, text="Insert Filepath", command=self.insert_ops_filepath).pack(pady=5)
-        tk.Button(ops_options_frame, text="Run Default Ops Suite2P", command=self.default_ops_suite2p).pack(pady=5)
-        tk.Button(ops_options_frame, text="Run Suite2P GUI", command=self.run_suite2p).pack(pady=5)
-
-    def insert_ops_filepath(self):
-        """Handle file path insertion for ops file."""
-        filepath = filedialog.askopenfilename(title="Select Ops File")
-        if filepath:
-            self.ops_path_var.set(filepath)
-            self.run_batch_file("run_s2p_cascade.bat")
-            self.prompt_timepoints()
-            self.run_batch_file("run_plots.bat")
-
-    def default_ops_suite2p(self):
-        """Run the default_ops_suite2p function (stub)."""
-        # Assuming this is defined elsewhere in your code
-        # default_ops_suite2p()  
-        self.run_batch_file("run_s2p_cascade.bat")
-        self.prompt_timepoints()
-        self.run_batch_file("run_plots.bat")
-
-    def run_suite2p(self):
-        """Open the Suite2P GUI (stub)."""
-        # Assuming this is defined elsewhere in your code
-        # run_suite2p()
-        self.run_batch_file("run_s2p_cascade.bat")
-        self.prompt_timepoints()
-        self.run_batch_file("run_plots.bat")
-
-    def prompt_timepoints(self):
-        """Prompt the user to change TimePoints and Group22 values."""
-        # Implement your prompt for TimePoints and Group22 values here
-        # You can use simple entry dialogs or extend the GUI
-        messagebox.showinfo("TimePoints and Group22", "Please change the TimePoints and Group22 values as needed.")
-
-    def run_batch_file(self, filename):
-        """Run a specified batch file."""
-        try:
-            subprocess.run([filename], check=True)
-            print(f"{filename} executed successfully.")
-        except subprocess.CalledProcessError as e:
-            messagebox.showerror("Error", f"An error occurred while running {filename}: {e}")
+            messagebox.showwarning("Input Error", "Please enter both key and value for TimePoint.")
 
     def create_dict_entries(self, master, title, dictionary):
         tk.Label(master, text=title).pack(anchor='w', padx=10, pady=5)
@@ -220,24 +190,56 @@ class ConfigEditor:
             widget.destroy()  # Remove old entries
         self.create_dict_entries(self.groups22_frame, "Groups22", self.groups22)
 
+    def create_parameters_entries(self):
+        self.parameters_vars = {}
+        
+        stat_test_options = [
+            "t-test", "Mann-Whitney", "Wilcoxon", "Kruskal", "Brunner-Munzel"
+        ]
+        
+        type_options = [
+            "strip", "swarm", "box", "violin", 
+            "boxen", "point", "bar", "count"
+        ]
+        
+        legend_options = ["auto", "inside", "false"]
+        
+        for key, value in self.config.get('parameters', {}).items():
+            frame = tk.Frame(self.parameters_frame)
+            frame.pack(pady=5)
+            tk.Label(frame, text=key).pack(side=tk.LEFT)
+            
+            var = tk.StringVar(value=value)
+            self.parameters_vars[key] = var
+            
+            if key == 'stat_test':
+                dropdown = tk.OptionMenu(frame, var, *stat_test_options)
+                dropdown.pack(side=tk.LEFT)
+            elif key == 'type':
+                dropdown = tk.OptionMenu(frame, var, *type_options)
+                dropdown.pack(side=tk.LEFT)
+            elif key == 'legend':
+                dropdown = tk.OptionMenu(frame, var, *legend_options)
+                dropdown.pack(side=tk.LEFT)
+            elif key == 'pairs':
+                tk.Entry(frame, textvariable=var, width=20, state='readonly').pack(side=tk.LEFT)
+            else:
+                tk.Entry(frame, textvariable=var, width=20).pack(side=tk.LEFT)
+
     def save_config(self):
         main_folder = self.main_folder_var.get().strip()
         data_extension = self.data_extension_var.get().strip()
         frame_rate = self.frame_rate_var.get()
         ops_path = self.ops_path_var.get().strip()
 
-        # Ensure the main folder exists
         if not os.path.exists(main_folder):
             messagebox.showerror("Error", "Main folder does not exist.")
             return
 
-        # Prepare TimePoints and Groups22
         groups22 = {key_var.get(): value_var.get() for key_var, (key_var, value_var) in self.dict_vars.items()}
 
-        # Get pairs from user input
         pairs_input = self.pairs_var.get().strip()
 
-        # Write configurations back to the file
         with open('gui_configurations.py', 'w') as f:
             f.write(f"main_folder = r'{main_folder}'\n")
             for i, group in enumerate(self.groups, start=1):
@@ -246,48 +248,77 @@ class ConfigEditor:
             f.write(f"data_extension = '{data_extension}'\n")
             f.write(f"frame_rate = {frame_rate}\n")
             f.write(f"ops_path = r'{ops_path}'\n")
-            
-            # Write TimePoints
+
             f.write("TimePoints = {\n")
             for key, value in self.timepoints.items():
                 f.write(f"    '{key}': '{value}',\n")
             f.write("}\n")
 
-            # Write Groups22
             f.write("Groups22 = {\n")
             for key, (key_var, value_var) in self.dict_vars.items():
                 f.write(f"    '{key_var.get()}': '{value_var.get()}',\n")
             f.write("}\n")
 
-            # Write pairs as a single string
             f.write(f"pairs = [ {pairs_input} ]\n")
 
-            # Write parameters, including testby with pairs
             f.write("parameters = {\n")
-            f.write(f"    'testby': pairs,\n")  # Set 'testby' to the string 'pairs'
             for key, var in self.parameters_vars.items():
-                if key != 'testby':  # Exclude 'testby' from user input
-                    f.write(f"    '{key}': '{var.get()}',\n")
+                f.write(f"    '{key}': '{var.get()}',\n")
             f.write("}\n")
 
-            # Append the new block of code
-            f.write("## plot a set of nb_neurons randomly chosen neuronal traces (first seconds)\n")
-            f.write("nb_neurons = 16 ## maybe put directly into cascade_this???\n\n")
+            f.write("## Additional configurations\n")
+            f.write("nb_neurons = 16\n")
             f.write('model_name = "Global_EXC_10Hz_smoothing200ms"\n')
-            f.write('## select fitting model from list (created in cascada code) ##\n')
-            f.write('## list still in CASCADE code, maybe add here##\n\n')
             f.write("EXPERIMENT_DURATION = 60\n")
             f.write("FRAME_INTERVAL = 1 / frame_rate\n")
-            f.write("BIN_WIDTH = 20  # SET TO APPROX 200ms\n")
-            f.write("FILTER_NEURONS = True\n\n")
+            f.write("BIN_WIDTH = 20\n")
+            f.write("FILTER_NEURONS = True\n")
             f.write("groups = []\n")
             f.write("for n in range(group_number):\n")
-            f.write("    group_name = f\"group{n+1}\"\n")
-            f.write("    if group_name in locals():\n")
-            f.write("        groups.append(locals()[group_name])\n\n")
+            f.write("    group_name = f\"group{n + 1}\"\n")
+            f.write("    groups.append(eval(group_name))\n")
+            f.write("for name, value in Groups22.items():\n")
+            f.write("    # Add your logic to handle Groups22\n")
+            f.write("    pass\n")
 
-            messagebox.showinfo("Success", "Configurations saved successfully.")
+        messagebox.showinfo("Success", "Configurations saved successfully.")
 
+    def proceed(self):
+        if self.skip_suite2p_var.get():
+            subprocess.call(["run_plots.bat"])  # Execute run_plots.bat
+        else:
+            self.show_ops_options()
+
+    def show_ops_options(self):
+        ops_window = tk.Toplevel(self.master)
+        ops_window.title("Select Ops File Option")
+
+        tk.Label(ops_window, text="Choose how to obtain the .ops file:").pack(padx=10, pady=10)
+
+        # Option a: Insert file path
+        tk.Label(ops_window, text="Insert Ops File Path:").pack(padx=10, pady=5)
+        ops_path_entry = tk.Entry(ops_window, width=50)
+        ops_path_entry.pack(padx=10, pady=5)
+        
+        def set_ops_path():
+            self.ops_path_var.set(ops_path_entry.get())
+            ops_window.destroy()
+
+        tk.Button(ops_window, text="Set Ops Path", command=set_ops_path).pack(pady=5)
+
+        # Option b: Edit default ops
+        tk.Button(ops_window, text="Edit Default Ops", command=self.default_ops_suite2p).pack(pady=5)
+
+        # Option c: Run Suite2P GUI
+        tk.Button(ops_window, text="Run Suite2P", command=self.run_suite2p).pack(pady=5)
+
+    def default_ops_suite2p(self):
+        # Placeholder for the default ops function
+        messagebox.showinfo("Default Ops", "Running default_ops_suite2p... (implement this function)")
+
+    def run_suite2p(self):
+        # Placeholder for running the Suite2P GUI
+        messagebox.showinfo("Suite2P GUI", "Running Suite2P GUI... (implement this function)")
 
 if __name__ == "__main__":
     root = tk.Tk()
