@@ -115,35 +115,6 @@ class ConfigEditor:
             messagebox.showerror("Error", "Configuration file not found. Starting with default settings.")
             return {}
         return config
-    
-    # def browse_and_add_groups(self):
-    #     """Open a file dialog to select multiple folders and add them to groups."""
-    #     folder_selected = filedialog.askdirectory(mustexist=True)
-    #     if folder_selected:
-    #         group_key = os.path.basename(folder_selected)  # Get the folder name
-    #         group_path = f"\\{group_key}" if not group_key.startswith("\\") else group_key
-            
-    #         if group_key not in self.groups22:  # Add to Groups22 if not already present
-    #             self.groups22[group_key] = ''
-            
-    #         if group_path not in self.groups:  # Prevent duplicates in groups
-    #             self.groups.append(group_path)
-    #             self.update_groups22_entries()
-    #             messagebox.showinfo("Group Added", f"Added Group: {group_key}")
-
-    #######backup##########
-    # def add_group(self):
-    #     group_path = self.group_entry.get().strip()
-    #     if group_path:
-    #         group_key = group_path
-    #         group_path = f"\\{group_path}" if not group_path.startswith("\\") else group_path
-    #         self.groups.append(group_path)
-    #         if group_key not in self.groups22:
-    #             self.groups22[group_key] = ''
-    #         self.group_entry.delete(0, tk.END)
-    #         self.update_groups22_entries()
-    #     else:
-    #         messagebox.showwarning("Input Error", "Please enter a valid group name.")
 
     def add_group(self):
         """Add all subfolders in the main folder, excluding certain names."""
