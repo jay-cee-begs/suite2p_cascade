@@ -115,6 +115,7 @@ def get_all_image_folders_in_path(path):
     for current_path, directories, files in os.walk(path):
         # Check if current directory is a "deepest" directory (no subdirectories)
         if check_for_single_image_file_in_folder(current_path):
+            #current_path = current_path.split("\\")[-2]
             found_image_folders.append(current_path)
 
     return found_image_folders
