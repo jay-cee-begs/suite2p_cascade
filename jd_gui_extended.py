@@ -8,8 +8,8 @@ import subprocess
 class ConfigEditor:
     def __init__(self, master):
         self.master = master
-        self.master.title("GUI Configurations Editor")
-        self.master.geometry("700x900")  # Set initial window size
+        self.master.title("Ultimate Suite2P + Cascade Configuration Editor")
+        self.master.geometry("450x750")  # Set initial window size
 
         # Create a canvas and a scrollbar
         self.canvas = tk.Canvas(master)
@@ -44,24 +44,26 @@ class ConfigEditor:
         # Main folder input
         tk.Label(self.scrollable_frame, text="Experiment / Main Folder Path:").pack(anchor='w', padx=10, pady=5)
         tk.Entry(self.scrollable_frame, textvariable=self.main_folder_var, width=50).pack(padx=10)
-
+        
         # Button to open file explorer for selecting a folder
         tk.Button(self.scrollable_frame, text="Browse", command=self.browse_folder).pack(padx=10, pady=5)
+        
 
+        # Data extension input
+        tk.Label(self.scrollable_frame, text="Data Extension:").pack(anchor='w', padx=10, pady=5)
+        tk.Entry(self.scrollable_frame, textvariable=self.data_extension_var).pack(padx=10)
+
+        #intermediate save button
+        tk.Button(self.scrollable_frame, text="Save Configurations (optional, in case you changed the data extension)", command=self.save_config).pack(pady=10)
+        
         # Group input
         self.group_frame = tk.Frame(self.scrollable_frame)
         self.group_frame.pack(padx=10, pady=5)
         tk.Label(self.group_frame, text="Adds all subfolders from the Experiment:").pack(side=tk.LEFT)
         tk.Button(self.group_frame, text="Add Group", command=self.add_group).pack(side=tk.LEFT)
 
-        # Data extension input
-        tk.Label(self.scrollable_frame, text="Data Extension:").pack(anchor='w', padx=10, pady=5)
-        tk.Entry(self.scrollable_frame, textvariable=self.data_extension_var).pack(padx=10)
 
-        # Frame rate input
-        tk.Label(self.scrollable_frame, text="Frame Rate:").pack(anchor='w', padx=10, pady=5)
-        tk.Entry(self.scrollable_frame, textvariable=self.frame_rate_var).pack(padx=10)
-
+       
         # Ops path input
         tk.Label(self.scrollable_frame, text="Ops Path Options:").pack(anchor='w', padx=10, pady=5)
         #tk.Entry(self.scrollable_frame, textvariable=self.ops_path_var, width=50).pack(padx=10)
@@ -76,19 +78,28 @@ class ConfigEditor:
         tk.Button(self.scrollable_frame, text="Edit Default Ops", command=self.edit_default_ops).pack(pady=5)
 
         # Option c: Create new ops file
-        tk.Button(self.scrollable_frame, text="Create New Ops File", command=self.create_new_ops_file).pack(pady=5)
+        tk.Button(self.scrollable_frame, text="Create New Ops File (WIP)", command=self.create_new_ops_file).pack(pady=5)
         
+        # Frame rate input
+        tk.Label(self.scrollable_frame, text="Frame Rate:").pack(anchor='w', padx=10, pady=5)
+        tk.Entry(self.scrollable_frame, textvariable=self.frame_rate_var).pack(padx=10)
+
         # TimePoints input
+        tk.Label(self.scrollable_frame, text="In case you need to rename your Baseconditions:").pack(anchor='w')
+        tk.Label(self.scrollable_frame, text="Left: Insert the name you assigned your timepoint in the recording").pack(anchor='w')
+        tk.Label(self.scrollable_frame, text="Right: your desired name").pack(anchor='w')
         self.timepoint_frame = tk.Frame(self.scrollable_frame)
         self.timepoint_frame.pack(padx=10, pady=5)
-        tk.Label(self.scrollable_frame, text="In case you need to rename your Baseconditions:").pack(anchor='w')
         self.timepoint_key_var = tk.StringVar()
         self.timepoint_value_var = tk.StringVar()
         tk.Entry(self.timepoint_frame, textvariable=self.timepoint_key_var, width=20).pack(side=tk.LEFT)
         tk.Entry(self.timepoint_frame, textvariable=self.timepoint_value_var, width=20).pack(side=tk.LEFT)
+        tk.Label(self.scrollable_frame, text="Press 'Add TimePoint' for each").pack(anchor='w')
         tk.Button(self.scrollable_frame, text="Add TimePoint", command=self.add_timepoint).pack(padx=10)
 
         # Editable Groups22
+        tk.Label(self.scrollable_frame, text="Same goes for your Groups:").pack(anchor='w')
+        tk.Label(self.scrollable_frame, text="(In case your structure looks like 'TimePoint_Condition' you can remove 'TimePoint_' )").pack(anchor='w')
         self.groups22_frame = tk.Frame(self.scrollable_frame)
         self.groups22_frame.pack(padx=10, pady=5)
         self.create_dict_entries(self.groups22_frame, "Groups22", self.groups22)
@@ -97,6 +108,12 @@ class ConfigEditor:
         self.parameters_frame = tk.Frame(self.scrollable_frame)
         self.parameters_frame.pack(padx=10, pady=5)
         self.create_parameters_entries()
+
+        # Editable pairs
+        tk.Label(self.scrollable_frame, text="Pairs for the stat test (input as (Group1, GroupA), (Group2, GroupB), etc:").pack(anchor='w', padx=10, pady=5)
+        self.pairs_var = tk.StringVar(value=", ".join([f"{pair}" for pair in self.config.get('pairs', [])]))
+        tk.Entry(self.scrollable_frame, textvariable=self.pairs_var, width=50).pack(padx=10)
+
 
         # Save button
         tk.Button(self.scrollable_frame, text="Save Configurations", command=self.save_config).pack(pady=10)
@@ -110,10 +127,11 @@ class ConfigEditor:
 
         # Initialize empty TimePoints dictionary
         self.timepoints = {}
-    
+
+################ Functions AREA ################    
     def edit_default_ops(self):
         # Call the function to edit default ops
-        default_ops_suite2p()
+        subprocess.call(["run_default_ops.bat"])  # Execute run_ops.bat
 
     def create_new_ops_file(self):
         # Call the function to create new ops file
@@ -139,35 +157,6 @@ class ConfigEditor:
             return {}
         return config
 
-    # def add_group(self):
-    #     main_folder = self.main_folder_var.get().strip()
-    #     if not os.path.exists(main_folder):
-    #         messagebox.showerror("Error", "Main folder does not exist.")
-    #         return
-
-    #     all_folders = [f for f in os.listdir(main_folder) if os.path.isdir(os.path.join(main_folder, f))]
-    #     excluded_substrings = ['csv_files', 'pkl_files', 'csv_files_deltaF']
-    #     unique_folders = [folder for folder in all_folders if not any(excluded in folder for excluded in excluded_substrings)]
-
-    #     for folder_name in unique_folders:
-    #         group_path = f"\\{folder_name}" if not folder_name.startswith("\\") else folder_name
-            
-    #         if folder_name not in self.groups22:
-    #             self.groups22[folder_name] = ''
-            
-    #         if group_path not in self.groups:
-    #             self.groups.append(group_path)
-
-    #     self.update_groups22_entries()
-    #     messagebox.showinfo("Groups Added", f"Added Groups: {', '.join(unique_folders)}")
-
-
-    # def check_for_single_image_file_in_folder(current_path, file_ending):
-    #     """
-    #     Check if the specified path contains exactly one file with the given extension.
-    #     """
-    #     files = [file for file in os.listdir(current_path) if file.endswith(file_ending)]
-    #     return len(files) == 1
 
     def add_group(self):
         main_folder = self.main_folder_var.get().strip()
@@ -251,16 +240,16 @@ class ConfigEditor:
 
     def create_parameters_entries(self):
         self.parameters_vars = {}
-        
+        # List of selectable values for 'stat_test'
         stat_test_options = [
-            "t-test", "Mann-Whitney", "Wilcoxon", "Kruskal", "Brunner-Munzel"
-        ]
+            "t-test", "Mann-Whitney", "Wilcoxon", "Kruskal", "Brunner-Munzel"]
         
+        # List of selectable values for 'type'
         type_options = [
             "strip", "swarm", "box", "violin", 
-            "boxen", "point", "bar", "count"
-        ]
+            "boxen", "point", "bar", "count"]
         
+        # List of selectable values for 'legend'
         legend_options = ["auto", "inside", "false"]
         
         for key, value in self.config.get('parameters', {}).items():
@@ -280,8 +269,8 @@ class ConfigEditor:
             elif key == 'legend':
                 dropdown = tk.OptionMenu(frame, var, *legend_options)
                 dropdown.pack(side=tk.LEFT)
-            elif key == 'pairs':
-                tk.Entry(frame, textvariable=var, width=20, state='readonly').pack(side=tk.LEFT)
+            elif key == 'testby':                
+                continue  # Skip 'testby' as it is a list
             else:
                 tk.Entry(frame, textvariable=var, width=20).pack(side=tk.LEFT)
 
@@ -321,8 +310,10 @@ class ConfigEditor:
             f.write(f"pairs = [ {pairs_input} ]\n")
 
             f.write("parameters = {\n")
+            f.write(f"    'testby': pairs,\n")
             for key, var in self.parameters_vars.items():
-                f.write(f"    '{key}': '{var.get()}',\n")
+                if key != 'testby':  # Exclude 'testby' from user input
+                    f.write(f"    '{key}': '{var.get()}',\n")
             f.write("}\n")
 
             f.write("## Additional configurations\n")
