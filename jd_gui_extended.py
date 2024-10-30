@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import filedialog
+from pathlib import Path
 import os
 import subprocess
 
@@ -138,17 +139,68 @@ class ConfigEditor:
             return {}
         return config
 
+    # def add_group(self):
+    #     main_folder = self.main_folder_var.get().strip()
+    #     if not os.path.exists(main_folder):
+    #         messagebox.showerror("Error", "Main folder does not exist.")
+    #         return
+
+    #     all_folders = [f for f in os.listdir(main_folder) if os.path.isdir(os.path.join(main_folder, f))]
+    #     excluded_substrings = ['csv_files', 'pkl_files', 'csv_files_deltaF']
+    #     unique_folders = [folder for folder in all_folders if not any(excluded in folder for excluded in excluded_substrings)]
+
+    #     for folder_name in unique_folders:
+    #         group_path = f"\\{folder_name}" if not folder_name.startswith("\\") else folder_name
+            
+    #         if folder_name not in self.groups22:
+    #             self.groups22[folder_name] = ''
+            
+    #         if group_path not in self.groups:
+    #             self.groups.append(group_path)
+
+    #     self.update_groups22_entries()
+    #     messagebox.showinfo("Groups Added", f"Added Groups: {', '.join(unique_folders)}")
+
+
+    # def check_for_single_image_file_in_folder(current_path, file_ending):
+    #     """
+    #     Check if the specified path contains exactly one file with the given extension.
+    #     """
+    #     files = [file for file in os.listdir(current_path) if file.endswith(file_ending)]
+    #     return len(files) == 1
+
     def add_group(self):
         main_folder = self.main_folder_var.get().strip()
         if not os.path.exists(main_folder):
             messagebox.showerror("Error", "Main folder does not exist.")
             return
-
+        def check_for_single_image_file_in_folder(current_path, file_ending):
+            """
+            Check if the specified path contains exactly one file with the given extension.
+            """
+            files = [file for file in os.listdir(current_path) if file.endswith(file_ending)]
+            return len(files) == 1
+        
         all_folders = [f for f in os.listdir(main_folder) if os.path.isdir(os.path.join(main_folder, f))]
-        excluded_substrings = ['csv_files', 'pkl_files', 'csv_files_deltaF']
+        excluded_substrings = []
         unique_folders = [folder for folder in all_folders if not any(excluded in folder for excluded in excluded_substrings)]
 
+        file_ending = self.data_extension_var.get().strip()  # Get the specified file extension
+
+        valid_folders = []  # To hold valid folders
+
         for folder_name in unique_folders:
+            current_folder_path = os.path.join(main_folder, folder_name)
+            
+            # Check if any subfolder has exactly one file with the specified extension
+            subfolders = [f for f in os.listdir(current_folder_path) if os.path.isdir(os.path.join(current_folder_path, f))]
+            for subfolder in subfolders:
+                subfolder_path = os.path.join(current_folder_path, subfolder)
+                if check_for_single_image_file_in_folder(subfolder_path, file_ending):
+                    valid_folders.append(folder_name)
+                    break  # No need to check other subfolders if one matches
+
+        for folder_name in valid_folders:
             group_path = f"\\{folder_name}" if not folder_name.startswith("\\") else folder_name
             
             if folder_name not in self.groups22:
@@ -158,7 +210,14 @@ class ConfigEditor:
                 self.groups.append(group_path)
 
         self.update_groups22_entries()
-        messagebox.showinfo("Groups Added", f"Added Groups: {', '.join(unique_folders)}")
+
+        if valid_folders:
+            messagebox.showinfo("Groups Added", f"Added Groups: {', '.join(valid_folders)}")
+        else:
+            messagebox.showinfo("No Groups Added", "No folders with a single file matching the specified extension were found.")
+
+               
+
 
     def add_timepoint(self):
         key = self.timepoint_key_var.get().strip()
