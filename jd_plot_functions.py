@@ -11,6 +11,11 @@ import scipy.stats as stats
 import pickle
 import matplotlib.pyplot as plt
 from gui_configurations import main_folder
+import importlib # to reload the gui_configurations file
+import gui_configurations
+importlib.reload(gui_configurations)
+parameters = gui_configurations.parameters
+print(parameters)
 
 def load_and_adjust(TimePoints, Groups):
     df = pd.read_csv(main_folder + r'\new_experiment_summary.csv')
