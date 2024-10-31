@@ -15,7 +15,7 @@ import importlib # to reload the gui_configurations file
 import gui_configurations
 importlib.reload(gui_configurations)
 parameters = gui_configurations.parameters
-print(parameters)
+#print(parameters)
 
 def load_and_adjust(TimePoints, Groups):
     df = pd.read_csv(main_folder + r'\new_experiment_summary.csv')
@@ -56,7 +56,7 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
     # types = ['violin', 'box', 'swarm', 'bar', 'point', 'strip']
     # if type not in types:
     #     raise ValueError(f"Type must be one of {types}") 
-    print(f"Parameters: {parameters}")  # Debugging statement
+    #print(f"Parameters: {parameters}")  # Debugging statement
     # Clear any existing plots
     plt.clf()
     plt.close()
