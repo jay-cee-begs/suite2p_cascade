@@ -56,6 +56,11 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
     # types = ['violin', 'box', 'swarm', 'bar', 'point', 'strip']
     # if type not in types:
     #     raise ValueError(f"Type must be one of {types}") 
+    print(f"Parameters: {parameters}")  # Debugging statement
+    # Clear any existing plots
+    plt.clf()
+    plt.close()
+    
     if type == 'swarm':                                                                                     # only works when not trying to plot by index 
         df_sort = df.groupby(df[plotby])                                                                    # sorts by whatever column you want
         for s in df_sort.groups.keys():                                                                     #iterates over the groups unique keys
