@@ -10,7 +10,7 @@ from statannotations.Annotator import Annotator
 import scipy.stats as stats
 import pickle
 import matplotlib.pyplot as plt
-from configurations import main_folder
+from gui_configurations import main_folder
 
 def load_and_adjust(TimePoints, Groups):
     df = pd.read_csv(main_folder + r'\new_experiment_summary.csv')
