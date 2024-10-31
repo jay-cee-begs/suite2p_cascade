@@ -79,7 +79,7 @@ class ConfigEditor:
 
         # Option c: Create new ops file
         tk.Button(self.scrollable_frame, text="Create New Ops File (WIP)", command=self.create_new_ops_file).pack(pady=5)
-        
+        tk.Label(self.scrollable_frame, text="Press any key in terminal when GUI is stuck").pack(anchor='w', padx=10, pady=5)
         # Frame rate input
         tk.Label(self.scrollable_frame, text="Frame Rate:").pack(anchor='w', padx=10, pady=5)
         tk.Entry(self.scrollable_frame, textvariable=self.frame_rate_var).pack(padx=10)
@@ -135,7 +135,7 @@ class ConfigEditor:
 
     def create_new_ops_file(self):
         # Call the function to create new ops file
-        run_suite2p()
+        subprocess.call(["run_s2p_gui.bat"])
 
     def browse_ops_file(self):
         file_selected = filedialog.askopenfilename(filetypes=[("Ops Files", "*.ops")])
@@ -337,7 +337,7 @@ class ConfigEditor:
         if self.skip_suite2p_var.get():
             subprocess.call(["run_plots.bat"])  # Execute run_plots.bat
         else:
-            self.show_ops_options()
+            subprocess.call(["run_sequence.bat"])  # Execute sequence.bat
 
     def show_ops_options(self):
         ops_window = tk.Toplevel(self.master)
