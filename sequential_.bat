@@ -5,7 +5,7 @@
 CALL "C:\Users\Justus\Anaconda3\Scripts\activate.bat" suite2p
 
 :: Run the first script
-python C:\Users\Justus\Documents\GitHub\suite_cascade1p_ju\suite2p_detect.py
+python -m suite2p_detect
 
 :: Deactivate the first environment
 CALL conda deactivate
@@ -14,7 +14,7 @@ CALL conda deactivate
 CALL "C:\Users\Justus\Anaconda3\Scripts\activate.bat" cascade
 
 :: Run the second script
-python C:\Users\Justus\Documents\GitHub\suite_cascade1p_ju\cascade_deconvolve.py
+python -m cascade_deconvolve
 
 :: Deactivate the second environment
 CALL conda deactivate
@@ -23,7 +23,7 @@ CALL conda deactivate
 CALL "C:\Users\Justus\Anaconda3\Scripts\activate.bat" data_env
 
 :: Run the third script 
-python C:\Users\Justus\Documents\GitHub\suite_cascade1p_ju\plotting_constants.py
+python -m plotting_constants
 
 
 
