@@ -12,7 +12,7 @@ class OpsEditor:
         # Load default operations
         self.ops = default_ops()
         
-        # Define the parameters you want to allow editing
+    # Define the parameters you want to allow editing, optionally have all be editable? CHANGE TO RELEVANT PARAMETERS
         self.editable_params = {
             '1Preg': self.ops.get('1Preg', False),
             'smooth_sigma': self.ops.get('smooth_sigma', 0),
@@ -50,7 +50,7 @@ class OpsEditor:
                 else:
                     self.ops[param] = float(value) if value.replace('.', '', 1).isdigit() else value
 
-        # Print all parameters to terminal
+        # Print all parameters to terminal for debugging
         print("Current Operations Parameters:")
         for param, value in self.ops.items():
             print(f"{param}: {value}")

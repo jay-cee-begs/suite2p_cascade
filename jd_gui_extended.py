@@ -16,7 +16,7 @@ class ConfigEditor:
         self.scrollbar = tk.Scrollbar(master, orient="vertical", command=self.canvas.yview)
         self.scrollable_frame = tk.Frame(self.canvas)
 
-        # Configure the scrollbar
+        # Configure the scrollbar #### Find a way to have the whole frame scrollable
         self.scrollable_frame.bind(
             "<Configure>",
             lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
@@ -31,7 +31,7 @@ class ConfigEditor:
         self.canvas.pack(side="left", fill="both", expand=True)
         self.scrollbar.pack(side="right", fill="y")
 
-        # Load existing configurations
+        # Load existing configurations, needs an existing file to load from
         self.config = self.load_config("gui_configurations.py")
 
         self.main_folder_var = tk.StringVar(value=self.config.get('main_folder', ''))
@@ -53,7 +53,7 @@ class ConfigEditor:
         tk.Label(self.scrollable_frame, text="Data Extension:").pack(anchor='w', padx=10, pady=5)
         tk.Entry(self.scrollable_frame, textvariable=self.data_extension_var).pack(padx=10)
 
-        #intermediate save button
+        #intermediate save button, to save the configurations before adding the groups
         tk.Button(self.scrollable_frame, text="Save Configurations (optional, in case you changed the data extension)", command=self.save_config).pack(pady=10)
         
         # Group input
@@ -128,14 +128,14 @@ class ConfigEditor:
         # Initialize empty TimePoints dictionary
         self.timepoints = {}
 
-################ Functions AREA ################    
+################ Functions AREA ################    put in seperate file eventually
     def edit_default_ops(self):
-        # Call the function to edit default ops
+        """Call the function to edit default ops"""
         subprocess.call(["run_default_ops.bat"])  # Execute run_ops.bat
 
     def create_new_ops_file(self):
-        # Call the function to create new ops file
-        subprocess.call(["run_s2p_gui.bat"])
+        """Call the function to create new ops file"""
+        subprocess.call(["run_s2p_gui.bat"]) # Execute run_s2p_gui.bat
 
     def browse_ops_file(self):
         file_selected = filedialog.askopenfilename(filetypes=[("Ops Files", "*.ops")])
@@ -209,6 +209,7 @@ class ConfigEditor:
 
 
     def add_timepoint(self):
+        """call this function to change a/each timepoint name"""
         key = self.timepoint_key_var.get().strip()
         value = self.timepoint_value_var.get().strip()
         if key and value:
@@ -220,6 +221,7 @@ class ConfigEditor:
             messagebox.showwarning("Input Error", "Please enter both key and value for TimePoint.")
 
     def create_dict_entries(self, master, title, dictionary):
+        """will allow you to edit dictionaries in the configurations file"""
         tk.Label(master, text=title).pack(anchor='w', padx=10, pady=5)
         self.dict_vars = {}
         for key, value in dictionary.items():
@@ -234,11 +236,13 @@ class ConfigEditor:
             tk.Entry(frame, textvariable=value_var, width=15).pack(side=tk.LEFT)
 
     def update_groups22_entries(self):
+        """Update the entries in the Groups22 dictionary with the use of create_dict_entries"""
         for widget in self.groups22_frame.winfo_children():
             widget.destroy()  # Remove old entries
         self.create_dict_entries(self.groups22_frame, "Groups22", self.groups22)
 
     def create_parameters_entries(self):
+        """Create entries for the parameters dictionary, contains lists for the various dropdown options"""
         self.parameters_vars = {}
         # List of selectable values for 'stat_test'
         stat_test_options = [
@@ -284,7 +288,7 @@ class ConfigEditor:
             messagebox.showerror("Error", "Main folder does not exist.")
             return
 
-        groups22 = {key_var.get(): value_var.get() for key_var, (key_var, value_var) in self.dict_vars.items()}
+        groups22 = {key_var.get(): value_var.get() for key_var, (key_var, value_var) in self.dict_vars.items()} ### ????????????? is this still needed?? 
 
         pairs_input = self.pairs_var.get().strip()
 
@@ -310,12 +314,12 @@ class ConfigEditor:
             f.write(f"pairs = [ {pairs_input} ]\n")
 
             f.write("parameters = {\n")
-            f.write(f"    'testby': pairs,\n")
+            f.write(f"    'testby': pairs,\n") # Add 'testby' to the parameters, assigns the pairs value to it, this is not user-editable
             for key, var in self.parameters_vars.items():
                 if key != 'testby':  # Exclude 'testby' from user input
                     f.write(f"    '{key}': '{var.get()}',\n")
             f.write("}\n")
-
+            #### Add addtionals here, maybe make them editable in the gui as well
             f.write("## Additional configurations\n")
             f.write("nb_neurons = 16\n")
             f.write('model_name = "Global_EXC_10Hz_smoothing200ms"\n')
@@ -333,7 +337,7 @@ class ConfigEditor:
 
         messagebox.showinfo("Success", "Configurations saved successfully.")
 
-    def proceed(self):
+    def proceed(self):  #Option to skip suite2p, will execute a different .bat then 
         if self.skip_suite2p_var.get():
             subprocess.call(["run_plots.bat"])  # Execute run_plots.bat
         else:
