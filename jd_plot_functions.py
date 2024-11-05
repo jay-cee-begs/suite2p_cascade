@@ -20,6 +20,7 @@ parameters = gui_configurations.parameters
 def load_and_adjust(TimePoints, Groups):  
     """Load the data and adjust it for plotting. 
         Args: TimePoints: dictionary to change condition names, Groups: dictionary to change condition names;"""
+
     df = pd.read_csv(main_folder + r'\new_experiment_summary.csv')
     df2 = df
     df2['File'] = df.Prediction_File.apply(lambda x: x.split('\\')[1] if isinstance(x, str) else x)
@@ -33,10 +34,12 @@ def load_and_adjust(TimePoints, Groups):
 
 
 def general_plotting_function(df, x, y, type, plotby):
+
     """General plotting function for different types of plots. Will return a catplot unless 'Swarm' is chosen. 
         Args: df: dataframe, x: x-axis, y: y-axis, type: type of plot, plotby: groupby;
         Returns: catplot or swarmplot;
         options for type: 'violin', 'box', 'swarm', 'bar', 'point', 'strip', 'boxen'"""
+
 
     if type == 'swarm':                     # only works when not trying to plot by index (eg. only df2 not df5 with multiindex) 
         df_sort = df.groupby(df[plotby]) 
@@ -73,7 +76,7 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
     # Clear any existing plots
     plt.clf()
     plt.close()
-    
+
     if type == 'swarm':                                                                                     # only works when not trying to plot by index 
         df_sort = df.groupby(df[plotby])                                                                    # sorts by whatever column you want
         for s in df_sort.groups.keys():                                                                     #iterates over the groups unique keys

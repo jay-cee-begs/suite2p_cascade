@@ -16,3 +16,5 @@ df2 = load_and_adjust(TimePoints, Groups22) #run once but only once since it can
 s1 = ez_sign_plot(df2, **parameters)  # Added pairs here
 
 plt.show()
+
+
