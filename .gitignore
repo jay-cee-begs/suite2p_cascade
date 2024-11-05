@@ -3,3 +3,5 @@ configurations.py
 *.npy
 *.csv
 __pycache__
+
+gui_configurations.py
