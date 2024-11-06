@@ -1,13 +1,11 @@
 import os
-import sys
-import matplotlib.pyplot as plt
 import numpy as np
 import tqdm
 from pathlib import Path
 from PIL import Image
-# !pip install nd2reader
 from nd2reader import ND2Reader #only if converting to tiff
 import shutil
+#import sys
 # sys.path.insert(0, 'D:/users/JC/suite2p-0.14.0')
 from suite2p import run_s2p
 
@@ -115,6 +113,7 @@ def get_all_image_folders_in_path(path):
     for current_path, directories, files in os.walk(path):
         # Check if current directory is a "deepest" directory (no subdirectories)
         if check_for_single_image_file_in_folder(current_path):
+            #current_path = current_path.split("\\")[-2]
             found_image_folders.append(current_path)
 
     return found_image_folders
@@ -167,4 +166,6 @@ activate suite2p
 import run_suite2p 
 if __name__ == "__main__":
     run_suite2p.main()
+
+or simply in ipynb file: run_suite2p_main()
     """

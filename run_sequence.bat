@@ -21,7 +21,7 @@ CALL conda deactivate
 
 :: Activate the third virtual environment
 CALL "C:\Users\Justus\Anaconda3\Scripts\activate.bat" data_env
-:: Need to maybe dynamically change the path to batch file activation
+
 :: Run the third script 
 python -m plotting_constants
 

@@ -1,7 +1,10 @@
 *.ipynb
-configurations.py
 *.npy
 *.csv
 __pycache__
+<<<<<<< HEAD
 jd_gui_test.py
+=======
+
+>>>>>>> 4586f85d287dc016b8a1f478d0e0feec494b1ed2
 gui_configurations.py

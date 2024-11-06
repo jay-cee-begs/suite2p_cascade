@@ -10,9 +10,17 @@ from statannotations.Annotator import Annotator
 import scipy.stats as stats
 import pickle
 import matplotlib.pyplot as plt
-from configurations import main_folder, TimePoints, Groups22, pairs
+from gui_configurations import main_folder
+import importlib # to reload the gui_configurations file
+import gui_configurations
+importlib.reload(gui_configurations)
+parameters = gui_configurations.parameters
+#print(parameters)
 
-def load_and_adjust(TimePoints, Groups):
+def load_and_adjust(TimePoints, Groups):  
+    """Load the data and adjust it for plotting. 
+        Args: TimePoints: dictionary to change condition names, Groups: dictionary to change condition names;"""
+
     df = pd.read_csv(main_folder + r'\new_experiment_summary.csv')
     df2 = df
     df2['File'] = df.Prediction_File.apply(lambda x: x.split('\\')[1] if isinstance(x, str) else x)
@@ -26,6 +34,12 @@ def load_and_adjust(TimePoints, Groups):
 
 
 def general_plotting_function(df, x, y, type, plotby):
+
+    """General plotting function for different types of plots. Will return a catplot unless 'Swarm' is chosen. 
+        Args: df: dataframe, x: x-axis, y: y-axis, type: type of plot, plotby: groupby;
+        Returns: catplot or swarmplot;
+        options for type: 'violin', 'box', 'swarm', 'bar', 'point', 'strip', 'boxen'"""
+
 
     if type == 'swarm':                     # only works when not trying to plot by index (eg. only df2 not df5 with multiindex) 
         df_sort = df.groupby(df[plotby]) 
@@ -48,9 +62,19 @@ def general_plotting_function(df, x, y, type, plotby):
 
 def ez_sign_plot(df, x, feature, type, plotby, testby,
                  stat_test=None, group_order=None, y_label="", x_label="", location='inside', legend=False, palette='Set3', aspct=0.5, hght=4): 
-    # types = ['violin', 'box', 'swarm', 'bar', 'point', 'strip']
-    # if type not in types:
-    #     raise ValueError(f"Type must be one of {types}") 
+    """Plotting function that includes statistical tests annotations.
+        Args: df: dataframe, x: x-axis, feature: y-axis, type: type of plot, plotby: groupby, 
+        testby: pairs of groups to compare for significance, location: location of the significance bars, legend; palette; aspct; hght;
+        type of plot: 'violin', 'box', 'swarm', 'bar', 'point', 'strip', 'boxen', 'count';
+        legend: 'auto', 'full', False; palette: 'viridis', 'Set3', 'tab10', 'tab20', 'tab20b', 'tab20c'...;"""
+
+    
+    #print(f"Parameters: {parameters}")  # Debugging statement
+    
+    # Clear any existing plots
+    plt.clf()
+    plt.close()
+
     if type == 'swarm':                                                                                     # only works when not trying to plot by index 
         df_sort = df.groupby(df[plotby])                                                                    # sorts by whatever column you want
         for s in df_sort.groups.keys():                                                                     #iterates over the groups unique keys
