@@ -5,7 +5,7 @@
 CALL "C:\Users\Justus\Anaconda3\Scripts\activate.bat" suite2p
 
 :: Run the first script
-python C:\Users\Justus\calcium\data_suite2p.py
+python -m suite2p_detect
 
 :: Deactivate the first environment
 CALL conda deactivate
@@ -14,16 +14,16 @@ CALL conda deactivate
 CALL "C:\Users\Justus\Anaconda3\Scripts\activate.bat" cascade
 
 :: Run the second script
-python C:\Users\Justus\calcium\data_cascade.py
+python -m cascade_deconvolve
 
 :: Deactivate the second environment
 CALL conda deactivate
 
 :: Activate the third virtual environment
 CALL "C:\Users\Justus\Anaconda3\Scripts\activate.bat" data_env
-
+:: Need to maybe dynamically change the path to batch file activation
 :: Run the third script 
-python C:\Users\Justus\calcium\data_data.py
+python -m plotting_constants
 
 
 

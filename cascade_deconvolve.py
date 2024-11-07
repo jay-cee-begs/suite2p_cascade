@@ -20,7 +20,6 @@ from functions_data_transformation import *
 
 ## import configurations ##
 import configurations
-ops_path
 
 """Activate cascade env"""
 from configurations import *

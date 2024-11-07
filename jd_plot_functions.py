@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.io as sio
-
+import os, warnings
 
 #%matplotlib widget # can be commented back in to make plots interactive
 import pandas as pd
@@ -67,9 +67,7 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
         testby: pairs of groups to compare for significance, location: location of the significance bars, legend; palette; aspct; hght;
         type of plot: 'violin', 'box', 'swarm', 'bar', 'point', 'strip', 'boxen', 'count';
         legend: 'auto', 'full', False; palette: 'viridis', 'Set3', 'tab10', 'tab20', 'tab20b', 'tab20c'...;"""
-    # types = ['violin', 'box', 'swarm', 'bar', 'point', 'strip']
-    # if type not in types:
-    #     raise ValueError(f"Type must be one of {types}") 
+
     
     #print(f"Parameters: {parameters}")  # Debugging statement
     
@@ -117,7 +115,10 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
             annotator.configure(test=stat_test, text_format='star', loc=location, hide_non_significant=True)
             annotator.apply_and_annotate()   
         print("Statistical test applied, n.s. bars hidden, change in function if needed")
-
+    
+    save_path = os.path.join(main_folder, 'exp_significance.png')
+    plt.savefig(save_path)
+    print(f'Your significance plot saved under {save_path}')
     plt.show()
 
     return fig 
