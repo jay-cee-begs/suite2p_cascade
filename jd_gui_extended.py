@@ -53,8 +53,6 @@ class ConfigEditor:
         tk.Label(self.scrollable_frame, text="Data Extension:").pack(anchor='w', padx=10, pady=5)
         tk.Entry(self.scrollable_frame, textvariable=self.data_extension_var).pack(padx=10)
 
-        #intermediate save button, to save the configurations before adding the groups
-        tk.Button(self.scrollable_frame, text="Save Configurations (optional, in case you changed the data extension)", command=self.save_config).pack(pady=10)
         
         # Group input
         self.group_frame = tk.Frame(self.scrollable_frame)
@@ -279,7 +277,7 @@ class ConfigEditor:
                 dropdown.pack(side=tk.LEFT)
             elif key == 'feature':
                 # Use Listbox for multiple feature selection
-                feature_listbox = tk.Listbox(frame, selectmode=tk.MULTIPLE, height=6, width=20)
+                feature_listbox = tk.Listbox(frame, selectmode=tk.MULTIPLE, height=6, width=40)
                 for feature in self.features_list:
                     feature_listbox.insert(tk.END, feature)
                 feature_listbox.pack(side=tk.LEFT)
@@ -307,7 +305,9 @@ class ConfigEditor:
         try:
             import pandas as pd
             df = pd.read_csv(csv_file_path)
-            self.features_list = df.columns.tolist()  # List of column names to be used as features
+            # Exclude certain columns from the features list
+            excluded_columns = ['Prediction_File', 'Group', 'Time_Point']  # Add the columns you want to exclude
+            self.features_list = [col for col in df.columns if col not in excluded_columns]
                   
         except Exception as e:
             messagebox.showerror("Error", f"Failed to read the CSV file: {str(e)}")
