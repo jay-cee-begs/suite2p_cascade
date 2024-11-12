@@ -118,7 +118,7 @@ class ConfigEditor:
 
         # Skip Suite2P option
         self.skip_suite2p_var = tk.BooleanVar()
-        tk.Checkbutton(self.scrollable_frame, text="Skip Suite2P", variable=self.skip_suite2p_var).pack(anchor='w', padx=10, pady=5)
+        tk.Checkbutton(self.scrollable_frame, text="Skip Suite2P, no need to run it twice :)", variable=self.skip_suite2p_var).pack(anchor='w', padx=10, pady=5)
 
         # Processing button
         tk.Button(self.scrollable_frame, text="Process", command=self.proceed).pack(pady=10)
