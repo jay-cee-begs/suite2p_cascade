@@ -136,7 +136,7 @@ class ConfigEditor:
         subprocess.call(["run_s2p_gui.bat"]) # Execute run_s2p_gui.bat
 
     def browse_ops_file(self):
-        file_selected = filedialog.askopenfilename(filetypes=[("Ops Files", "*.ops")])
+        file_selected = filedialog.askopenfilename(filetypes=[("Ops Files", "*.npy")])
         if file_selected:
             self.ops_path_var.set(file_selected)
 
