@@ -88,8 +88,10 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
                 ax.set_ylabel(y_label, fontsize=15)
                 ax.set_xticklabels(ax.get_xticklabels(), fontsize=10)
 
-            print("Swarm plot does not support statistical tests, please use another plot type")
-            
+                print("Swarm plot does not support statistical tests, please use another plot type")
+                save_path = os.path.join(main_folder, f'exp_swarm_{s}_{f}.png')
+                plt.savefig(save_path)
+                print(f'Your swarm plot is saved under {save_path}')    
 
         else:
             if type == 'violin':                                                                                # violin plot extra to allow us to plot quartiles inside, otherwise not needed
@@ -109,12 +111,12 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
                 ax.set_xticklabels(ax.get_xticklabels(),fontsize=10)
             
 
-        if stat_test:
-            for ax in fig.axes.flat:
-                annotator = Annotator(ax, testby, x=x, y=f, data=df, x_order=group_order, y_order=None)
-                annotator.configure(test=stat_test, text_format='star', loc=location, hide_non_significant=True)
-                annotator.apply_and_annotate()   
-            print("Statistical test applied, n.s. bars hidden, change in function if needed")
+            if stat_test:
+                for ax in fig.axes.flat:
+                    annotator = Annotator(ax, testby, x=x, y=f, data=df, x_order=group_order, y_order=None)
+                    annotator.configure(test=stat_test, text_format='star', loc=location, hide_non_significant=True)
+                    annotator.apply_and_annotate()   
+                print("Statistical test applied, n.s. bars hidden, change in function if needed")
         
         save_path = os.path.join(main_folder, f'exp_significance_{f}.png')
         plt.savefig(save_path)
