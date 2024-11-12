@@ -96,7 +96,7 @@ class ConfigEditor:
         tk.Button(self.scrollable_frame, text="Add TimePoint", command=self.add_timepoint).pack(padx=10)
 
         # Editable Groups22
-        tk.Label(self.scrollable_frame, text="Same goes for your Groups:").pack(anchor='w')
+        tk.Label(self.scrollable_frame, text="Same goes for your Groups, dont leave the brackets empty:").pack(anchor='w')
         tk.Label(self.scrollable_frame, text="(In case your structure looks like 'TimePoint_Condition' you can remove 'TimePoint_' )").pack(anchor='w')
         self.groups22_frame = tk.Frame(self.scrollable_frame)
         self.groups22_frame.pack(padx=10, pady=5)
