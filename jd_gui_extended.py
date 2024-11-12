@@ -255,7 +255,11 @@ class ConfigEditor:
         
         # List of selectable values for 'legend'
         legend_options = ["auto", "inside", "false"]
+
+        # Feature selection from CSV file
+        self.load_features_from_csv()
         
+
         for key, value in self.config.get('parameters', {}).items():
             frame = tk.Frame(self.parameters_frame)
             frame.pack(pady=5)
@@ -273,10 +277,42 @@ class ConfigEditor:
             elif key == 'legend':
                 dropdown = tk.OptionMenu(frame, var, *legend_options)
                 dropdown.pack(side=tk.LEFT)
+            elif key == 'feature':
+                # Use Listbox for multiple feature selection
+                feature_listbox = tk.Listbox(frame, selectmode=tk.MULTIPLE, height=6, width=20)
+                for feature in self.features_list:
+                    feature_listbox.insert(tk.END, feature)
+                feature_listbox.pack(side=tk.LEFT)
+                # Store reference to feature_listbox as an instance variable
+                self.feature_listbox = feature_listbox
+
             elif key == 'testby':                
                 continue  # Skip 'testby' as it is a list
             else:
                 tk.Entry(frame, textvariable=var, width=20).pack(side=tk.LEFT)
+
+    def load_features_from_csv(self):
+        """Load column names from the 'new_experiment_summary.csv' for feature selection"""
+        main_folder = self.main_folder_var.get().strip()
+        if not os.path.exists(main_folder):
+            messagebox.showerror("Error", "Main folder does not exist.")
+            return
+
+        csv_file_path = os.path.join(main_folder, 'new_experiment_summary.csv')
+        if not os.path.exists(csv_file_path):
+            messagebox.showerror("Error", f"File {csv_file_path} not found.")
+            return
+        
+        # Read the CSV file to get the columns
+        try:
+            import pandas as pd
+            df = pd.read_csv(csv_file_path)
+            self.features_list = df.columns.tolist()  # List of column names to be used as features
+                  
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to read the CSV file: {str(e)}")
+            return
+
 
     def save_config(self):
         main_folder = self.main_folder_var.get().strip()
@@ -292,6 +328,18 @@ class ConfigEditor:
 
         pairs_input = self.pairs_var.get().strip()
 
+        # Get selected features as a string in brackets
+        selected_features = [self.feature_listbox.get(i) for i in self.feature_listbox.curselection()]
+
+        selected_features = ", ".join([f"'{feature}'" for feature in selected_features])
+
+
+        if selected_features:
+            selected_features = f"[{selected_features}]"
+        else:
+            selected_features = "['Active_Neuron_Proportion', 'Total_Estimated_Spikes_proportion_scaled']"
+        #clearing the parameters dictionary before adding the new values
+        self.config['parameters']['feature'] = selected_features
         with open('gui_configurations.py', 'w') as f:
             f.write(f"main_folder = r'{main_folder}'\n")
             for i, group in enumerate(self.groups, start=1):
@@ -315,8 +363,9 @@ class ConfigEditor:
 
             f.write("parameters = {\n")
             f.write(f"    'testby': pairs,\n") # Add 'testby' to the parameters, assigns the pairs value to it, this is not user-editable
+            f.write(f"    'feature': {selected_features},\n")
             for key, var in self.parameters_vars.items():
-                if key != 'testby':  # Exclude 'testby' from user input
+                if key != 'testby' and key != 'feature':  # Exclude 'testby' from user input
                     f.write(f"    '{key}': '{var.get()}',\n")
             f.write("}\n")
             #### Add addtionals here, maybe make them editable in the gui as well
@@ -330,11 +379,8 @@ class ConfigEditor:
             f.write("groups = []\n")
             f.write("for n in range(group_number):\n")
             f.write("    group_name = f\"group{n + 1}\"\n")
-            f.write("    groups.append(eval(group_name))\n")
-            f.write("for name, value in Groups22.items():\n")
-            f.write("    # Add your logic to handle Groups22\n")
-            f.write("    pass\n")
-
+            f.write("    if group_name in locals():\n")
+            f.write("        groups.append(locals()[group_name])\n")
         messagebox.showinfo("Success", "Configurations saved successfully.")
 
     def proceed(self):  #Option to skip suite2p, will execute a different .bat then 
