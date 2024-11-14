@@ -175,7 +175,7 @@ def load_suite2p_paths(data_folder, groups, main_folder, use_iscell=False):  ## 
     return suite2p_dict
 
 
-def create_output_csv(input_path, overwrite=False, check_for_iscell=False): ## creates output csv for all wells and saves them in .csv folder
+def create_output_csv(input_path, overwrite=False, check_for_iscell=False, update_iscell = True): ## creates output csv for all wells and saves them in .csv folder
     """This will create .csv files for each video loaded from out data fram function below.
         The structure will consist of columns that list: "Amplitudes": spike_amplitudes})
         
@@ -199,7 +199,6 @@ def create_output_csv(input_path, overwrite=False, check_for_iscell=False): ## c
 
         suite2p_dict = load_suite2p_paths(folder, groups, input_path, use_iscell=check_for_iscell)
 
-        # output_df = create_df(load_suite2p_paths(folder, groups, input_path))
         output_df = create_df(suite2p_dict)
     
 
@@ -210,6 +209,17 @@ def create_output_csv(input_path, overwrite=False, check_for_iscell=False): ## c
         ops = suite2p_dict["ops"]
         Img = getImg(ops)
         scatters, nid2idx, nid2idx_rejected, pixel2neuron = getStats(suite2p_dict["stat"], Img.shape, output_df)
+        iscell_path = os.path.join(folder, *SUITE2P_STRUCTURE['iscell'])
+        if update_iscell == True:
+            updated_iscell = suite2p_dict['iscell']
+            for idx in nid2idx:
+                updated_iscell[idx,0] = 1.0
+            for idxr in nid2idx_rejected:
+                updated_iscell[idxr,0] = 0.0
+            np.save(iscell_path, updated_iscell)
+            print(f"Updated iscell.npy saved for {folder}")
+        else:
+            continue
 
         image_save_path = os.path.join(input_path, f"{folder}_plot.png") #TODO explore changing "input path" to "folder" to save the processing in the same 
         dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
