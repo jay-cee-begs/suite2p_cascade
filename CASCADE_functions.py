@@ -3,7 +3,7 @@
 import os, warnings
 import sys
 import numpy as np
-from configurations import *
+from gui_configurations import *
 import matplotlib.pyplot as plt
 
 sys.path.insert(0,cascade_file_path) # cascade2p packages, imported from the downloaded Github repository

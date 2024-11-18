@@ -8,19 +8,19 @@ yaml = yaml.YAML(typ='rt')
 
 from CASCADE_functions import plots_and_basic_info, cascade_this
 from functions_data_transformation import get_file_name_list, create_output_csv, csv_to_pickle, create_experiment_overview
-import configurations
+import gui_configurations
 
 
 def main():
     # ## get the names of the deltaF files from the functions_data_transformation.py file
 
-    deltaF = get_file_name_list(folder_path = configurations.main_folder, file_ending = "deltaF.npy")
+    deltaF = get_file_name_list(folder_path = gui_configurations.main_folder, file_ending = "deltaF.npy")
     # if len(deltaF_files) == 0:
     #     deltaF_files = get_file_name_list(folder_path = configurations.main_folder, file_ending = "deltaF.npy")
-    deltaF_files =get_file_name_list(folder_path = configurations.main_folder, file_ending = "deltaF.npy")
+    deltaF_files =get_file_name_list(folder_path = gui_configurations.main_folder, file_ending = "deltaF.npy")
     try:
 
-        predictions_deltaF_files = get_file_name_list(folder_path = configurations.main_folder, file_ending = "predictions_deltaF.npy") ## get the names of the predicted spike files
+        predictions_deltaF_files = get_file_name_list(folder_path = gui_configurations.main_folder, file_ending = "predictions_deltaF.npy") ## get the names of the predicted spike files
         if len(predictions_deltaF_files) == 0:
             predictions_deltaF_files = []
     except FileNotFoundError as e:
@@ -31,14 +31,14 @@ def main():
         print("Cascade predictions for this dataset are missing, generating now...")
         for file in deltaF_files:
             plots_and_basic_info(file)
-            cascade_this(file, configurations.nb_neurons)
+            cascade_this(file, gui_configurations.nb_neurons)
         print("Done Generating Prediction Files")
     else:
         print("Cascade prediction files already exist")
     
 
-    predictions_deltaF_files = get_file_name_list(folder_path = configurations.main_folder, file_ending = "predictions_deltaF.npy") ## get the names of the predicted spike files
-    output_directories = get_file_name_list(folder_path = configurations.main_folder, file_ending = "samples")
+    predictions_deltaF_files = get_file_name_list(folder_path = gui_configurations.main_folder, file_ending = "predictions_deltaF.npy") ## get the names of the predicted spike files
+    output_directories = get_file_name_list(folder_path = gui_configurations.main_folder, file_ending = "samples")
     
     # for file, output in zip(predictions_deltaF_files, output_directories):
     #     histogram_total_estimated_spikes(file, output)
@@ -52,11 +52,11 @@ def main():
     #     plot_total_spikes_per_frame(file, spike_maximum, output)
     #     plot_average_spike_probability_per_frame(file, output)
 
-    create_output_csv(configurations.main_folder, overwrite = True)
-    csv_to_pickle(configurations.main_folder, overwrite = True)
+    create_output_csv(gui_configurations.main_folder, overwrite = True)
+    csv_to_pickle(gui_configurations.main_folder, overwrite = True)
     #TODO add an output for final_df for within python stuff
-    # create_final_df(configurations.main_folder)
-    create_experiment_overview(configurations.main_folder, configurations.groups)
+    # create_final_df(gui_configurations.main_folder)
+    create_experiment_overview(gui_configurations.main_folder, gui_configurations.groups)
 
 if __name__ == "__main__":
     main()
