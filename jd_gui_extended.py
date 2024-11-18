@@ -294,11 +294,13 @@ class ConfigEditor:
         main_folder = self.main_folder_var.get().strip()
         if not os.path.exists(main_folder):
             messagebox.showerror("Error", "Main folder does not exist.")
+            self.features_list = ['Active_Neuron_Proportion']
             return
 
         csv_file_path = os.path.join(main_folder, 'new_experiment_summary.csv')
         if not os.path.exists(csv_file_path):
             messagebox.showerror("Error", f"File {csv_file_path} not found.")
+            self.features_list = ['Active_Neuron_Proportion']
             return
         
         # Read the CSV file to get the columns
@@ -311,6 +313,7 @@ class ConfigEditor:
                   
         except Exception as e:
             messagebox.showerror("Error", f"Failed to read the CSV file: {str(e)}")
+            self.features_list = ['Active_Neuron_Proportion']
             return
 
 
