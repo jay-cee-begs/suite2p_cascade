@@ -333,7 +333,6 @@ class ConfigEditor:
             self.config['cascade_file_path'] = csc_path
         
         return csc_path
-    
     def reload_config(self):
         """Reload the configuration file to refresh the GUI."""
         self.config = self.load_config("gui_configurations.py")  # Reload the configuration file
@@ -346,12 +345,19 @@ class ConfigEditor:
         self.groups = self.config.get('groups', [])
         self.groups22 = {key: value for key, value in self.config.get('Groups22', {}).items()}
         self.timepoints = self.config.get('TimePoints', {})
+        
+        # Update the GUI components to reflect the new values
+        self.update_groups22_entries()
+        self.create_parameters_entries()
+        self.main_folder_var.set(self.config.get('main_folder', ''))
+        self.data_extension_var.set(self.config.get('data_extension', ''))
+        self.frame_rate_var.set(self.config.get('frame_rate', 0))
+        self.ops_path_var.set(self.config.get('ops_path', ''))
+        self.csc_path_var.set(self.config.get('cascade_file_path', ''))
+
+        # Optionally, you can also refresh other specific widgets or labels here.
+        messagebox.showinfo("Config Reloaded", "Configuration file has been reloaded successfully.")
     
-    # Update the GUI components to reflect the new values
-    self.update_groups22_entries()
-    self.create_parameters_entries()
-    # Optionally, you can also refresh other specific widgets or labels here.
-    messagebox.showinfo("Config Reloaded", "Configuration file has been reloaded successfully.")
     def save_config(self):
         main_folder = self.main_folder_var.get().strip()
         data_extension = self.data_extension_var.get().strip()
@@ -427,11 +433,16 @@ class ConfigEditor:
             f.write("        groups.append(locals()[group_name])\n")
         messagebox.showinfo("Success", "Configurations saved successfully.")
 
+        #reload the gui 
+        self.reload_config()
+
     def proceed(self):  #Option to skip suite2p, will execute a different .bat then 
         if self.skip_suite2p_var.get():
             subprocess.call(["run_plots.bat"])  # Execute run_plots.bat
         else:
             subprocess.call(["run_sequence.bat"])  # Execute sequence.bat
+         #refresh the gui after processing
+        self.reload_config()
 
     def show_ops_options(self):
         ops_window = tk.Toplevel(self.master)
