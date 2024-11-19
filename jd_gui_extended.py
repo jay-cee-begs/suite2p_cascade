@@ -38,6 +38,7 @@ class ConfigEditor:
         self.data_extension_var = tk.StringVar(value=self.config.get('data_extension', ''))
         self.frame_rate_var = tk.IntVar(value=self.config.get('frame_rate', 0))
         self.ops_path_var = tk.StringVar(value=self.config.get('ops_path', ''))
+        self.csc_path_var = tk.StringVar(value=self.config.get('cascade_file_path', ''))
         self.groups = self.config.get('groups', [])
         self.groups22 = {key: value for key, value in self.config.get('Groups22', {}).items()}
 
@@ -60,7 +61,11 @@ class ConfigEditor:
         tk.Label(self.group_frame, text="Adds all subfolders from the Experiment:").pack(side=tk.LEFT)
         tk.Button(self.group_frame, text="Add Group", command=self.add_group).pack(side=tk.LEFT)
 
-
+        #cascade path input
+        csc_frame = tk.Frame(self.scrollable_frame)
+        csc_frame.pack(padx=10, pady=5)
+        tk.Label(self.group_frame, text="Only Change when Cascade installation changed").pack(side=tk.LEFT)
+        tk.Entry(csc_frame, textvariable=self.csc_path_var, width=40).pack(side=tk.LEFT)
        
         # Ops path input
         tk.Label(self.scrollable_frame, text="Ops Path Options:").pack(anchor='w', padx=10, pady=5)
@@ -316,7 +321,19 @@ class ConfigEditor:
             self.features_list = ['Active_Neuron_Proportion']
             return
 
+    def csc_path(self):
+        """Call this function to get or set the path to the cascade file"""
+        csc_path = self.csc_path_var.get().strip()
 
+        # Check if the path is already in the configuration
+        if 'cascade_file_path' in self.config:
+            csc_path = self.config['cascade_file_path']
+            self.csc_path_var.set(csc_path)
+        else:
+            self.config['cascade_file_path'] = csc_path
+        
+        return csc_path
+    
     def save_config(self):
         main_folder = self.main_folder_var.get().strip()
         data_extension = self.data_extension_var.get().strip()
@@ -344,13 +361,18 @@ class ConfigEditor:
         #clearing the parameters dictionary before adding the new values
         self.config['parameters']['feature'] = selected_features
         with open('gui_configurations.py', 'w') as f:
+            f.write('import numpy as np')
             f.write(f"main_folder = r'{main_folder}'\n")
             for i, group in enumerate(self.groups, start=1):
                 f.write(f"group{i} = main_folder + r'{group}'\n")
             f.write(f"group_number = {len(self.groups)}\n")
             f.write(f"data_extension = '{data_extension}'\n")
             f.write(f"frame_rate = {frame_rate}\n")
+            f.write(f"cascade_file_path = r'{cascade_file_path}'\n")
             f.write(f"ops_path = r'{ops_path}'\n")
+            f.write("ops = np.load(ops_path, allow_pickle=True).item()\n")
+            f.write("ops['frame_rate'] = frame_rate\n")
+            f.write("ops['input_format'] = data_extension\n")
 
             f.write("TimePoints = {\n")
             for key, value in self.timepoints.items():
