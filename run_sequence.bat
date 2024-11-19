@@ -16,6 +16,9 @@ CALL "C:\Users\Justus\miniforge3\Scripts\activate.bat" cascade
 :: Run the second script
 python -m cascade_deconvolve
 
+:: Run the second script again bc it failes the first time
+python -m cascade_deconvolve
+
 :: Deactivate the second environment
 CALL conda deactivate
 
