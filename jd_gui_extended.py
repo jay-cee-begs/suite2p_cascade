@@ -339,6 +339,7 @@ class ConfigEditor:
         data_extension = self.data_extension_var.get().strip()
         frame_rate = self.frame_rate_var.get()
         ops_path = self.ops_path_var.get().strip()
+        csc_path = self.csc_path_var.get().strip()
 
         if not os.path.exists(main_folder):
             messagebox.showerror("Error", "Main folder does not exist.")
@@ -361,14 +362,14 @@ class ConfigEditor:
         #clearing the parameters dictionary before adding the new values
         self.config['parameters']['feature'] = selected_features
         with open('gui_configurations.py', 'w') as f:
-            f.write('import numpy as np')
+            f.write('import numpy as np \n')
             f.write(f"main_folder = r'{main_folder}'\n")
             for i, group in enumerate(self.groups, start=1):
                 f.write(f"group{i} = main_folder + r'{group}'\n")
             f.write(f"group_number = {len(self.groups)}\n")
             f.write(f"data_extension = '{data_extension}'\n")
             f.write(f"frame_rate = {frame_rate}\n")
-            f.write(f"cascade_file_path = r'{cascade_file_path}'\n")
+            f.write(f"cascade_file_path = r'{csc_path}'\n")
             f.write(f"ops_path = r'{ops_path}'\n")
             f.write("ops = np.load(ops_path, allow_pickle=True).item()\n")
             f.write("ops['frame_rate'] = frame_rate\n")
