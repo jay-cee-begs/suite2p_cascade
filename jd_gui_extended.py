@@ -40,7 +40,7 @@ class ConfigEditor:
         self.ops_path_var = tk.StringVar(value=self.config.get('ops_path', ''))
         self.csc_path_var = tk.StringVar(value=self.config.get('cascade_file_path', ''))
         self.groups = self.config.get('groups', [])
-        self.groups22 = {key: value for key, value in self.config.get('Groups22', {}).items()}
+        self.exp_condition = {key: value for key, value in self.config.get('exp_condition', {}).items()}
 
         # Main folder input
         tk.Label(self.scrollable_frame, text="Experiment / Main Folder Path:").pack(anchor='w', padx=10, pady=5)
@@ -59,13 +59,13 @@ class ConfigEditor:
         self.group_frame = tk.Frame(self.scrollable_frame)
         self.group_frame.pack(padx=10, pady=5)
         tk.Label(self.group_frame, text="Adds all subfolders from the Experiment:").pack(side=tk.LEFT)
-        tk.Button(self.group_frame, text="Add Group", command=self.add_group).pack(side=tk.LEFT)
+        tk.Button(self.group_frame, text="Add Experiment Conditions", command=self.add_group).pack(side=tk.LEFT)
 
         #cascade path input
-        csc_frame = tk.Frame(self.scrollable_frame)
-        csc_frame.pack(padx=10, pady=5)
-        tk.Label(self.group_frame, text="Only Change when Cascade installation changed").pack(side=tk.LEFT)
-        tk.Entry(csc_frame, textvariable=self.csc_path_var, width=40).pack(side=tk.LEFT)
+        self.csc_frame = tk.Frame(self.scrollable_frame)
+        self.csc_frame.pack(padx=10, pady=5)
+        tk.Label(self.csc_frame, text="Only Change when Cascade installation changed:").pack(side=tk.LEFT)
+        tk.Entry(self.csc_frame, textvariable=self.csc_path_var, width=40).pack(side=tk.LEFT)
        
         # Ops path input
         tk.Label(self.scrollable_frame, text="Ops Path Options:").pack(anchor='w', padx=10, pady=5)
@@ -100,12 +100,12 @@ class ConfigEditor:
         tk.Label(self.scrollable_frame, text="Press 'Add TimePoint' for each").pack(anchor='w')
         tk.Button(self.scrollable_frame, text="Add TimePoint", command=self.add_timepoint).pack(padx=10)
 
-        # Editable Groups22
+        # Editable exp_condition
         tk.Label(self.scrollable_frame, text="Same goes for your Groups, dont leave the brackets empty:").pack(anchor='w')
         tk.Label(self.scrollable_frame, text="(In case your structure looks like 'TimePoint_Condition' you can remove 'TimePoint_' )").pack(anchor='w')
-        self.groups22_frame = tk.Frame(self.scrollable_frame)
-        self.groups22_frame.pack(padx=10, pady=5)
-        self.create_dict_entries(self.groups22_frame, "Groups22", self.groups22)
+        self.exp_condition_frame = tk.Frame(self.scrollable_frame)
+        self.exp_condition_frame.pack(padx=10, pady=5)
+        self.create_dict_entries(self.exp_condition_frame, " ", self.exp_condition)
 
         # Editable parameters
         self.parameters_frame = tk.Frame(self.scrollable_frame)
@@ -195,13 +195,13 @@ class ConfigEditor:
         for folder_name in valid_folders:
             group_path = f"\\{folder_name}" if not folder_name.startswith("\\") else folder_name
             
-            if folder_name not in self.groups22:
-                self.groups22[folder_name] = ''
+            if folder_name not in self.exp_condition:
+                self.exp_condition[folder_name] = ''
             
             if group_path not in self.groups:
                 self.groups.append(group_path)
 
-        self.update_groups22_entries()
+        self.update_exp_condition_entries()
 
         if valid_folders:
             messagebox.showinfo("Groups Added", f"Added Groups: {', '.join(valid_folders)}")
@@ -238,11 +238,11 @@ class ConfigEditor:
             tk.Label(frame, text="Value:").pack(side=tk.LEFT)
             tk.Entry(frame, textvariable=value_var, width=15).pack(side=tk.LEFT)
 
-    def update_groups22_entries(self):
-        """Update the entries in the Groups22 dictionary with the use of create_dict_entries"""
-        for widget in self.groups22_frame.winfo_children():
+    def update_exp_condition_entries(self):
+        """Update the entries in the exp_condition dictionary with the use of create_dict_entries"""
+        for widget in self.exp_condition_frame.winfo_children():
             widget.destroy()  # Remove old entries
-        self.create_dict_entries(self.groups22_frame, "Groups22", self.groups22)
+        self.create_dict_entries(self.exp_condition_frame, "exp_condition", self.exp_condition)
 
     def create_parameters_entries(self):
         """Create entries for the parameters dictionary, contains lists for the various dropdown options"""
@@ -353,11 +353,11 @@ class ConfigEditor:
         self.ops_path_var.set(self.config.get('ops_path', ''))
         self.csc_path_var.set(self.config.get('cascade_file_path', ''))
         self.groups = self.config.get('groups', [])
-        self.groups22 = {key: value for key, value in self.config.get('Groups22', {}).items()}
+        self.exp_condition = {key: value for key, value in self.config.get('exp_condition', {}).items()}
         self.timepoints = self.config.get('TimePoints', {})
         
         # Update the GUI components to reflect the new values
-        self.update_groups22_entries()
+        self.update_exp_condition_entries()
         self.create_parameters_entries()
         self.reload_features_listbox()
         # Optionally, you can also refresh other specific widgets or labels here.
@@ -374,7 +374,7 @@ class ConfigEditor:
             messagebox.showerror("Error", "Main folder does not exist.")
             return
 
-        groups22 = {key_var.get(): value_var.get() for key_var, (key_var, value_var) in self.dict_vars.items()} ### ????????????? is this still needed?? 
+        exp_condition = {key_var.get(): value_var.get() for key_var, (key_var, value_var) in self.dict_vars.items()} ### ????????????? is this still needed?? 
 
         pairs_input = self.pairs_var.get().strip()
 
@@ -409,7 +409,7 @@ class ConfigEditor:
                 f.write(f"    '{key}': '{value}',\n")
             f.write("}\n")
 
-            f.write("Groups22 = {\n")
+            f.write("exp_condition = {\n")
             for key, (key_var, value_var) in self.dict_vars.items():
                 f.write(f"    '{key_var.get()}': '{value_var.get()}',\n")
             f.write("}\n")
