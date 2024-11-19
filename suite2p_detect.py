@@ -18,18 +18,18 @@ from functions_plots import *
 from functions_data_transformation import *
 
 
-## import configurations ##
-import configurations
+## import gui_configurations ##
+import gui_configurations
 ops_path
 
 ## Activate suite2p
 import run_suite2p 
-from configurations import main_folder
-# configurations.data_extension = 'nd2'
+from gui_configurations import main_folder
+# gui_configurations.data_extension = 'nd2'
 run_suite2p.get_all_image_folders_in_path(main_folder)
-# configurations.data_extension = 'tif'
+# gui_configurations.data_extension = 'tif'
 run_suite2p.main()
-# configurations.data_extension = 'nd2'
+# gui_configurations.data_extension = 'nd2'
 # run_suite2p.main()
 
 # run_suite2p.export_image_files_to_suite2p_format(r'D:\users\JC\pipeline\cysteine toxicity\001-DMEM replicates\DMEM replicates\240322 DMEM high pH acute toxicity')

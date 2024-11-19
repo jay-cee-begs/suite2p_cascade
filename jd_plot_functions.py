@@ -74,52 +74,53 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
     # Clear any existing plots
     plt.clf()
     plt.close()
+    for f in feature:
+        if type == 'swarm':                                                                                     # only works when not trying to plot by index 
+            df_sort = df.groupby(df[plotby])                                                                    # sorts by whatever column you want
+            for s in df_sort.groups.keys():                                                                     #iterates over the groups unique keys
+                df_unique = df_sort.get_group(s)
+                fig, ax = plt.subplots()                                                                        #create ax to use change it later if needed
+                sns.swarmplot(x=x, y=f, data=df_unique, hue='Group', ax=ax)
+                sns.lineplot(x=x, y=f, data=df_unique, err_style="bars", ax=ax)
+                # plot specifics
+                ax.set_title(df_unique.Time_Point.iloc[0])
+                ax.set_xlabel(x_label, fontsize=15)
+                ax.set_ylabel(y_label, fontsize=15)
+                ax.set_xticklabels(ax.get_xticklabels(), fontsize=10)
 
-    if type == 'swarm':                                                                                     # only works when not trying to plot by index 
-        df_sort = df.groupby(df[plotby])                                                                    # sorts by whatever column you want
-        for s in df_sort.groups.keys():                                                                     #iterates over the groups unique keys
-            df_unique = df_sort.get_group(s)
-            fig, ax = plt.subplots()                                                                        #create ax to use change it later if needed
-            sns.swarmplot(x=x, y=feature, data=df_unique, hue='Group', ax=ax)
-            sns.lineplot(x=x, y=feature, data=df_unique, err_style="bars", ax=ax)
-            # plot specifics
-            ax.set_title(df_unique.Time_Point.iloc[0])
-            ax.set_xlabel(x_label, fontsize=15)
-            ax.set_ylabel(y_label, fontsize=15)
-            ax.set_xticklabels(ax.get_xticklabels(), fontsize=10)
+                print("Swarm plot does not support statistical tests, please use another plot type")
+                save_path = os.path.join(main_folder, f'exp_swarm_{s}_{f}.png')
+                plt.savefig(save_path)
+                print(f'Your swarm plot is saved under {save_path}')    
 
-        print("Swarm plot does not support statistical tests, please use another plot type")
-         
-
-    else:
-        if type == 'violin':                                                                                # violin plot extra to allow us to plot quartiles inside, otherwise not needed
-            fig= sns.catplot(
-                data=df, kind=type, col = plotby, inner = 'quartiles',
-                x=x, y=feature,  aspect=aspct, height=hght, hue='Group', palette=palette, legend=legend)
-            print('Inner lines display quartiles, change in function if needed')
-                
         else:
-            fig= sns.catplot(
-                data=df, kind=type, col = plotby,
-                x=x, y=feature,  aspect=aspct, height=hght, hue='Group', palette=palette, legend=legend)
-        
-        for ax in fig.axes.flat:
-            ax.set_xlabel(x_label, fontsize=15)
-            ax.set_ylabel(y_label, fontsize=15)
-            ax.set_xticklabels(ax.get_xticklabels(),fontsize=10)
-        
+            if type == 'violin':                                                                                # violin plot extra to allow us to plot quartiles inside, otherwise not needed
+                fig= sns.catplot(
+                    data=df, kind=type, col = plotby, inner = 'quartiles',
+                    x=x, y=f,  aspect=aspct, height=hght, hue='Group', palette=palette, legend=legend)
+                print('Inner lines display quartiles, change in function if needed')
+                    
+            else:
+                fig= sns.catplot(
+                    data=df, kind=type, col = plotby,
+                    x=x, y=f,  aspect=aspct, height=hght, hue='Group', palette=palette, legend=legend)
+            
+            for ax in fig.axes.flat:
+                ax.set_xlabel(x_label, fontsize=15)
+                ax.set_ylabel(y_label, fontsize=15)
+                ax.set_xticklabels(ax.get_xticklabels(),fontsize=10)
+            
 
-    if stat_test:
-        for ax in fig.axes.flat:
-            annotator = Annotator(ax, testby, x=x, y=feature, data=df, x_order=group_order, y_order=None)
-            annotator.configure(test=stat_test, text_format='star', loc=location, hide_non_significant=True)
-            annotator.apply_and_annotate()   
-        print("Statistical test applied, n.s. bars hidden, change in function if needed")
-    
-    save_path = os.path.join(main_folder, 'exp_significance.png')
-    plt.savefig(save_path)
-    print(f'Your significance plot saved under {save_path}')
-    plt.show()
+            if stat_test:
+                for ax in fig.axes.flat:
+                    annotator = Annotator(ax, testby, x=x, y=f, data=df, x_order=group_order, y_order=None)
+                    annotator.configure(test=stat_test, text_format='star', loc=location, hide_non_significant=True)
+                    annotator.apply_and_annotate()   
+                print("Statistical test applied, n.s. bars hidden, change in function if needed")
+        
+        save_path = os.path.join(main_folder, f'exp_significance_{f}.png')
+        plt.savefig(save_path)
+        print(f'Your significance plot saved under {save_path}')
 
     return fig 
 
