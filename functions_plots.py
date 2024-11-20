@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import random
@@ -7,7 +8,7 @@ from scipy.signal import find_peaks
 import pandas as pd
 from scipy.ndimage import binary_dilation, binary_fill_holes
 import scipy.stats as stats
-import mapper
+# import mapper
 from PIL import Image
 import seaborn as sns #needed for aggregated feature plots
 # import pynapple as nap #TODO if you need Pynapple plots, you cannot use alongside cascade as it will break the code
@@ -237,8 +238,8 @@ def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
              ax1.tick_params(axis='both', which='both', bottom=False, top=False, 
                              labelbottom=False, left=False, right=False, labelleft=False)
              print("Neurons count:", len(nid2idx))
-            #  norm = matplotlib.colors.Normalize(vmin=0, vmax=1, clip=True) 
-            #  mapper = cm.ScalarMappable(norm=norm, cmap=cm.gist_rainbow) 
+             norm = matplotlib.colors.Normalize(vmin=0, vmax=1, clip=True) 
+             mapper = cm.ScalarMappable(norm=norm, cmap=cm.gist_rainbow) 
 
              def plotDict(n2d2idx_dict, override_color = None):
                  for neuron_id, idx in n2d2idx_dict.items():

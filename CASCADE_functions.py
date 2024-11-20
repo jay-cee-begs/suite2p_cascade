@@ -3,7 +3,7 @@
 import os, warnings
 import sys
 import numpy as np
-from configurations import *
+from gui_configurations import *
 import matplotlib.pyplot as plt
 
 sys.path.insert(0,cascade_file_path) # cascade2p packages, imported from the downloaded Github repository
@@ -99,7 +99,7 @@ def cascade_this(deltaF_file, nb_neurons):
     print(f"\ncurrent file: {deltaF_file}")
     neuron_indices = np.random.randint(traces.shape[0], size=nb_neurons)
     time_axis = plot_dFF_traces(traces,neuron_indices,frame_rate,spike_prob,y_range=(-1.5, 3))
-    plt.show()
+    #plt.show()
 
 
     ## Plots randomly drawn excerpts from the ground truth, re-sampled at the same frame rate and noise level as a typical recording of the test dataset.
@@ -112,7 +112,7 @@ def cascade_this(deltaF_file, nb_neurons):
     nb_traces = 16
     duration = max(time_axis) - 64/frame_rate # seconds
     plot_noise_matched_ground_truth(model_name, median_noise, frame_rate, nb_traces, duration, cascade_file_path)
-    plt.show()
+    #plt.show()
 
     #@markdown By default saves as variable **`spike_prob`** both to a *.mat-file and a *.npy-file. You can uncomment the file format that you do not need or leave it as it is.
 
