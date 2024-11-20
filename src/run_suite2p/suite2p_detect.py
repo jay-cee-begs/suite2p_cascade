@@ -19,12 +19,12 @@ from functions_data_transformation import *
 
 
 ## import gui_configurations ##
-import gui_configurations
+import batch_process.gui_configurations as gui_configurations
 ops_path
 
 ## Activate suite2p
 import run_suite2p 
-from gui_configurations import main_folder
+from batch_process.gui_configurations import main_folder
 # gui_configurations.data_extension = 'nd2'
 run_suite2p.get_all_image_folders_in_path(main_folder)
 # gui_configurations.data_extension = 'tif'
