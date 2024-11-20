@@ -15,6 +15,8 @@ class ConfigEditor:
         self.canvas = tk.Canvas(master)
         self.scrollbar = tk.Scrollbar(master, orient="vertical", command=self.canvas.yview)
         self.scrollable_frame = tk.Frame(self.canvas)
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+
 
         # Configure the scrollbar #### Find a way to have the whole frame scrollable
         self.scrollable_frame.bind(
@@ -41,6 +43,8 @@ class ConfigEditor:
         self.csc_path_var = tk.StringVar(value=self.config.get('cascade_file_path', ''))
         self.groups = self.config.get('groups', [])
         self.exp_condition = {key: value for key, value in self.config.get('exp_condition', {}).items()}
+        self.exp_dur_var = tk.IntVar(value=self.config.get("EXPERIMENT_DURATION", 60))
+        self.bin_width_var = tk.IntVar(value=self.config.get("BIN_WIDTH", ))
 
         # Main folder input
         tk.Label(self.scrollable_frame, text="Experiment / Main Folder Path:").pack(anchor='w', padx=10, pady=5)
@@ -132,6 +136,10 @@ class ConfigEditor:
         self.timepoints = {}
 
 ################ Functions AREA ################    put in seperate file eventually
+               
+    def _on_mousewheel(self, event):
+        self.canvas.yview_scroll(-1 * (event.delta // 120), "units")   
+
     def edit_default_ops(self):
         """Call the function to edit default ops"""
         subprocess.call(["run_default_ops.bat"])  # Execute run_ops.bat
@@ -161,18 +169,29 @@ class ConfigEditor:
         return config
 
 
-    def add_group(self):
+    def add_group(self, look_one_level_down = False):
         main_folder = self.main_folder_var.get().strip()
         if not os.path.exists(main_folder):
             messagebox.showerror("Error", "Main folder does not exist.")
             return
+        
+        file_ending = self.data_extension_var.get().strip()  # Get the specified file extension
+
         def check_for_single_image_file_in_folder(current_path, file_ending):
             """
             Check if the specified path contains exactly one file with the given extension.
             """
             files = [file for file in os.listdir(current_path) if file.endswith(file_ending)]
             return len(files) == 1
-        
+        def check_for_unprocessed_image_files_in_folder(current_path, file_ending):
+            """
+            Check if the folder contains more than one file with the given extension (indicating unprocessed files).
+            """
+            files = [file for file in os.listdir(current_path) if file.endswith(file_ending)]
+            return len(files)>1
+            #     return True
+            # if len(files) == 1:
+            #     return False
         all_folders = [f for f in os.listdir(main_folder) if os.path.isdir(os.path.join(main_folder, f))]
         excluded_substrings = []
         unique_folders = [folder for folder in all_folders if not any(excluded in folder for excluded in excluded_substrings)]
@@ -184,13 +203,18 @@ class ConfigEditor:
         for folder_name in unique_folders:
             current_folder_path = os.path.join(main_folder, folder_name)
             
-            # Check if any subfolder has exactly one file with the specified extension
-            subfolders = [f for f in os.listdir(current_folder_path) if os.path.isdir(os.path.join(current_folder_path, f))]
-            for subfolder in subfolders:
-                subfolder_path = os.path.join(current_folder_path, subfolder)
-                if check_for_single_image_file_in_folder(subfolder_path, file_ending):
+            if not look_one_level_down:
+                if check_for_unprocessed_image_files_in_folder(current_folder_path, file_ending):
                     valid_folders.append(folder_name)
+            else:
+            # Check if any subfolder has exactly one file with the specified extension
+                subfolders = [f for f in os.listdir(current_folder_path) if os.path.isdir(os.path.join(current_folder_path, f))]
+                for subfolder in subfolders:
+                    subfolder_path = os.path.join(current_folder_path, subfolder)
+                    if check_for_single_image_file_in_folder(subfolder_path, file_ending):
+                        valid_folders.append(folder_name)
                     break  # No need to check other subfolders if one matches
+
 
         for folder_name in valid_folders:
             group_path = f"\\{folder_name}" if not folder_name.startswith("\\") else folder_name
@@ -207,9 +231,6 @@ class ConfigEditor:
             messagebox.showinfo("Groups Added", f"Added Groups: {', '.join(valid_folders)}")
         else:
             messagebox.showinfo("No Groups Added", "No folders with a single file matching the specified extension were found.")
-
-               
-
 
     def add_timepoint(self):
         """call this function to change a/each timepoint name"""
@@ -369,6 +390,8 @@ class ConfigEditor:
         frame_rate = self.frame_rate_var.get()
         ops_path = self.ops_path_var.get().strip()
         csc_path = self.csc_path_var.get().strip()
+        BIN_WIDTH = self.bin_width_var.get()
+        EXPERIMENT_DURATION = self.exp_dur_var.get()
 
         if not os.path.exists(main_folder):
             messagebox.showerror("Error", "Main folder does not exist.")
@@ -403,6 +426,10 @@ class ConfigEditor:
             f.write("ops = np.load(ops_path, allow_pickle=True).item()\n")
             f.write("ops['frame_rate'] = frame_rate\n")
             f.write("ops['input_format'] = data_extension\n")
+            f.write(f"BIN_WIDTH = {BIN_WIDTH}\n")
+            f.write(f"EXPERIMENT_DURATION = {EXPERIMENT_DURATION}\n")
+            f.write("FRAME_INTERVAL = 1 / frame_rate\n")
+            f.write("FILTER_NEURONS = True\n")
 
             f.write("TimePoints = {\n")
             for key, value in self.timepoints.items():
@@ -427,9 +454,6 @@ class ConfigEditor:
             f.write("## Additional configurations\n")
             f.write("nb_neurons = 16\n")
             f.write('model_name = "Global_EXC_10Hz_smoothing200ms"\n')
-            f.write("EXPERIMENT_DURATION = 60\n")
-            f.write("FRAME_INTERVAL = 1 / frame_rate\n")
-            f.write("BIN_WIDTH = 20\n")
             f.write("FILTER_NEURONS = True\n")
             f.write("groups = []\n")
             f.write("for n in range(group_number):\n")
