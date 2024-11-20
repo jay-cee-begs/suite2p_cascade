@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import functions_general
 from functions_general import calculate_deltaF, basic_stats_per_cell, basic_estimated_stats_per_cell, summed_spike_probs_per_cell, return_baseline_F
-from gui_configurations import groups, main_folder, EXPERIMENT_DURATION, FRAME_INTERVAL, BIN_WIDTH, FILTER_NEURONS
+from batch_process.gui_configurations import groups, main_folder, EXPERIMENT_DURATION, FRAME_INTERVAL, BIN_WIDTH, FILTER_NEURONS
 import functions_plots
 from functions_plots import getImg, getStats, dispPlot
 
