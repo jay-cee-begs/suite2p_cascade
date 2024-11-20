@@ -171,7 +171,7 @@ class ConfigEditor:
             Check if the specified path contains exactly one file with the given extension.
             """
             files = [file for file in os.listdir(current_path) if file.endswith(file_ending)]
-            return len(files) == 1
+            return len(files)
         
         all_folders = [f for f in os.listdir(main_folder) if os.path.isdir(os.path.join(main_folder, f))]
         excluded_substrings = []
@@ -180,23 +180,26 @@ class ConfigEditor:
         file_ending = self.data_extension_var.get().strip()  # Get the specified file extension
 
         valid_folders = []  # To hold valid folders
-
+        
         for folder_name in unique_folders:
             current_folder_path = os.path.join(main_folder, folder_name)
-            
-            # Check if any subfolder has exactly one file with the specified extension
-            subfolders = [f for f in os.listdir(current_folder_path) if os.path.isdir(os.path.join(current_folder_path, f))]
-            for subfolder in subfolders:
-                subfolder_path = os.path.join(current_folder_path, subfolder)
-                if check_for_single_image_file_in_folder(subfolder_path, file_ending):
-                    valid_folders.append(folder_name)
-                    break  # No need to check other subfolders if one matches
+            if check_for_single_image_file_in_folder(current_folder_path, file_ending) >= 1:
+                valid_folders.append(folder_name)
+                
+            else:
+                # Check if any subfolder has exactly one file with the specified extension
+                subfolders = [f for f in os.listdir(current_folder_path) if os.path.isdir(os.path.join(current_folder_path, f))]
+                for subfolder in subfolders:
+                    subfolder_path = os.path.join(current_folder_path, subfolder)
+                    if check_for_single_image_file_in_folder(subfolder_path, file_ending) == 1:
+                        valid_folders.append(folder_name)
+                        break  # No need to check other subfolders if one matches
 
         for folder_name in valid_folders:
             group_path = f"\\{folder_name}" if not folder_name.startswith("\\") else folder_name
             
             if folder_name not in self.exp_condition:
-                self.exp_condition[folder_name] = ''
+                self.exp_condition[folder_name] = f"{folder_name}" #populates it with the folder name for the user to change?
             
             if group_path not in self.groups:
                 self.groups.append(group_path)
@@ -206,7 +209,7 @@ class ConfigEditor:
         if valid_folders:
             messagebox.showinfo("Groups Added", f"Added Groups: {', '.join(valid_folders)}")
         else:
-            messagebox.showinfo("No Groups Added", "No folders with a single file matching the specified extension were found.")
+            messagebox.showinfo("No Groups Added", "No (sub-)folders with one or more files matching the specified extension were found.")
 
                
 
