@@ -98,7 +98,6 @@ class ConfigEditor:
         tk.Entry(self.timepoint_frame, textvariable=self.timepoint_key_var, width=20).pack(side=tk.LEFT)
         tk.Entry(self.timepoint_frame, textvariable=self.timepoint_value_var, width=20).pack(side=tk.LEFT)
         tk.Label(self.scrollable_frame, text="Press 'Add TimePoint' for each").pack(anchor='w')
-        tk.Button(self.scrollable_frame, text="Add TimePoint", command=self.add_timepoint).pack(padx=10)
 
         # Editable exp_condition
         tk.Label(self.scrollable_frame, text="Same goes for your Groups, dont leave the brackets empty:").pack(anchor='w')
@@ -205,26 +204,39 @@ class ConfigEditor:
                 self.groups.append(group_path)
 
         self.update_exp_condition_entries()
+        
+        # After adding groups, update timepoints using unique prefixes
+        unique_prefixes = self.get_unique_prefixes(prefix_length=3)
+        for prefix in unique_prefixes:
+            if prefix not in self.timepoints:
+                self.timepoints[prefix] = prefix  # Set the key-value as the prefix itself
+
+        # Update timepoint entries UI
+        self.update_timepoint_entries()
 
         if valid_folders:
             messagebox.showinfo("Groups Added", f"Added Groups: {', '.join(valid_folders)}")
         else:
             messagebox.showinfo("No Groups Added", "No (sub-)folders with one or more files matching the specified extension were found.")
 
-               
+    def update_timepoint_entries(self):
+        """Update the entries in the timepoints dictionary with the current keys and values."""
+        # Clear previous timepoint entries
+        for widget in self.timepoint_frame.winfo_children():
+            widget.destroy()
 
+        # Create new timepoint entries for each key-value pair in the timepoints dictionary
+        for key, value in self.timepoints.items():
+            frame = tk.Frame(self.timepoint_frame)
+            frame.pack(padx=10, pady=5)
+            tk.Label(frame, text="Key:").pack(side=tk.LEFT)
+            key_var = tk.StringVar(value=key)
+            value_var = tk.StringVar(value=value)
+            self.timepoints[key] = value_var  # Store the variable to the dictionary
+            tk.Entry(frame, textvariable=key_var, width=20).pack(side=tk.LEFT)
+            tk.Label(frame, text="Value:").pack(side=tk.LEFT)
+            tk.Entry(frame, textvariable=value_var, width=20).pack(side=tk.LEFT)               
 
-    def add_timepoint(self):
-        """call this function to change a/each timepoint name"""
-        key = self.timepoint_key_var.get().strip()
-        value = self.timepoint_value_var.get().strip()
-        if key and value:
-            self.timepoints[key] = value
-            self.timepoint_key_var.set('')  # Clear input
-            self.timepoint_value_var.set('')  # Clear input
-            messagebox.showinfo("TimePoint Added", f"Added TimePoint: {key} -> {value}")
-        else:
-            messagebox.showwarning("Input Error", "Please enter both key and value for TimePoint.")
 
     def create_dict_entries(self, master, title, dictionary):
         """will allow you to edit dictionaries in the configurations file"""
@@ -324,6 +336,26 @@ class ConfigEditor:
             self.features_list = ['Active_Neuron_Proportion']
             return
 
+    ####copied from functions_data_transformation.py to get the TimePoints names before csv creation
+    def get_unique_prefixes(self, prefix_length=3):
+        """Get unique prefixes from the group names, corresponding to the prefixes chosen by cascade"""
+        prefixes = set()
+        for name in self.groups:
+                    # Normalize the path by using os.path.normpath, which handles both slashes
+            normalized_path = os.path.normpath(name)
+            
+            # Remove drive letter and leading directories by splitting and taking the last part
+            last_part = normalized_path.split(os.sep)[-1]  # Get the last part of the path
+            
+            # Now, get the prefix based on the desired length (e.g., first 3 characters)
+            prefix = last_part[:prefix_length]
+            prefixes.add(prefix)
+        return prefixes
+
+
+        
+        
+
     def csc_path(self):
         """Call this function to get or set the path to the cascade file"""
         csc_path = self.csc_path_var.get().strip()
@@ -408,8 +440,8 @@ class ConfigEditor:
             f.write("ops['input_format'] = data_extension\n")
 
             f.write("TimePoints = {\n")
-            for key, value in self.timepoints.items():
-                f.write(f"    '{key}': '{value}',\n")
+            for key, value_var in self.timepoints.items():
+                f.write(f"    '{key}': '{value_var.get()}',\n")
             f.write("}\n")
 
             f.write("exp_condition = {\n")
