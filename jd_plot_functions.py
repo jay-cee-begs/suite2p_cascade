@@ -118,9 +118,9 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
                     annotator.apply_and_annotate()   
                 print("Statistical test applied, n.s. bars hidden, change in function if needed")
         
-        save_path = os.path.join(main_folder, f'exp_significance_{f}.png')
-        plt.savefig(save_path)
-        print(f'Your significance plot saved under {save_path}')
+            save_path = os.path.join(main_folder, f'exp_significance_{f}.png')
+            plt.savefig(save_path)
+            print(f'Your significance plot saved under {save_path}')
 
     return fig 
 
