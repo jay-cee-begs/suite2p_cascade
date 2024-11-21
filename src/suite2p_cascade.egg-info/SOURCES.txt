@@ -1,0 +1,7 @@
+LICENSE
+README.md
+setup.py
+src/suite2p_cascade.egg-info/PKG-INFO
+src/suite2p_cascade.egg-info/SOURCES.txt
+src/suite2p_cascade.egg-info/dependency_links.txt
+src/suite2p_cascade.egg-info/top_level.txt

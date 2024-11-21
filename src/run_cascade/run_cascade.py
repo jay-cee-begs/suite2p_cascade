@@ -8,7 +8,7 @@ yaml = yaml.YAML(typ='rt')
 
 from CASCADE_functions import plots_and_basic_info, cascade_this
 from functions_data_transformation import get_file_name_list, create_output_csv, csv_to_pickle, create_experiment_overview
-import gui_configurations
+import batch_process.gui_configurations as gui_configurations
 
 
 def main():

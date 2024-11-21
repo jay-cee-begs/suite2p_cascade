@@ -2,7 +2,7 @@
 import os, warnings
 import numpy as np
 import matplotlib.pyplot as plt
-from gui_configurations import FRAME_INTERVAL, main_folder
+from batch_process.gui_configurations import FRAME_INTERVAL, main_folder
 from scipy.signal import find_peaks, peak_prominences
 
 
