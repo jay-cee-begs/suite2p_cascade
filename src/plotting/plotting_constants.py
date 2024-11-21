@@ -1,6 +1,6 @@
 import pandas as pd
-import gui_configurations
-from gui_configurations import main_folder, parameters, TimePoints, exp_condition 
+import batch_process.gui_configurations as gui_configurations
+from batch_process.gui_configurations import main_folder, parameters, TimePoints, exp_condition 
 #from functions_plots import *
 from statannotations.Annotator import Annotator
 from jd_plot_functions import ez_sign_plot, load_and_adjust

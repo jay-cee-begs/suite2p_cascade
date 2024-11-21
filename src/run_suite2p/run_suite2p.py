@@ -9,7 +9,7 @@ import shutil
 # sys.path.insert(0, 'D:/users/JC/suite2p-0.14.0')
 from suite2p import run_s2p
 
-import gui_configurations
+import batch_process.gui_configurations as gui_configurations
 #potential issue here in that gui_configurations would need to 
 #be accessed in both virtual environments if we define a directory here
 
