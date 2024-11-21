@@ -2,6 +2,4 @@
 *.npy
 *.csv
 __pycache__
-jd_gui_test.py
-*.bat
-gui_configurations.py
+
