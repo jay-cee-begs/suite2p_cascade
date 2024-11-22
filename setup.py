@@ -23,7 +23,7 @@ def parse_requirements_yaml(filename, encoding):
 env_requirements = {
     'suite2p': parse_requirements_yaml('suite2p-req.yml', detect_encoding('suite2p-req.yml')),
     'cascade': parse_requirements_yaml('cascade-req.yml', detect_encoding('cascade-req.yml')),
-    'data_env': parse_requirements_yaml('data_env', detect_encoding('data_env'))
+    # 'data_env': parse_requirements_yaml('data_env', detect_encoding('data_env'))
 
 }
 
