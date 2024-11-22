@@ -3,5 +3,6 @@
 *.csv
 __pycache__
 *.txt
+!statannotations-req.txt
 *.egg-info\PKG-INFO
 
