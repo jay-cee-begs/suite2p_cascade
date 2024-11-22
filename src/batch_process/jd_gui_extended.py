@@ -490,11 +490,25 @@ class ConfigEditor:
         #reload the gui
         #self.reload_config()
 
-    def proceed(self):  #Option to skip suite2p, will execute a different .bat then 
+    def get_current_dir(self):
+        return self.current_dir 
+    
+    def move_up(self, levels = 1):
+        new_dir = self.current_dir
+
+
+    def proceed(self):  #Option to skip suite2p, will execute a different .bat then
+        current_dir = Path(__file__).parent
+        scripts_dir = current_dir / "Scripts" 
         if self.skip_suite2p_var.get():
-            subprocess.call(["run_plots.bat"])  # Execute run_plots.bat
+            bat_file = scripts_dir / "run_plots"
         else:
-            subprocess.call(["run_sequence.bat"])  # Execute sequence.bat
+            bat_file = scripts_dir / "run_sequence.bat"
+            
+        print(f"Executing {bat_file}")
+        subprocess.call([str(bat_file)])  # Execute sequence.bat
+        # reload the gui
+        #self.reload_config()
         # reload the gui
         #self.reload_config()
 
