@@ -9,12 +9,22 @@ def detect_encoding(filename):
         result = chardet.detect(raw_data)
         return result['encoding']
 
-
 def parse_requirements_yaml(filename, encoding):
     with open(filename, 'r', encoding=encoding) as file:
         data = yaml.safe_load(file)
-        return data.get('dependencies', [])
+        return [str(line) for line in data.get('dependencies', [])]
         # return [line.strip() for line in file if line.strip() and not line.startswith("#")]
+
+def parse_requirements_txt(filename, encoding):
+    """
+    Parses a plain text requirements file to extract dependencies.
+    """
+    with open(filename, 'r', encoding=encoding) as file:
+        return [
+            line.strip()
+            for line in file
+            if line.strip() and not line.startswith("#")  # Exclude empty lines and comments
+        ]
 
 
 # encoding = detect_encoding('requirements.txt')  # Or 'requirements.yaml'
@@ -23,7 +33,7 @@ def parse_requirements_yaml(filename, encoding):
 env_requirements = {
     'suite2p': parse_requirements_yaml('suite2p-req.yml', detect_encoding('suite2p-req.yml')),
     'cascade': parse_requirements_yaml('cascade-req.yml', detect_encoding('cascade-req.yml')),
-    # 'data_env': parse_requirements_yaml('data_env', detect_encoding('data_env'))
+    'data_env': parse_requirements_txt('statannotations.txt', detect_encoding('statannotations.txt'))
 
 }
 
@@ -34,7 +44,8 @@ setup(
     package_dir={'': 'src'},
     extra_require = {
         "suite2p":env_requirements['suite2p'],
-        'cascade':env_requirements['cascade']
+        'cascade':env_requirements['cascade'],
+        'data_env':env_requirements['data_env']
 
     }
         # List your project dependencies here
