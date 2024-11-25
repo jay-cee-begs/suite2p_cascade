@@ -169,6 +169,7 @@ class ConfigEditor:
 
 
     def add_group(self):
+        self.groups.clear()  
         main_folder = self.main_folder_var.get().strip()
         if not os.path.exists(main_folder):
             messagebox.showerror("Error", "Main folder does not exist.")
