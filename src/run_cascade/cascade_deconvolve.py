@@ -14,7 +14,7 @@ import pickle
 ## import functions ##
 from functions_general import *
 from CASCADE_functions import *
-from functions_plots import *
+from plotting.functions_plots import *
 from functions_data_transformation import *
 
 
@@ -24,7 +24,7 @@ import configurations
 """Activate cascade env"""
 from configurations import *
 import run_cascade.run_cascade as run_cascade
-from functions_plots import *
+from plotting.functions_plots import *
 if __name__ == "__main__":
     run_cascade.main()
 

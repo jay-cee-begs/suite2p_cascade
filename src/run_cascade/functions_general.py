@@ -2,7 +2,7 @@
 import os, warnings
 import numpy as np
 import matplotlib.pyplot as plt
-from batch_process.gui_configurations import FRAME_INTERVAL, main_folder
+import batch_process.gui_configurations as configurations
 from scipy.signal import find_peaks, peak_prominences
 
 
@@ -68,7 +68,7 @@ def basic_stats_per_cell(predictions_file):
         sum.append(np.nansum(cell))
         if mean > 0:
 
-            cell_instant_spike_rate.append(mean/FRAME_INTERVAL)
+            cell_instant_spike_rate.append(mean/configurations.FRAME_INTERVAL)
         # cell_means.append(mean)
             sd=np.nanstd(cell)
             cell_sds.append(sd)
@@ -159,18 +159,18 @@ def calculate_deltaF(F_file):
 
     np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
 
-    print(f"delta F calculated for {F_file[len(main_folder)+1:-21]}")
+    print(f"delta F calculated for {F_file[len(configurations.main_folder)+1:-21]}")
 
-    csv_filename = f"{F_file[len(main_folder)+1:-21]}".replace("\\", "-") ## prevents backslahes being replaced in rest of code
+    csv_filename = f"{F_file[len(configurations.main_folder)+1:-21]}".replace("\\", "-") ## prevents backslahes being replaced in rest of code
 
-    if not os.path.exists(main_folder + r'\csv_files_deltaF'): ## creates directory if it doesn't exist
-        os.mkdir(main_folder + r'\csv_files_deltaF')
+    if not os.path.exists(configurations.main_folder + r'\csv_files_deltaF'): ## creates directory if it doesn't exist
+        os.mkdir(configurations.main_folder + r'\csv_files_deltaF')
 
-    np.savetxt(f"{main_folder}/csv_files_deltaF/{csv_filename}.csv", deltaF, delimiter=";") ### can be commented out if you don't want to save deltaF as .csv files (additionally to .npy)
+    np.savetxt(f"{configurations.main_folder}/csv_files_deltaF/{csv_filename}.csv", deltaF, delimiter=";") ### can be commented out if you don't want to save deltaF as .csv files (additionally to .npy)
 
     ## if done by pandas, version needs to be checked, np.savetxt might be enough anyways ##
     # df = pd.DataFrame(deltaF)
-    # df.to_csv(f"{main_folder}"+"/csv_files/"+f"{file[len(main_folder)+1:-21]}"+".csv", index = False, header = False)
+    # df.to_csv(f"{configurations.main_folder}"+"/csv_files/"+f"{file[len(configurations.main_folder)+1:-21]}"+".csv", index = False, header = False)
 
     print(f"delta F traces saved as deltaF.npy under {savepath}\n")
 
