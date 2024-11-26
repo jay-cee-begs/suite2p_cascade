@@ -8,6 +8,7 @@ yaml = yaml.YAML(typ='rt')
 
 from CASCADE_functions import plots_and_basic_info, cascade_this
 from functions_data_transformation import get_file_name_list, create_output_csv, csv_to_pickle, create_experiment_overview
+from functions_plots import histogram_total_estimated_spikes, plot_average_spike_probability_per_frame, plot_total_spikes_per_frame, get_max_spike_across_frames
 import gui_configurations
 
 
@@ -40,17 +41,17 @@ def main():
     predictions_deltaF_files = get_file_name_list(folder_path = gui_configurations.main_folder, file_ending = "predictions_deltaF.npy") ## get the names of the predicted spike files
     output_directories = get_file_name_list(folder_path = gui_configurations.main_folder, file_ending = "samples")
     
-    # for file, output in zip(predictions_deltaF_files, output_directories):
-    #     histogram_total_estimated_spikes(file, output)
+    for file, output in zip(predictions_deltaF_files, output_directories):
+        histogram_total_estimated_spikes(file, output)
     # #TODO figure out how to compile group histograms
     # # for group in groups:
     # #     plot_group_histogram(group, predictions_deltaF_files)
     
-    #     spike_maximum = get_max_spike_across_frames(predictions_deltaF_files)
+        spike_maximum = get_max_spike_across_frames(predictions_deltaF_files)
 
-    # for file, output in zip(predictions_deltaF_files, output_directories):
-    #     plot_total_spikes_per_frame(file, spike_maximum, output)
-    #     plot_average_spike_probability_per_frame(file, output)
+    for file, output in zip(predictions_deltaF_files, output_directories):
+        plot_total_spikes_per_frame(file, spike_maximum, output)
+        plot_average_spike_probability_per_frame(file, output)
 
     create_output_csv(gui_configurations.main_folder, overwrite = True)
     csv_to_pickle(gui_configurations.main_folder, overwrite = True)
