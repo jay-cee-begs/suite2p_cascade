@@ -195,6 +195,7 @@ def boundary(ypix,xpix):
 def getStats(stat, frame_shape, output_df):
     """Accesses suite2p stats on ROIs and filters ROIs based on cascade spike probability being >= 1 into nid2idx and nid2idx_rejected (respectively)"""
     MIN_PROB = 0 
+    min_radius = 2
     pixel2neuron = np.full(frame_shape, fill_value=np.nan, dtype=float)
     scatters = dict(x=[], y=[], color=[], text=[])
     nid2idx = {}
@@ -202,8 +203,9 @@ def getStats(stat, frame_shape, output_df):
     print(f"Number of detected ROIs: {stat.shape[0]}")
     for n in range(stat.shape[0]):
         estimated_spikes = output_df.iloc[n]["EstimatedSpikes"]
+        radius = stat.iloc[n]['radius']
 
-        if estimated_spikes > MIN_PROB:
+        if estimated_spikes > MIN_PROB and radius >= min_radius:
             nid2idx[n] = len(scatters["x"]) # Assign new idx
         else:
             nid2idx_rejected[n] = len(scatters["x"])
