@@ -33,7 +33,7 @@ def parse_requirements_txt(filename, encoding):
 env_requirements = {
     'suite2p': parse_requirements_yaml('suite2p-req.yml', detect_encoding('suite2p-req.yml')),
     'cascade': parse_requirements_yaml('cascade-req.yml', detect_encoding('cascade-req.yml')),
-    'data_env': parse_requirements_txt('statannotations.txt', detect_encoding('statannotations.txt'))
+    'plt_analysis': parse_requirements_txt('plt_analysis-req.txt', detect_encoding('plt_analysis-req.txt'))
 
 }
 
@@ -45,7 +45,7 @@ setup(
     extra_require = {
         "suite2p":env_requirements['suite2p'],
         'cascade':env_requirements['cascade'],
-        'data_env':env_requirements['data_env']
+        'plt_analysis':env_requirements['plt_analysis']
 
     }
         # List your project dependencies here
