@@ -102,7 +102,6 @@ class ConfigEditor:
         tk.Entry(self.timepoint_frame, textvariable=self.timepoint_key_var, width=20).pack(side=tk.LEFT)
         tk.Entry(self.timepoint_frame, textvariable=self.timepoint_value_var, width=20).pack(side=tk.LEFT)
         tk.Label(self.scrollable_frame, text="Press 'Add TimePoint' for each").pack(anchor='w')
-        tk.Button(self.scrollable_frame, text="Add TimePoint", command=self.add_timepoint).pack(padx=10)
 
         # Editable exp_condition
         tk.Label(self.scrollable_frame, text="Same goes for your Groups, dont leave the brackets empty:").pack(anchor='w')
@@ -169,7 +168,7 @@ class ConfigEditor:
         return config
 
 
-    def add_group(self, look_one_level_down = False):
+    def add_group(self):
         main_folder = self.main_folder_var.get().strip()
         if not os.path.exists(main_folder):
             messagebox.showerror("Error", "Main folder does not exist.")
@@ -182,16 +181,7 @@ class ConfigEditor:
             Check if the specified path contains exactly one file with the given extension.
             """
             files = [file for file in os.listdir(current_path) if file.endswith(file_ending)]
-            return len(files) == 1
-        def check_for_unprocessed_image_files_in_folder(current_path, file_ending):
-            """
-            Check if the folder contains more than one file with the given extension (indicating unprocessed files).
-            """
-            files = [file for file in os.listdir(current_path) if file.endswith(file_ending)]
-            return len(files)>1
-            #     return True
-            # if len(files) == 1:
-            #     return False
+            return len(files)
         all_folders = [f for f in os.listdir(main_folder) if os.path.isdir(os.path.join(main_folder, f))]
         excluded_substrings = []
         unique_folders = [folder for folder in all_folders if not any(excluded in folder for excluded in excluded_substrings)]
@@ -199,50 +189,65 @@ class ConfigEditor:
         file_ending = self.data_extension_var.get().strip()  # Get the specified file extension
 
         valid_folders = []  # To hold valid folders
-
+        
         for folder_name in unique_folders:
             current_folder_path = os.path.join(main_folder, folder_name)
-            
-            if not look_one_level_down:
-                if check_for_unprocessed_image_files_in_folder(current_folder_path, file_ending):
-                    valid_folders.append(folder_name)
+            if check_for_single_image_file_in_folder(current_folder_path, file_ending) >= 1:
+                valid_folders.append(folder_name)
+                
             else:
-            # Check if any subfolder has exactly one file with the specified extension
+                # Check if any subfolder has exactly one file with the specified extension
                 subfolders = [f for f in os.listdir(current_folder_path) if os.path.isdir(os.path.join(current_folder_path, f))]
                 for subfolder in subfolders:
                     subfolder_path = os.path.join(current_folder_path, subfolder)
-                    if check_for_single_image_file_in_folder(subfolder_path, file_ending):
+                    if check_for_single_image_file_in_folder(subfolder_path, file_ending) == 1:
                         valid_folders.append(folder_name)
-                    break  # No need to check other subfolders if one matches
-
+                        break  # No need to check other subfolders if one matches
 
         for folder_name in valid_folders:
             group_path = f"\\{folder_name}" if not folder_name.startswith("\\") else folder_name
             
             if folder_name not in self.exp_condition:
-                self.exp_condition[folder_name] = ''
+                self.exp_condition[folder_name] = f"{folder_name}" #populates it with the folder name for the user to change?
             
             if group_path not in self.groups:
                 self.groups.append(group_path)
 
         self.update_exp_condition_entries()
+        
+        # After adding groups, update timepoints using unique prefixes
+        unique_prefixes = self.get_unique_prefixes(prefix_length=3)
+        for prefix in unique_prefixes:
+            if prefix not in self.timepoints:
+                self.timepoints[prefix] = prefix  # Set the key-value as the prefix itself
+
+        # Update timepoint entries UI
+        self.update_timepoint_entries()
 
         if valid_folders:
             messagebox.showinfo("Groups Added", f"Added Groups: {', '.join(valid_folders)}")
         else:
-            messagebox.showinfo("No Groups Added", "No folders with a single file matching the specified extension were found.")
+            messagebox.showinfo("No Groups Added", "No (sub-)folders with one or more files matching the specified extension were found.")
+            
+            
+    def update_timepoint_entries(self):
+        """Update the entries in the timepoints dictionary with the current keys and values."""
+        # Clear previous timepoint entries
+        for widget in self.timepoint_frame.winfo_children():
+            widget.destroy()
 
-    def add_timepoint(self):
-        """call this function to change a/each timepoint name"""
-        key = self.timepoint_key_var.get().strip()
-        value = self.timepoint_value_var.get().strip()
-        if key and value:
-            self.timepoints[key] = value
-            self.timepoint_key_var.set('')  # Clear input
-            self.timepoint_value_var.set('')  # Clear input
-            messagebox.showinfo("TimePoint Added", f"Added TimePoint: {key} -> {value}")
-        else:
-            messagebox.showwarning("Input Error", "Please enter both key and value for TimePoint.")
+        # Create new timepoint entries for each key-value pair in the timepoints dictionary
+        for key, value in self.timepoints.items():
+            frame = tk.Frame(self.timepoint_frame)
+            frame.pack(padx=10, pady=5)
+            tk.Label(frame, text="Key:").pack(side=tk.LEFT)
+            key_var = tk.StringVar(value=key)
+            value_var = tk.StringVar(value=value)
+            self.timepoints[key] = value_var  # Store the variable to the dictionary
+            tk.Entry(frame, textvariable=key_var, width=20).pack(side=tk.LEFT)
+            tk.Label(frame, text="Value:").pack(side=tk.LEFT)
+            tk.Entry(frame, textvariable=value_var, width=20).pack(side=tk.LEFT)               
+            
 
     def create_dict_entries(self, master, title, dictionary):
         """will allow you to edit dictionaries in the configurations file"""
@@ -342,6 +347,26 @@ class ConfigEditor:
             self.features_list = ['Active_Neuron_Proportion']
             return
 
+    ####copied from functions_data_transformation.py to get the TimePoints names before csv creation
+    def get_unique_prefixes(self, prefix_length=3):
+        """Get unique prefixes from the group names, corresponding to the prefixes chosen by cascade"""
+        prefixes = set()
+        for name in self.groups:
+                    # Normalize the path by using os.path.normpath, which handles both slashes
+            normalized_path = os.path.normpath(name)
+            
+            # Remove drive letter and leading directories by splitting and taking the last part
+            last_part = normalized_path.split(os.sep)[-1]  # Get the last part of the path
+            
+            # Now, get the prefix based on the desired length (e.g., first 3 characters)
+            prefix = last_part[:prefix_length]
+            prefixes.add(prefix)
+        return prefixes
+
+
+        
+        
+
     def csc_path(self):
         """Call this function to get or set the path to the cascade file"""
         csc_path = self.csc_path_var.get().strip()
@@ -432,8 +457,8 @@ class ConfigEditor:
             f.write("FILTER_NEURONS = True\n")
 
             f.write("TimePoints = {\n")
-            for key, value in self.timepoints.items():
-                f.write(f"    '{key}': '{value}',\n")
+            for key, value_var in self.timepoints.items():
+                f.write(f"    '{key}': '{value_var.get()}',\n")
             f.write("}\n")
 
             f.write("exp_condition = {\n")
@@ -465,11 +490,25 @@ class ConfigEditor:
         #reload the gui
         #self.reload_config()
 
-    def proceed(self):  #Option to skip suite2p, will execute a different .bat then 
+    def get_current_dir(self):
+        return self.current_dir 
+    
+    def move_up(self, levels = 1):
+        new_dir = self.current_dir
+
+
+    def proceed(self):  #Option to skip suite2p, will execute a different .bat then
+        current_dir = Path(__file__).parent
+        scripts_dir = current_dir / "Scripts" 
         if self.skip_suite2p_var.get():
-            subprocess.call(["run_plots.bat"])  # Execute run_plots.bat
+            bat_file = scripts_dir / "run_plots"
         else:
-            subprocess.call(["run_sequence.bat"])  # Execute sequence.bat
+            bat_file = scripts_dir / "run_sequence.bat"
+            
+        print(f"Executing {bat_file}")
+        subprocess.call([str(bat_file)])  # Execute sequence.bat
+        # reload the gui
+        #self.reload_config()
         # reload the gui
         #self.reload_config()
 

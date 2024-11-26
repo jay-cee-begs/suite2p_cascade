@@ -2,11 +2,9 @@
 import os
 import pandas as pd
 import numpy as np
-import functions_general
 from functions_general import calculate_deltaF, basic_stats_per_cell, basic_estimated_stats_per_cell, summed_spike_probs_per_cell, return_baseline_F
-from gui_configurations import groups, main_folder, EXPERIMENT_DURATION, FRAME_INTERVAL, BIN_WIDTH, FILTER_NEURONS
-import functions_plots
-from functions_plots import getImg, getStats, dispPlot
+from batch_process import gui_configurations as configurations 
+from plotting import functions_plots as fun_plot 
 
 SUITE2P_STRUCTURE = {
     "F": ["suite2p", "plane0", "F.npy"],
@@ -197,7 +195,7 @@ def create_output_csv(input_path, overwrite=False, check_for_iscell=False, updat
             print(f"CSV file {translated_path} already exists!")
             continue
 
-        suite2p_dict = load_suite2p_paths(folder, groups, input_path, use_iscell=check_for_iscell)
+        suite2p_dict = load_suite2p_paths(folder, configurations.groups, input_path, use_iscell=check_for_iscell)
 
         output_df = create_df(suite2p_dict)
     
@@ -205,10 +203,10 @@ def create_output_csv(input_path, overwrite=False, check_for_iscell=False, updat
         output_df.to_csv(translated_path)
         print(f"csv created for {folder}")
 
-        suite2p_dict = load_suite2p_paths(folder, groups, input_path, use_iscell=check_for_iscell)
+        suite2p_dict = load_suite2p_paths(folder, configurations.groups, input_path, use_iscell=check_for_iscell)
         ops = suite2p_dict["ops"]
-        Img = getImg(ops)
-        scatters, nid2idx, nid2idx_rejected, pixel2neuron = getStats(suite2p_dict["stat"], Img.shape, output_df)
+        Img = fun_plot.getImg(ops)
+        scatters, nid2idx, nid2idx_rejected, pixel2neuron = fun_plot.getStats(suite2p_dict["stat"], Img.shape, output_df)
         iscell_path = os.path.join(folder, *SUITE2P_STRUCTURE['iscell'])
         if update_iscell == True:
             updated_iscell = suite2p_dict['iscell']
@@ -222,9 +220,9 @@ def create_output_csv(input_path, overwrite=False, check_for_iscell=False, updat
             continue
 
         image_save_path = os.path.join(input_path, f"{folder}_plot.png") #TODO explore changing "input path" to "folder" to save the processing in the same 
-        dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
+        fun_plot.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
 
-    print(f"{len(well_folders)} .csv files were saved under {main_folder+r'/csv_files'}")
+    print(f"{len(well_folders)} .csv files were saved under {configurations.main_folder+r'/csv_files'}")
 
 ## create .pkl and final df ##
 def get_pkl_file_name_list(folder_path): 
@@ -251,10 +249,10 @@ def csv_to_pickle(main_folder, overwrite=True):
         df = pd.read_csv(file)
         pkl_path = os.path.join(output_path, 
                                         f"{os.path.basename(file[:-4])}"
-                                        f"Dur{int(EXPERIMENT_DURATION)}s"
-                                        f"Int{int(FRAME_INTERVAL*1000)}ms"
-                                        f"Bin{int(BIN_WIDTH*1000)}ms"
-                                            + ("_filtered" if FILTER_NEURONS else "") +
+                                        f"Dur{int(configurations.EXPERIMENT_DURATION)}s"
+                                        f"Int{int(configurations.FRAME_INTERVAL*1000)}ms"
+                                        f"Bin{int(configurations.BIN_WIDTH*1000)}ms"
+                                            + ("_filtered" if configurations.FILTER_NEURONS else "") +
                                         ".pkl")
         if os.path.exists(pkl_path) and not overwrite:
             print(f"Processed file {pkl_path} already exists!")

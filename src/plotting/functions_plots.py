@@ -12,7 +12,7 @@ import scipy.stats as stats
 from PIL import Image
 import seaborn as sns #needed for aggregated feature plots
 # import pynapple as nap #TODO if you need Pynapple plots, you cannot use alongside cascade as it will break the code
-from configurations import main_folder
+from batch_process import gui_configurations as configurations
 
 def random_individual_cell_histograms(deltaF_file, plot_number):
     ## for individual cells, random sample of plot_number, (can also be set to randoms sample of size plot_number, i this case use code below to calculate plot number and then pass it to function) ##
@@ -34,7 +34,7 @@ def deltaF_histogram_across_cells(deltaF_file):
     list_cleaned = [x for x in list if not np.isnan(x)]
     plt.figure(figsize=(5,5))
     plt.hist(list_cleaned, density=True, bins=200)
-    plt.title(f'Histogram df/F {deltaF_file[len(main_folder)+1:]}')
+    plt.title(f'Histogram df/F {deltaF_file[len(configurations.main_folder)+1:]}')
     plt.show()
 
 def histogram_total_estimated_spikes(prediction_deltaF_file, output_directory):
@@ -43,12 +43,12 @@ def histogram_total_estimated_spikes(prediction_deltaF_file, output_directory):
     estimated_spikes = []
     for i in range(len(array)):
         estimated_spikes.append(np.nansum(array[i]))
-    print(f"For {prediction_deltaF_file[len(main_folder)+1:-38]} {int(sum(estimated_spikes))} spikes were predicted in total")
+    print(f"For {prediction_deltaF_file[len(configurations.main_folder)+1:-38]} {int(sum(estimated_spikes))} spikes were predicted in total")
     plt.figure(figsize=(5,5))
     plt.hist(estimated_spikes, bins=50, color = 'm')
     plt.xlabel("Number of predicted estimated spikes")
     plt.ylabel("Number of Neurons")
-    plt.title(f'Total number of predicted spikes') # \n {prediction_deltaF_file[len(main_folder)+1:-38]}
+    plt.title(f'Total number of predicted spikes') # \n {prediction_deltaF_file[len(configurations.main_folder)+1:-38]}
     plt.text(0.65, 0.9, f"Total Spikes \nPredicted: {int(sum(estimated_spikes))}", transform=plt.gca().transAxes)
     figure_output_path = os.path.join(output_directory, 'spks_histogram.png')
     plt.savefig(figure_output_path, bbox_inches = 'tight')
@@ -62,20 +62,20 @@ def plot_group_histogram(group, predictions_deltaF_files): ## plots histograms o
         if str(group) in file:
             array = np.load(rf"{file}")
             group_arrays.append(array)        
-    print(f"{len(group_arrays)} files found for group {group[len(main_folder)+1:]}")
+    print(f"{len(group_arrays)} files found for group {group[len(configurations.main_folder)+1:]}")
     group_array = np.concatenate(group_arrays, axis=0)
     print(f"{len(group_array)} total neurons in {group}")
     for i in range(len(group_array)):
         estimated_spikes.append(np.nansum(group_array[i]))
-    print(f"For group {group[len(main_folder)+1:]} {int(sum(estimated_spikes))} spikes were predicted in total")
+    print(f"For group {group[len(configurations.main_folder)+1:]} {int(sum(estimated_spikes))} spikes were predicted in total")
     plt.figure(figsize=(5,5))
     plt.hist(estimated_spikes, bins=50, density=True)
     plt.ylim(0, 0.5)
     plt.xlim(0,100) ## maybe make dynamic (get_max_spike_across_frames() could be useful or slight alteration), so it's the same for all groups
-    plt.title(f'Histogram estimated total number of spikes, {group[len(main_folder)+1:]}') ## y proprtion of neurons, x number of events, title estimated distribution total spike number
+    plt.title(f'Histogram estimated total number of spikes, {group[len(configurations.main_folder)+1:]}') ## y proprtion of neurons, x number of events, title estimated distribution total spike number
     plt.xlabel("Number of estimated spikes")
-    group_name = group[len(main_folder) + 1]
-    save_path = os.path.join(main_folder, f'histogram_{group_name}.png')
+    group_name = group[len(configurations.main_folder) + 1]
+    save_path = os.path.join(configurations.main_folder, f'histogram_{group_name}.png')
     plt.savefig(save_path)
     plt.show()
 
@@ -103,11 +103,11 @@ def visualization_process_single_cell(F_files, deltaF_files, predictions_deltaF_
         deltaF_array = np.load(rf"{deltaF_files[file_number]}", allow_pickle=True)
         sample = np.random.randint(0,len(prediction_array), cells_plotted)
         for cell in sample:
-            print(f"raw fluorescence {predictions_deltaF_files[file_number][len(main_folder)+1:-38]}, cell {cell}")
+            print(f"raw fluorescence {predictions_deltaF_files[file_number][len(configurations.main_folder)+1:-38]}, cell {cell}")
             single_cell_peak_plotting(rawF_array[cell], f"Raw fluorescence {predictions_deltaF_files[file_number][-45:-38]}, cell {cell}")
-            print(f"delta F {predictions_deltaF_files[file_number][len(main_folder)+1:-38]}, cell {cell}")
+            print(f"delta F {predictions_deltaF_files[file_number][len(configurations.main_folder)+1:-38]}, cell {cell}")
             single_cell_peak_plotting(deltaF_array[cell], f"DeltaF {predictions_deltaF_files[file_number][-45:-38]}, cell {cell}")
-            print(f"cascade predictions {predictions_deltaF_files[file_number][len(main_folder)+1:-38]}, cell {cell}")
+            print(f"cascade predictions {predictions_deltaF_files[file_number][len(configurations.main_folder)+1:-38]}, cell {cell}")
             single_cell_peak_plotting(prediction_array[cell], f"Cascade predictions {predictions_deltaF_files[file_number][-45:-38]}, cell {cell}")
 ## maybe move those not used anymore to unused to other functions script
 
@@ -129,7 +129,7 @@ def plot_total_spikes_per_frame(prediction_deltaF_file, max_spikes_all_samples, 
     plt.plot(sum_rows, color = "green")
     plt.plot(np.full_like(sum_rows, np.mean(avg_rows)), "--", color = "k")
     plt.title(f'Estimated Network Spike Predictions')
-    # plt.text(0.315, -0.115, f"{prediction_deltaF_file[len(main_folder)+1:-38]}", horizontalalignment='center', verticalalignment = "center", transform=plt.gca().transAxes)
+    # plt.text(0.315, -0.115, f"{prediction_deltaF_file[len(configurations.main_folder)+1:-38]}", horizontalalignment='center', verticalalignment = "center", transform=plt.gca().transAxes)
     plt.ylim(0,max_spikes_all_samples+10) ## make dynamic
     plt.ylabel("Number of Predicted Spikes")
     plt.xlabel(f'Frame Number (10 frame = 1s)')
@@ -149,7 +149,7 @@ def plot_average_spike_probability_per_frame(predictions_deltaF_file, output_dir
     #plt.plot(actief_aandeel, color = "magenta", label = "proportion of active cells")
     #plt.legend()
     plt.title(f'Average spike probability across cells per frame')
-    plt.text(0.315, -0.115, f"{predictions_deltaF_file[len(main_folder)+1:-38]}", horizontalalignment='center', verticalalignment = "center", transform=plt.gca().transAxes)
+    plt.text(0.315, -0.115, f"{predictions_deltaF_file[len(configurations.main_folder)+1:-38]}", horizontalalignment='center', verticalalignment = "center", transform=plt.gca().transAxes)
     plt.ylim(0,1)
     save_path = os.path.join(output_directory, 'avg_spike_probability_per_frame.png')
     plt.savefig(save_path)
@@ -255,7 +255,7 @@ def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
              plt.savefig(save_path)
              plt.close(fig)
 
-def create_suite2p_ROI_masks(stat, frame_shape, nid2idx):
+def create_suite2p_ROI_masks(stat, frame_shape, nid2idx, output_path):
     """Function designed to do what was done above, except mask the ROIs for detection in other programs (e.g. FlouroSNNAP)"""
     #Make an empty array to contain the nid2idx masks
     roi_masks = np.zeros(frame_shape, dtype=int)

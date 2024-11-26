@@ -10,9 +10,9 @@ from statannotations.Annotator import Annotator
 import scipy.stats as stats
 import pickle
 import matplotlib.pyplot as plt
-from gui_configurations import main_folder
+from batch_process.gui_configurations import main_folder
 import importlib # to reload the gui_configurations file
-import gui_configurations
+import batch_process.gui_configurations as gui_configurations
 importlib.reload(gui_configurations)
 parameters = gui_configurations.parameters
 #print(parameters)
