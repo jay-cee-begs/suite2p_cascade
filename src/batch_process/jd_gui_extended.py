@@ -458,7 +458,10 @@ class ConfigEditor:
         selected_features = [self.feature_listbox.get(i) for i in self.feature_listbox.curselection()]
 
         selected_features = ", ".join([f"'{feature}'" for feature in selected_features])
-
+        
+        # Construct the absolute path to the configuration file, saving uses the same logic as loading now
+        script_dir = os.path.dirname(__file__)
+        config_filepath = os.path.join(script_dir, 'gui_configurations.py')
 
         if selected_features:
             selected_features = f"[{selected_features}]"
@@ -466,7 +469,7 @@ class ConfigEditor:
             selected_features = "['Active_Neuron_Proportion', 'Total_Estimated_Spikes_proportion_scaled']"
         #clearing the parameters dictionary before adding the new values
         self.config['parameters']['feature'] = selected_features
-        with open('gui_configurations.py', 'w') as f:
+        with open(config_filepath, 'w') as f:
             f.write('import numpy as np \n')
             f.write(f"main_folder = r'{main_folder}'\n")
             for i, group in enumerate(self.groups, start=1):
