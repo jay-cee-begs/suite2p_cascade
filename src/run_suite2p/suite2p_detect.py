@@ -12,10 +12,10 @@ import seaborn as sns
 import scipy.stats as stats
 import pickle
 ## import functions ##
-from run_cascade.functions_general import *
-from run_cascade.CASCADE_functions import *
-from plotting.functions_plots import *
-from run_cascade.functions_data_transformation import *
+from run_cascade import functions_general
+from run_cascade import CASCADE_functions
+from plotting import functions_plots 
+from run_cascade import functions_data_transformation 
 
 
 ## import gui_configurations ##
