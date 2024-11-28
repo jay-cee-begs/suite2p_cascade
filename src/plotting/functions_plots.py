@@ -2,13 +2,13 @@ import os
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
 import matplotlib.cm as cm
 import random
 from scipy.signal import find_peaks
 import pandas as pd
 from scipy.ndimage import binary_dilation, binary_fill_holes
 import scipy.stats as stats
-# import mapper
 from PIL import Image
 import seaborn as sns #needed for aggregated feature plots
 # import pynapple as nap #TODO if you need Pynapple plots, you cannot use alongside cascade as it will break the code
@@ -192,8 +192,10 @@ def boundary(ypix,xpix):
     return yext, xext
 
 #gets neuronal indices
-def getStats(stat, frame_shape, output_df):
+def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
     """Accesses suite2p stats on ROIs and filters ROIs based on cascade spike probability being >= 1 into nid2idx and nid2idx_rejected (respectively)"""
+    stat = suite2p_dict['stat']
+    iscell = suite2p_dict['iscell']
     MIN_PROB = 0 
     min_radius = 2
     pixel2neuron = np.full(frame_shape, fill_value=np.nan, dtype=float)
@@ -201,25 +203,45 @@ def getStats(stat, frame_shape, output_df):
     nid2idx = {}
     nid2idx_rejected = {}
     print(f"Number of detected ROIs: {stat.shape[0]}")
-    for n in range(stat.shape[0]):
-        estimated_spikes = output_df.iloc[n]["EstimatedSpikes"]
-        radius = stat.iloc[n]['radius']
+    
+    if not use_iscell:
 
-        if estimated_spikes > MIN_PROB and radius >= min_radius:
-            nid2idx[n] = len(scatters["x"]) # Assign new idx
-        else:
-            nid2idx_rejected[n] = len(scatters["x"])
+        for n in range(stat.shape[0]):
+            estimated_spikes = output_df.iloc[n]["EstimatedSpikes"]
+            radius = stat.iloc[n]['radius']
 
-        ypix = stat.iloc[n]['ypix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
-        xpix = stat.iloc[n]['xpix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+            if estimated_spikes > MIN_PROB and radius >= min_radius:
+                nid2idx[n] = len(scatters["x"]) # Assign new idx
+            else:
+                nid2idx_rejected[n] = len(scatters["x"])
+            ypix = stat.iloc[n]['ypix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+            xpix = stat.iloc[n]['xpix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
 
-        valid_idx = (xpix>=0) & (xpix < frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
-        ypix = ypix[valid_idx]
-        xpix = xpix[valid_idx]
-        yext, xext = boundary(ypix, xpix)
-        scatters['x'] += [xext]
-        scatters['y'] += [yext]
-        pixel2neuron[ypix, xpix] = n
+            valid_idx = (xpix>=0) & (xpix < frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
+            ypix = ypix[valid_idx]
+            xpix = xpix[valid_idx]
+            yext, xext = boundary(ypix, xpix)
+            scatters['x'] += [xext]
+            scatters['y'] += [yext]
+            pixel2neuron[ypix, xpix] = n
+    else:
+        for n in range(stat.shape[0]):
+
+            if iscell[n,0]:
+                nid2idx[n] = len(scatters["x"]) # Assign new idx
+            else:
+                nid2idx_rejected[n] = len(scatters["x"])
+
+            ypix = stat.iloc[n]['ypix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+            xpix = stat.iloc[n]['xpix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+
+            valid_idx = (xpix>=0) & (xpix < frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
+            ypix = ypix[valid_idx]
+            xpix = xpix[valid_idx]
+            yext, xext = boundary(ypix, xpix)
+            scatters['x'] += [xext]
+            scatters['y'] += [yext]
+            pixel2neuron[ypix, xpix] = n
 
     return scatters, nid2idx, nid2idx_rejected, pixel2neuron
 
@@ -240,7 +262,7 @@ def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
              ax1.tick_params(axis='both', which='both', bottom=False, top=False, 
                              labelbottom=False, left=False, right=False, labelleft=False)
              print("Neurons count:", len(nid2idx))
-             norm = matplotlib.colors.Normalize(vmin=0, vmax=1, clip=True) 
+             norm = Normalize(vmin=0, vmax=1, clip=True) 
              mapper = cm.ScalarMappable(norm=norm, cmap=cm.gist_rainbow) 
 
              def plotDict(n2d2idx_dict, override_color = None):
@@ -255,6 +277,7 @@ def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
              ax1.set_title(f"{len(nid2idx)} neurons used (green) out of {len(nid2idx)+len(nid2idx_rejected)} neurons detected (magenta - rejected)") 
 
              plt.savefig(save_path)
+             plt.show()
              plt.close(fig)
 
 def create_suite2p_ROI_masks(stat, frame_shape, nid2idx, output_path):
