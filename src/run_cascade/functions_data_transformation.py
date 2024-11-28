@@ -2,7 +2,7 @@
 import os
 import pandas as pd
 import numpy as np
-from functions_general import calculate_deltaF, basic_stats_per_cell, basic_estimated_stats_per_cell, summed_spike_probs_per_cell, return_baseline_F
+from run_cascade import functions_general as g_func
 from batch_process import gui_configurations as configurations 
 from plotting import functions_plots as fun_plot 
 
@@ -29,7 +29,7 @@ def check_deltaF(folder_name_list):
         if os.path.exists(location):
             continue
         else:
-            calculate_deltaF(location.replace("deltaF.npy","F.npy"))
+            g_func.calculate_deltaF(location.replace("deltaF.npy","F.npy"))
             if os.path.exists(location):
                 continue
             else:
@@ -82,22 +82,21 @@ def get_sample_dict(main_folder):
                 sample_dict[well_folders[i1]]=f"sample_{i2+1}"
     return sample_dict
 
-def create_df(suite2p_dict): ## creates df structure for single sample (e.g. well_x) csv file, input is dict resulting from load_suite2p_paths
+def create_df(suite2p_dict, use_iscell = False): ## creates df structure for single sample (e.g. well_x) csv file, input is dict resulting from load_suite2p_paths
     """this is the principle function in which we will create our .csv file structure; and where we will actually use
         our detector functions for spike detection and amplitude extraction"""
  
     ## spike_amplitudes = find_predicted_peaks(suite2p_dict["cascade_predictions"], return_peaks = False) ## removed
     # spikes_per_neuron = find_predicted_peaks(suite2p_dict["cascade_predictions"]) ## removed
  
-    estimated_spike_total = np.array(summed_spike_probs_per_cell(suite2p_dict["cascade_predictions"]))
+    estimated_spike_total = np.array(g_func.summed_spike_probs_per_cell(suite2p_dict["cascade_predictions"]))
     # estimated_spike_std = np.std(np.array(summed_spike_probs_per_cell(suite2p_dict["cascade_predictions"])))
-    basic_cell_stats = basic_estimated_stats_per_cell(suite2p_dict['cascade_predictions'])
-    F_baseline = return_baseline_F(suite2p_dict["F"], suite2p_dict["Fneu"])
-    avg_instantaneous_spike_rate, avg_cell_sds, avg_cell_cvs, avg_time_stamp_mean, avg_time_stamp_sds, avg_time_stamp_cvs = basic_stats_per_cell(suite2p_dict["cascade_predictions"])
+    basic_cell_stats = g_func.basic_estimated_stats_per_cell(suite2p_dict['cascade_predictions'])
+    F_baseline = g_func.return_baseline_F(suite2p_dict["F"], suite2p_dict["Fneu"])
+    avg_instantaneous_spike_rate, avg_cell_sds, avg_cell_cvs, avg_time_stamp_mean, avg_time_stamp_sds, avg_time_stamp_cvs = g_func.basic_stats_per_cell(suite2p_dict["cascade_predictions"])
+    
    
-    ## all columns of created csv below ##
- 
-    df = pd.DataFrame({"IsUsed": suite2p_dict["IsUsed"],
+    df = pd.DataFrame({
                     #    "ImgShape": ImgShape,
                     #    "npix": suite2p_dict["stat"]["npix"],
                     #    "xpix": suite2p_dict["stat"]["xpix"],
@@ -115,15 +114,15 @@ def create_df(suite2p_dict): ## creates df structure for single sample (e.g. wel
                        "group": suite2p_dict["Group"],
                        "dataset":suite2p_dict["sample"],
                        "file_name": suite2p_dict["file_name"]})
-    #if use_suite2p_iscell == True:
-    #else:
-        # continue
-    df["IsUsed"] = df["EstimatedSpikes"] > 0
+    if not use_iscell:
+        df["IsUsed"] = df["EstimatedSpikes"] > 0
+    else:
+        df["IsUsed"] = suite2p_dict["IsUsed"]
 
     df.index.set_names("NeuronID", inplace=True)
     return df
 
-def load_suite2p_paths(data_folder, groups, main_folder, use_iscell=False):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for well_x)
+def load_suite2p_paths(data_folder, groups, main_folder, use_iscell = False):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for well_x)
     """here we define our suite2p dictionary from the SUITE2P_STRUCTURE...see above"""
     suite2p_dict = {
         "F": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["F"])),
@@ -134,13 +133,14 @@ def load_suite2p_paths(data_folder, groups, main_folder, use_iscell=False):  ## 
         "iscell": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['iscell'])),
 
     }
- 
-    if use_iscell == False:
+        # suite2p_dict["IsUsed"] = [(suite2p_dict["stat"]["skew"] >= 1)] 
+    if not use_iscell:
         suite2p_dict["IsUsed"] = [(suite2p_dict["stat"]["skew"] >= 1)] 
-        suite2p_dict["IsUsed"] = pd.DataFrame(suite2p_dict["IsUsed"]).iloc[:,0:].values.T
-        suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["IsUsed"])
+
     else:
-        suite2p_dict["IsUsed"] = load_npy_df(os.path.join(data_folder, *SUITE2P_STRUCTURE["iscell"]))[0].astype(bool)
+        suite2p_dict["IsUsed"] = pd.DataFrame(suite2p_dict["iscell"]).iloc[:,0].values.T
+        suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["iscell"])
+        suite2p_dict['IsUsed'] = suite2p_dict['iscell'][:,0].astype(bool)
  #TODO make sure that changing "path" to "data_folder" for using IsCell natively will still work
     if not groups:
         raise ValueError("The 'groups' list is empty. Please provide valid group names.")
@@ -157,7 +157,7 @@ def load_suite2p_paths(data_folder, groups, main_folder, use_iscell=False):  ## 
             print(f"Assigned Group: {suite2p_dict['Group']}")
     
     # debugging
-    if "IsUsed" not in suite2p_dict:
+    if "iscell" not in suite2p_dict:
         raise KeyError ("'IsUsed' was not defined correctly either")
     if "Group" not in suite2p_dict:
         raise KeyError("'Group' key not found in suite2p_dict.")
@@ -173,7 +173,7 @@ def load_suite2p_paths(data_folder, groups, main_folder, use_iscell=False):  ## 
     return suite2p_dict
 
 
-def create_output_csv(input_path, overwrite=False, check_for_iscell=False, update_iscell = True): ## creates output csv for all wells and saves them in .csv folder
+def create_output_csv(input_path, overwrite=False, iscell_check=True, update_iscell = True): ## creates output csv for all wells and saves them in .csv folder
     """This will create .csv files for each video loaded from out data fram function below.
         The structure will consist of columns that list: "Amplitudes": spike_amplitudes})
         
@@ -195,7 +195,7 @@ def create_output_csv(input_path, overwrite=False, check_for_iscell=False, updat
             print(f"CSV file {translated_path} already exists!")
             continue
 
-        suite2p_dict = load_suite2p_paths(folder, configurations.groups, input_path, use_iscell=check_for_iscell)
+        suite2p_dict = load_suite2p_paths(folder, configurations.groups, input_path)
 
         output_df = create_df(suite2p_dict)
     
@@ -203,22 +203,26 @@ def create_output_csv(input_path, overwrite=False, check_for_iscell=False, updat
         output_df.to_csv(translated_path)
         print(f"csv created for {folder}")
 
-        suite2p_dict = load_suite2p_paths(folder, configurations.groups, input_path, use_iscell=check_for_iscell)
+        suite2p_dict = load_suite2p_paths(folder, configurations.groups, input_path)
         ops = suite2p_dict["ops"]
         Img = fun_plot.getImg(ops)
-        scatters, nid2idx, nid2idx_rejected, pixel2neuron = fun_plot.getStats(suite2p_dict["stat"], Img.shape, output_df)
+        scatters, nid2idx, nid2idx_rejected, pixel2neuron = fun_plot.getStats(suite2p_dict, Img.shape, output_df, use_iscell=iscell_check)
         iscell_path = os.path.join(folder, *SUITE2P_STRUCTURE['iscell'])
-        if update_iscell == True:
-            updated_iscell = suite2p_dict['iscell']
-            for idx in nid2idx:
-                updated_iscell[idx,0] = 1.0
-            for idxr in nid2idx_rejected:
-                updated_iscell[idxr,0] = 0.0
-            np.save(iscell_path, updated_iscell)
-            print(f"Updated iscell.npy saved for {folder}")
-        else:
-            continue
+        new_path = os.path.join(folder + r'\suite2p\plane0\new_iscell.npy')
+        parent_iscell = load_npy_array(iscell_path)
+        print("parent_iscell type:", type(parent_iscell))
+        print("parent_iscell shape:", np.shape(parent_iscell))
+        update_iscell = parent_iscell.copy()
+        # update_iscell[nid2idx, 0] = 1.0
+        # update_iscell[nid2idx_rejected, 0] = 0.0
+        for idx in nid2idx:
+            update_iscell[idx] = [1.0, update_iscell[idx][1]]
+        for idxr in nid2idx_rejected:
+            update_iscell[idxr] = [0.0, update_iscell[idxr][1]]
+        np.save(iscell_path, update_iscell)
 
+        print(f"Updated iscell.npy saved for {folder}")
+        
         image_save_path = os.path.join(input_path, f"{folder}_plot.png") #TODO explore changing "input path" to "folder" to save the processing in the same 
         fun_plot.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
 
@@ -299,7 +303,7 @@ def create_experiment_overview(main_folder, groups):
         
         for file in groups_predictions_deltaF_files:
             array = np.load(rf"{file}", allow_pickle=True)
-            avg_cell_instantaneous_spike_rate, cell_sds, cell_cvs, time_stamp_means, time_stamp_sds, time_stamp_cvs = basic_stats_per_cell(array)
+            avg_cell_instantaneous_spike_rate, cell_sds, cell_cvs, time_stamp_means, time_stamp_sds, time_stamp_cvs = g_func.basic_stats_per_cell(array)
             
             active_neurons = sum(np.nansum(row) > 0 for row in array)
             neuron_count = len(array)
@@ -310,7 +314,7 @@ def create_experiment_overview(main_folder, groups):
             Fneu_file = file.replace('predictions_deltaF.npy', 'Fneu.npy')
             F = np.load(rf"{F_file}", allow_pickle=True)
             Fneu = np.load(rf"{Fneu_file}", allow_pickle=True)
-            baseline_F = return_baseline_F(F, Fneu)
+            baseline_F = g_func.return_baseline_F(F, Fneu)
 
             # Separate and average the baseline fluorescence
             inactive_baseline = [cell for row, cell in zip(array, baseline_F) if np.nansum(row) == 0]
@@ -376,3 +380,8 @@ def create_experiment_overview(main_folder, groups):
     summary_stats.to_csv(main_folder + r'\summary_stats.csv', index = True)
 
     return df, summary_stats
+
+
+if __name__ == "__main__":
+    create_output_csv(configurations.main_folder, overwrite=True, iscell_check=False, update_iscell=True)
+    csv_to_pickle(configurations.main_folder, overwrite = True)

@@ -35,6 +35,15 @@ class ConfigEditor:
 
         # Load existing configurations, needs an existing file to load from
         self.config = self.load_config("gui_configurations.py")
+        
+        if 'parameters' not in self.config:
+            self.config['parameters'] = {
+                'feature': ['Active_Neuron_Proportion'],  # Default features
+                'stat_test': 't-test',                   # Default stat_test
+                'type': 'box',                           # Default plot type
+                'legend': 'auto',                        # Default legend option
+                # Add other default parameters as needed
+            }
 
         self.main_folder_var = tk.StringVar(value=self.config.get('main_folder', ''))
         self.data_extension_var = tk.StringVar(value=self.config.get('data_extension', ''))
@@ -134,6 +143,7 @@ class ConfigEditor:
         # Initialize empty TimePoints dictionary
         self.timepoints = {}
 
+
 ################ Functions AREA ################    put in seperate file eventually
                
     def _on_mousewheel(self, event):
@@ -141,11 +151,18 @@ class ConfigEditor:
 
     def edit_default_ops(self):
         """Call the function to edit default ops"""
-        subprocess.call(["run_default_ops.bat"])  # Execute run_ops.bat
+        current_dir = Path(__file__).parent
+        scripts_dir = current_dir / "Scripts"
+        bat_file = scripts_dir / "run_default_ops.bat"
+        subprocess.call([str(bat_file)])  # Execute run_default_ops.bat
 
     def create_new_ops_file(self):
         """Call the function to create new ops file"""
-        subprocess.call(["run_s2p_gui.bat"]) # Execute run_s2p_gui.bat
+        current_dir = Path(__file__).parent
+        scripts_dir = current_dir / "Scripts"
+        bat_file = scripts_dir / "run_s2p_gui.bat"
+        subprocess.call([str(bat_file)])  # Execute run_s2p_gui.bat
+
 
     def browse_ops_file(self):
         file_selected = filedialog.askopenfilename(filetypes=[("Ops Files", "*.npy")])
@@ -294,6 +311,11 @@ class ConfigEditor:
         # Feature selection from CSV file
         self.load_features_from_csv()
         
+        # Ensure 'feature' key exists in parameters
+        parameters = self.config.get('parameters', {})
+        if 'feature' not in parameters:
+            parameters['feature'] = ['Active_Neuron_Proportion']  # Default feature
+
 
         for key, value in self.config.get('parameters', {}).items():
             frame = tk.Frame(self.parameters_frame)
@@ -507,7 +529,7 @@ class ConfigEditor:
         current_dir = Path(__file__).parent
         scripts_dir = current_dir / "Scripts" 
         if self.skip_suite2p_var.get():
-            bat_file = scripts_dir / "run_plots"
+            bat_file = scripts_dir / "run_plots.bat"
         else:
             bat_file = scripts_dir / "run_sequence.bat"
             
