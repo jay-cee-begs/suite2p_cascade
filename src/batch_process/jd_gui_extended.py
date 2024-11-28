@@ -157,16 +157,21 @@ class ConfigEditor:
         if folder_selected:
             self.main_folder_var.set(folder_selected)
 
+
     def load_config(self, filepath):
         config = {}
         try:
-            with open(filepath) as f:
+            # Get the directory of the current script
+            script_dir = os.path.dirname(__file__)
+            # Construct the absolute path to the configuration file
+            abs_filepath = os.path.join(script_dir, filepath)
+            
+            with open(abs_filepath) as f:
                 exec(f.read(), config)
         except FileNotFoundError:
             messagebox.showerror("Error", "Configuration file not found. Starting with default settings.")
             return {}
         return config
-
 
     def add_group(self):
         self.groups.clear()  
