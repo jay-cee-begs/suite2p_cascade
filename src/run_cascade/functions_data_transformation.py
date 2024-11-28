@@ -82,7 +82,7 @@ def get_sample_dict(main_folder):
                 sample_dict[well_folders[i1]]=f"sample_{i2+1}"
     return sample_dict
 
-def create_df(suite2p_dict): ## creates df structure for single sample (e.g. well_x) csv file, input is dict resulting from load_suite2p_paths
+def create_df(suite2p_dict, use_iscell = False): ## creates df structure for single sample (e.g. well_x) csv file, input is dict resulting from load_suite2p_paths
     """this is the principle function in which we will create our .csv file structure; and where we will actually use
         our detector functions for spike detection and amplitude extraction"""
  
@@ -94,10 +94,9 @@ def create_df(suite2p_dict): ## creates df structure for single sample (e.g. wel
     basic_cell_stats = g_func.basic_estimated_stats_per_cell(suite2p_dict['cascade_predictions'])
     F_baseline = g_func.return_baseline_F(suite2p_dict["F"], suite2p_dict["Fneu"])
     avg_instantaneous_spike_rate, avg_cell_sds, avg_cell_cvs, avg_time_stamp_mean, avg_time_stamp_sds, avg_time_stamp_cvs = g_func.basic_stats_per_cell(suite2p_dict["cascade_predictions"])
+    
    
-    ## all columns of created csv below ##
- 
-    df = pd.DataFrame({"iscell": suite2p_dict["iscell"],
+    df = pd.DataFrame({
                     #    "ImgShape": ImgShape,
                     #    "npix": suite2p_dict["stat"]["npix"],
                     #    "xpix": suite2p_dict["stat"]["xpix"],
@@ -115,12 +114,15 @@ def create_df(suite2p_dict): ## creates df structure for single sample (e.g. wel
                        "group": suite2p_dict["Group"],
                        "dataset":suite2p_dict["sample"],
                        "file_name": suite2p_dict["file_name"]})
-    df["IsUsed"] = df["EstimatedSpikes"] > 0
+    if not use_iscell:
+        df["IsUsed"] = df["EstimatedSpikes"] > 0
+    else:
+        df["IsUsed"] = suite2p_dict["IsUsed"]
 
     df.index.set_names("NeuronID", inplace=True)
     return df
 
-def load_suite2p_paths(data_folder, groups, main_folder):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for well_x)
+def load_suite2p_paths(data_folder, groups, main_folder, use_iscell = False):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for well_x)
     """here we define our suite2p dictionary from the SUITE2P_STRUCTURE...see above"""
     suite2p_dict = {
         "F": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["F"])),
@@ -132,8 +134,13 @@ def load_suite2p_paths(data_folder, groups, main_folder):  ## creates a dictiona
 
     }
         # suite2p_dict["IsUsed"] = [(suite2p_dict["stat"]["skew"] >= 1)] 
-    suite2p_dict["IsUsed"] = pd.DataFrame(suite2p_dict["iscell"]).iloc[:,0].values.T
-    suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["iscell"])
+    if not use_iscell:
+        suite2p_dict["IsUsed"] = [(suite2p_dict["stat"]["skew"] >= 1)] 
+
+    else:
+        suite2p_dict["IsUsed"] = pd.DataFrame(suite2p_dict["iscell"]).iloc[:,0].values.T
+        suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["iscell"])
+        suite2p_dict['IsUsed'] = suite2p_dict['iscell'][:,0].astype(bool)
  #TODO make sure that changing "path" to "data_folder" for using IsCell natively will still work
     if not groups:
         raise ValueError("The 'groups' list is empty. Please provide valid group names.")
@@ -201,18 +208,21 @@ def create_output_csv(input_path, overwrite=False, iscell_check=True, update_isc
         Img = fun_plot.getImg(ops)
         scatters, nid2idx, nid2idx_rejected, pixel2neuron = fun_plot.getStats(suite2p_dict, Img.shape, output_df, use_iscell=iscell_check)
         iscell_path = os.path.join(folder, *SUITE2P_STRUCTURE['iscell'])
+        new_path = os.path.join(folder + r'\suite2p\plane0\new_iscell.npy')
         parent_iscell = load_npy_array(iscell_path)
-        if update_iscell == True:
-            for idx in nid2idx:
-                parent_iscell[idx] = 1.0
-            for idxr in nid2idx_rejected:
-                parent_iscell[idxr] = 0.0
-            parent_iscell = update_iscell
-            np.save(iscell_path, parent_iscell)
-            print(f"Updated iscell.npy saved for {folder}")
-        else:
-            continue
+        print("parent_iscell type:", type(parent_iscell))
+        print("parent_iscell shape:", np.shape(parent_iscell))
+        update_iscell = parent_iscell.copy()
+        # update_iscell[nid2idx, 0] = 1.0
+        # update_iscell[nid2idx_rejected, 0] = 0.0
+        for idx in nid2idx:
+            update_iscell[idx] = [1.0, update_iscell[idx][1]]
+        for idxr in nid2idx_rejected:
+            update_iscell[idxr] = [0.0, update_iscell[idxr][1]]
+        np.save(iscell_path, update_iscell)
 
+        print(f"Updated iscell.npy saved for {folder}")
+        
         image_save_path = os.path.join(input_path, f"{folder}_plot.png") #TODO explore changing "input path" to "folder" to save the processing in the same 
         fun_plot.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
 
@@ -293,7 +303,7 @@ def create_experiment_overview(main_folder, groups):
         
         for file in groups_predictions_deltaF_files:
             array = np.load(rf"{file}", allow_pickle=True)
-            avg_cell_instantaneous_spike_rate, cell_sds, cell_cvs, time_stamp_means, time_stamp_sds, time_stamp_cvs = basic_stats_per_cell(array)
+            avg_cell_instantaneous_spike_rate, cell_sds, cell_cvs, time_stamp_means, time_stamp_sds, time_stamp_cvs = g_func.basic_stats_per_cell(array)
             
             active_neurons = sum(np.nansum(row) > 0 for row in array)
             neuron_count = len(array)
