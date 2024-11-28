@@ -277,7 +277,6 @@ def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
              ax1.set_title(f"{len(nid2idx)} neurons used (green) out of {len(nid2idx)+len(nid2idx_rejected)} neurons detected (magenta - rejected)") 
 
              plt.savefig(save_path)
-             plt.show()
              plt.close(fig)
 
 def create_suite2p_ROI_masks(stat, frame_shape, nid2idx, output_path):
