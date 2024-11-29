@@ -33,7 +33,8 @@ def parse_requirements_txt(filename, encoding):
 env_requirements = {
     'suite2p': parse_requirements_yaml('suite2p-req.yml', detect_encoding('suite2p-req.yml')),
     'cascade': parse_requirements_yaml('cascade-req.yml', detect_encoding('cascade-req.yml')),
-    'plt_analysis': parse_requirements_txt('plt_analysis-req.txt', detect_encoding('plt_analysis-req.txt'))
+    'data_env': parse_requirements_txt('statannotations-req.txt', detect_encoding('statannotations-req.txt'))
+
 
 }
 
