@@ -35,6 +35,7 @@ env_requirements = {
     'cascade': parse_requirements_yaml('cascade-req.yml', detect_encoding('cascade-req.yml')),
     'data_env': parse_requirements_txt('statannotations-req.txt', detect_encoding('statannotations-req.txt'))
 
+
 }
 
 setup(

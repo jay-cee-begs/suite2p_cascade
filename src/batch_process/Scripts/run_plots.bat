@@ -10,7 +10,9 @@ set script_dir=%~dp0
 echo script_dir is %script_dir% 
 set src_dir=%script_dir%..\..\
 
+
 set src_dir = %script_dir%..\..\src
+
 
 cd "%src_dir%\plotting"
 
