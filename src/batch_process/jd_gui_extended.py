@@ -528,6 +528,20 @@ class ConfigEditor:
         new_dir = self.current_dir
 
 
+    def show_log_window(self, log_file):
+        log_window = tk.Toplevel(self.master)
+        log_window.title("Process Log")
+
+        with open(log_file, "r") as f:
+            log_content = f.read()
+
+        text_widget = tk.Text(log_window, wrap="word")
+        text_widget.insert("1.0", log_content)
+        text_widget.config(state=tk.DISABLED)  # Make the text widget read-only
+        text_widget.pack(expand=True, fill="both")
+
+        tk.Button(log_window, text="Close", command=log_window.destroy).pack(pady=5)
+
     def proceed(self):  #Option to skip suite2p, will execute a different .bat then
         current_dir = Path(__file__).parent
         scripts_dir = current_dir / "Scripts" 
@@ -538,6 +552,25 @@ class ConfigEditor:
             
         print(f"Executing {bat_file}")
         subprocess.call([str(bat_file)])  # Execute sequence.bat
+        # Redirect the terminal output to a text file
+        log_file = scripts_dir / "process_log.txt"
+        with open(log_file, "w") as f:
+            process = subprocess.Popen([str(bat_file)], stdout=f, stderr=subprocess.STDOUT)
+            process.wait()
+
+        # Display the log file content in a new GUI window
+      
+        self.show_log_window(log_file)
+        
+        with open(log_file, "r") as f:
+            log_content = f.read()
+
+        text_widget = tk.Text(log_window, wrap="word")
+        text_widget.insert("1.0", log_content)
+        text_widget.config(state=tk.DISABLED)  # Make the text widget read-only
+        text_widget.pack(expand=True, fill="both")
+
+        tk.Button(log_window, text="Close", command=log_window.destroy).pack(pady=5)
         # reload the gui
         #self.reload_config()
         # reload the gui
