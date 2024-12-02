@@ -298,7 +298,7 @@ class ConfigEditor:
         self.parameters_vars = {}
         # List of selectable values for 'stat_test'
         stat_test_options = [
-            "t-test", "Mann-Whitney", "Wilcoxon", "Kruskal", "Brunner-Munzel"]
+            "t-test_ind", "t-test_welch",   "t-test_paired", "Mann-Whitney", "Mann-Whitney-gt", "Mann-Whitney-ls", "Wilcoxon", "Kruskal", "Brunner-Munzel"]
         
         # List of selectable values for 'type'
         type_options = [
