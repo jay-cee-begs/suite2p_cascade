@@ -35,10 +35,6 @@ CALL conda deactivate
 :: Activate the third virtual environment
 CALL "C:\Users\Justus\miniforge3\Scripts\activate.bat" data_env
 
-set script_dir=%~dp0
-
-set src_dir=%script_dir%..\..\
-
 cd "%src_dir%\plotting"
 :: Run the third script 
 python -m plotting_constants

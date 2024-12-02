@@ -1,7 +1,8 @@
 @echo off
 
 :: Activate the data_env virtual environment
-CALL "C:\Users\Justus\miniforge3\Scripts\activate.bat" data_env
+CALL "C:\Users\jcbegs\miniforge3\Scripts\activate.bat" data_env
+
 
 python -c "import sys; print('Python executable:', sys.executable); print('sys.path:', sys.path)"
 
