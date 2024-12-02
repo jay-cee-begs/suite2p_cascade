@@ -1,7 +1,7 @@
 @echo off
 
 :: Activate the s2p environment
-CALL "C:\miniforge3\Scripts\activate.bat" suite2p
+CALL "C:\Users\jcbegs\miniforge3\Scripts\activate.bat" suite2p
 
 python -m suite2p
 

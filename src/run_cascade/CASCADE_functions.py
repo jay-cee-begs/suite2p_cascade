@@ -44,7 +44,7 @@ def plots_and_basic_info(deltaF_file): ## maybe make into one function with casc
       ## histogram noise level across neurons
       warnings.filterwarnings('ignore')
       plt.rcParams['figure.figsize'] = [12, 5]
-      plt.show()
+      # plt.show()
       noise_levels = plot_noise_level_distribution(traces,configurations.frame_rate)
 
       ## df/f plots
@@ -55,7 +55,7 @@ def plots_and_basic_info(deltaF_file): ## maybe make into one function with casc
       if plot_number <4: plot_number = 4 ## can be removed
       neuron_indices = np.random.randint(traces.shape[0], size=plot_number)  ## if removed set number here or add plot_number = n at top
       time_axis = plot_dFF_traces(traces,neuron_indices,configurations.frame_rate)
-      plt.show()
+      # plt.show()
 
     except Exception as e:
 
@@ -99,7 +99,7 @@ def cascade_this(deltaF_file, nb_neurons):
     print(f"\ncurrent file: {deltaF_file}")
     neuron_indices = np.random.randint(traces.shape[0], size=nb_neurons)
     time_axis = plot_dFF_traces(traces,neuron_indices,configurations.frame_rate,spike_prob,y_range=(-1.5, 3))
-    #plt.show()
+    # plt.show()
 
 
     ## Plots randomly drawn excerpts from the ground truth, re-sampled at the same frame rate and noise level as a typical recording of the test dataset.
@@ -112,7 +112,7 @@ def cascade_this(deltaF_file, nb_neurons):
     nb_traces = 16
     duration = max(time_axis) - 64/configurations.frame_rate # seconds
     plot_noise_matched_ground_truth(configurations.model_name, median_noise, configurations.frame_rate, nb_traces, duration, configurations.cascade_file_path)
-    #plt.show()
+    # plt.show()
 
     #@markdown By default saves as variable **`spike_prob`** both to a *.mat-file and a *.npy-file. You can uncomment the file format that you do not need or leave it as it is.
 
