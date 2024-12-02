@@ -559,22 +559,7 @@ class ConfigEditor:
             process.wait()
 
         # Display the log file content in a new GUI window
-      
         self.show_log_window(log_file)
-        
-        with open(log_file, "r") as f:
-            log_content = f.read()
-
-        text_widget = tk.Text(log_window, wrap="word")
-        text_widget.insert("1.0", log_content)
-        text_widget.config(state=tk.DISABLED)  # Make the text widget read-only
-        text_widget.pack(expand=True, fill="both")
-
-        tk.Button(log_window, text="Close", command=log_window.destroy).pack(pady=5)
-        # reload the gui
-        #self.reload_config()
-        # reload the gui
-        #self.reload_config()
 
     def show_ops_options(self):
         ops_window = tk.Toplevel(self.master)
