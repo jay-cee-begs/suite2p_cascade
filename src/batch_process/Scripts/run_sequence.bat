@@ -21,7 +21,7 @@ CALL "C:\Users\Justus\miniforge3\Scripts\activate.bat" cascade
 :: Run the second script
 set script_dir=%~dp0
 
-set src_dir=%script_dir%..\
+set src_dir=%script_dir%..\..\
 
 cd "%src_dir%\run_cascade"
 python -m cascade_deconvolve
@@ -37,7 +37,7 @@ CALL "C:\Users\Justus\miniforge3\Scripts\activate.bat" data_env
 
 set script_dir=%~dp0
 
-set src_dir=%script_dir%..\
+set src_dir=%script_dir%..\..\
 
 cd "%src_dir%\plotting"
 :: Run the third script 
