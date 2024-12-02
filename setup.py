@@ -46,7 +46,7 @@ setup(
     extra_require = {
         "suite2p":env_requirements['suite2p'],
         'cascade':env_requirements['cascade'],
-        'plt_analysis':env_requirements['plt_analysis']
+        'data_env':env_requirements['data_env']
 
     }
         # List your project dependencies here
