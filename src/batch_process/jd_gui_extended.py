@@ -4,6 +4,8 @@ from tkinter import filedialog
 from pathlib import Path
 import os
 import subprocess
+import time
+import threading 
 
 class ConfigEditor:
     def __init__(self, master):
@@ -611,10 +613,22 @@ class ConfigEditor:
             bat_file = scripts_dir / "run_plots.bat"
         else:
             bat_file = scripts_dir / "run_sequence.bat"
+            file_count = self.count_files_with_ending()
+            if file_count > 0:
+                self.show_progress_bar(file_count)
+            else:
+                messagebox.showerror("Error", "No files found with the specified file ending.")
+                
+
             
         print(f"Executing {bat_file}")
+        #subprocess.call([str(bat_file)])  # Execute sequence.bat
+        threading.Thread(target=self.run_subprocess, args=(bat_file,)).start()
+
+    def run_subprocess(self, bat_file):
         subprocess.call([str(bat_file)])  # Execute sequence.bat
-        # Redirect the terminal output to a text file
+        # Redirect the terminal output to a text file, seperate function to reduce interference with the process bar
+        scripts_dir = Path(bat_file).parent
         log_file = scripts_dir / "process_log.txt"
         with open(log_file, "w") as f:
             process = subprocess.Popen([str(bat_file)], stdout=f, stderr=subprocess.STDOUT)
@@ -653,6 +667,64 @@ class ConfigEditor:
     def run_suite2p(self):
         # Placeholder for running the Suite2P GUI
         messagebox.showinfo("Suite2P GUI", "Running Suite2P GUI... (implement this function)")
+
+###### Progress bar #####
+
+    def create_process_button(self):
+        process_frame = tk.Frame(self.scrollable_frame)
+        process_frame.pack(pady=10)
+
+        self.skip_suite2p_check = tk.Checkbutton(process_frame, text="Skip Suite2p", variable=self.skip_suite2p_var)
+        self.skip_suite2p_check.pack(side=tk.LEFT, padx=5)
+
+        tk.Button(process_frame, text="Process", command=self.process_files).pack(side=tk.LEFT, padx=5)
+
+    def process_files(self):
+        if not self.skip_suite2p_var.get():
+            file_count = self.count_files_with_ending()
+            if file_count > 0:
+                self.show_progress_bar(file_count)
+            else:
+                messagebox.showerror("Error", "No files found with the specified file ending.")
+        else:
+            messagebox.showinfo("Info", "Skipping Suite2p processing.")
+
+    def count_files_with_ending(self):
+        main_folder = self.main_folder_var.get().strip()
+        file_ending = self.data_extension_var.get().strip()
+        file_count = 0
+
+        for root, dirs, files in os.walk(main_folder):
+            for file in files:
+                if file.endswith(file_ending):
+                    file_count += 1
+
+        return file_count
+
+    def show_progress_bar(self, file_count):
+        progress_window = tk.Toplevel(self.scrollable_frame)
+        progress_window.title("Processing Files")
+
+        tk.Label(progress_window, text="Processing files...").pack(pady=10)
+
+        progress_bar = ttk.Progressbar(progress_window, length=300, mode='determinate')
+        progress_bar.pack(pady=10)
+
+        estimated_time = 55 * 60  # 55 minutes for 24 files
+        time_per_file = estimated_time / 24
+        total_time = time_per_file * file_count
+
+        def update_progress():
+            for i in range(file_count):
+                time.sleep(time_per_file)
+                progress_bar['value'] += (100 / file_count)
+                progress_window.update_idletasks()
+
+            progress_window.destroy()
+            messagebox.showinfo("Info", "Processing completed.")
+
+        threading.Thread(target=update_progress).start()
+
 
 if __name__ == "__main__":
     root = tk.Tk()
