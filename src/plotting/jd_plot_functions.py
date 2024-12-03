@@ -31,7 +31,8 @@ def load_and_adjust(TimePoints, Groups):
     df2['Group'] = df2['Group'].replace(Groups)
     return df2
 
-
+def remove_underscores(input_string):
+    return input_string.replace("_", " ")
 
 def general_plotting_function(df, x, y, type, plotby):
 
@@ -85,7 +86,8 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
                 # plot specifics
                 ax.set_title(df_unique.Time_Point.iloc[0])
                 ax.set_xlabel(x_label, fontsize=15)
-                ax.set_ylabel(y_label, fontsize=15)
+                f = remove_underscores(f)
+                ax.set_ylabel(f, fontsize=15)
                 ax.set_xticklabels(ax.get_xticklabels(), fontsize=10)
 
                 print("Swarm plot does not support statistical tests, please use another plot type")
@@ -107,11 +109,15 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
             
             for ax in fig.axes.flat:
                 ax.set_xlabel(x_label, fontsize=15)
-                ax.set_ylabel(y_label, fontsize=15)
+                f = remove_underscores(f)
+                ax.set_ylabel(f, fontsize=15)
                 ax.set_xticklabels(ax.get_xticklabels(),fontsize=10)
             
 
             if stat_test:
+                def reapply_underscores(input_string):
+                    return input_string.replace(" ", "_")
+                f = reapply_underscores(f)
                 for ax in fig.axes.flat:
                     annotator = Annotator(ax, testby, x=x, y=f, data=df, x_order=group_order, y_order=None)
                     annotator.configure(test=stat_test, text_format='star', loc=location, hide_non_significant=True)
