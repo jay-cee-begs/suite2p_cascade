@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 from tkinter import filedialog
 from pathlib import Path
 import os
@@ -46,6 +46,8 @@ class ConfigEditor:
             }
 
         self.main_folder_var = tk.StringVar(value=self.config.get('main_folder', ''))
+        if 'pairs' not in self.config:
+            self.config['pairs'] = []
         self.data_extension_var = tk.StringVar(value=self.config.get('data_extension', ''))
         self.frame_rate_var = tk.IntVar(value=self.config.get('frame_rate', 0))
         self.ops_path_var = tk.StringVar(value=self.config.get('ops_path', ''))
@@ -125,9 +127,9 @@ class ConfigEditor:
         self.create_parameters_entries()
 
         # Editable pairs
-        tk.Label(self.scrollable_frame, text="Pairs for the stat test (input as (Group1, GroupA), (Group2, GroupB), etc:").pack(anchor='w', padx=10, pady=5)
-        self.pairs_var = tk.StringVar(value=", ".join([f"{pair}" for pair in self.config.get('pairs', [])]))
-        tk.Entry(self.scrollable_frame, textvariable=self.pairs_var, width=50).pack(padx=10)
+        self.pairs_var = tk.StringVar()
+        self.pairs_listbox = tk.Listbox()
+        self.setup_pairs_ui()
 
 
         # Save button
@@ -145,7 +147,67 @@ class ConfigEditor:
 
 
 ################ Functions AREA ################    put in seperate file eventually
-               
+    def setup_pairs_ui(self):
+        # Setup the UI components here
+        self.create_pairs_ui()
+
+    def create_pairs_ui(self):
+        # Create the dropdown menus and "Add Pair" button
+        pair_frame = tk.Frame(self.scrollable_frame)
+        pair_frame.pack(pady=10)
+
+        tk.Label(pair_frame, text="Select Pair:").pack(anchor='w')
+        tk.Label(pair_frame, text="Should you have assigned no values to the Experiment Conditions: Save Configurations First!").pack(anchor='w')
+
+        self.pair1_var = tk.StringVar()
+        self.pair2_var = tk.StringVar()
+
+        self.pair1_menu = ttk.Combobox(pair_frame, textvariable=self.pair1_var, state="readonly")
+        self.pair2_menu = ttk.Combobox(pair_frame, textvariable=self.pair2_var, state="readonly")
+
+        self.pair1_menu.pack(side=tk.LEFT, padx=5)
+        self.pair2_menu.pack(side=tk.LEFT, padx=5)
+
+        tk.Button(pair_frame, text="Add Pair", command=self.add_pair).pack(side=tk.LEFT, padx=5)
+
+        # Display the list of pairs
+        self.pairs_listbox = tk.Listbox(pair_frame, height=6)
+        self.pairs_listbox.pack(padx=10, pady=5)
+
+        tk.Button(pair_frame, text="Delete Selected Pair", command=self.delete_pair).pack(pady=5)
+
+        # Load the exp_condition values into the dropdown menus
+        self.load_exp_condition_values()   
+
+    def load_exp_condition_values(self):
+        exp_condition_values = list(self.config.get('exp_condition', {}).values())
+        self.pair1_menu['values'] = exp_condition_values
+        self.pair2_menu['values'] = exp_condition_values
+
+    def add_pair(self):
+        pair1 = self.pair1_var.get()
+        pair2 = self.pair2_var.get()
+        if pair1 and pair2 and pair1 != pair2:
+            pair = (pair1, pair2)
+            self.config['pairs'].append(pair)
+            self.update_pairs_listbox()
+        else:
+            messagebox.showerror("Error", "Please select two different conditions.")
+
+    def update_pairs_listbox(self):
+        self.pairs_listbox.delete(0, tk.END)
+        for pair in self.config['pairs']:
+            self.pairs_listbox.insert(tk.END, str(pair))
+
+    def delete_pair(self):
+        selected_indices = self.pairs_listbox.curselection()
+        if selected_indices:
+            for index in selected_indices[::-1]:
+                del self.config['pairs'][index]
+            self.update_pairs_listbox()
+        else:
+            messagebox.showerror("Error", "Please select a pair to delete.")
+
     def _on_mousewheel(self, event):
         self.canvas.yview_scroll(-1 * (event.delta // 120), "units")   
 
@@ -497,7 +559,7 @@ class ConfigEditor:
                 f.write(f"    '{key_var.get()}': '{value_var.get()}',\n")
             f.write("}\n")
 
-            f.write(f"pairs = [ {pairs_input} ]\n")
+            f.write(f"pairs = {self.config['pairs']}\n")
 
             f.write("parameters = {\n")
             f.write(f"    'testby': pairs,\n") # Add 'testby' to the parameters, assigns the pairs value to it, this is not user-editable
