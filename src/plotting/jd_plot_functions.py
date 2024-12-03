@@ -97,13 +97,13 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
             if type == 'violin':                                                                                # violin plot extra to allow us to plot quartiles inside, otherwise not needed
                 fig= sns.catplot(
                     data=df, kind=type, col = plotby, inner = 'quartiles',
-                    x=x, y=f,  aspect=aspct, height=hght, hue='Group', palette=palette, legend=legend)
+                    x=x, y=f,  aspect=1.5, height=hght, hue='Group', palette=palette, legend=legend)
                 print('Inner lines display quartiles, change in function if needed')
                     
             else:
                 fig= sns.catplot(
                     data=df, kind=type, col = plotby,
-                    x=x, y=f,  aspect=aspct, height=hght, hue='Group', palette=palette, legend=legend)
+                    x=x, y=f,  aspect=1.5, height=hght, hue='Group', palette=palette, legend=legend)
             
             for ax in fig.axes.flat:
                 ax.set_xlabel(x_label, fontsize=15)
