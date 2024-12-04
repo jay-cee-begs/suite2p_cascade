@@ -1,9 +1,11 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 from tkinter import filedialog
 from pathlib import Path
 import os
 import subprocess
+import time
+import threading 
 
 class ConfigEditor:
     def __init__(self, master):
@@ -46,6 +48,8 @@ class ConfigEditor:
             }
 
         self.main_folder_var = tk.StringVar(value=self.config.get('main_folder', ''))
+        if 'pairs' not in self.config:
+            self.config['pairs'] = []
         self.data_extension_var = tk.StringVar(value=self.config.get('data_extension', ''))
         self.frame_rate_var = tk.IntVar(value=self.config.get('frame_rate', 0))
         self.ops_path_var = tk.StringVar(value=self.config.get('ops_path', ''))
@@ -125,9 +129,9 @@ class ConfigEditor:
         self.create_parameters_entries()
 
         # Editable pairs
-        tk.Label(self.scrollable_frame, text="Pairs for the stat test (input as (Group1, GroupA), (Group2, GroupB), etc:").pack(anchor='w', padx=10, pady=5)
-        self.pairs_var = tk.StringVar(value=", ".join([f"{pair}" for pair in self.config.get('pairs', [])]))
-        tk.Entry(self.scrollable_frame, textvariable=self.pairs_var, width=50).pack(padx=10)
+        self.pairs_var = tk.StringVar()
+        self.pairs_listbox = tk.Listbox()
+        self.setup_pairs_ui()
 
 
         # Save button
@@ -145,7 +149,67 @@ class ConfigEditor:
 
 
 ################ Functions AREA ################    put in seperate file eventually
-               
+    def setup_pairs_ui(self):
+        # Setup the UI components here
+        self.create_pairs_ui()
+
+    def create_pairs_ui(self):
+        # Create the dropdown menus and "Add Pair" button
+        pair_frame = tk.Frame(self.scrollable_frame)
+        pair_frame.pack(pady=10)
+
+        tk.Label(pair_frame, text="Select Pair:").pack(anchor='w')
+        tk.Label(pair_frame, text="Should you have assigned no values to the Experiment Conditions: Save Configurations First!").pack(anchor='w')
+
+        self.pair1_var = tk.StringVar()
+        self.pair2_var = tk.StringVar()
+
+        self.pair1_menu = ttk.Combobox(pair_frame, textvariable=self.pair1_var, state="readonly")
+        self.pair2_menu = ttk.Combobox(pair_frame, textvariable=self.pair2_var, state="readonly")
+
+        self.pair1_menu.pack(side=tk.LEFT, padx=5)
+        self.pair2_menu.pack(side=tk.LEFT, padx=5)
+
+        tk.Button(pair_frame, text="Add Pair", command=self.add_pair).pack(side=tk.LEFT, padx=5)
+
+        # Display the list of pairs
+        self.pairs_listbox = tk.Listbox(pair_frame, height=6)
+        self.pairs_listbox.pack(padx=10, pady=5)
+
+        tk.Button(pair_frame, text="Delete Selected Pair", command=self.delete_pair).pack(pady=5)
+
+        # Load the exp_condition values into the dropdown menus
+        self.load_exp_condition_values()   
+
+    def load_exp_condition_values(self):
+        exp_condition_values = list(self.config.get('exp_condition', {}).values())
+        self.pair1_menu['values'] = exp_condition_values
+        self.pair2_menu['values'] = exp_condition_values
+
+    def add_pair(self):
+        pair1 = self.pair1_var.get()
+        pair2 = self.pair2_var.get()
+        if pair1 and pair2 and pair1 != pair2:
+            pair = (pair1, pair2)
+            self.config['pairs'].append(pair)
+            self.update_pairs_listbox()
+        else:
+            messagebox.showerror("Error", "Please select two different conditions.")
+
+    def update_pairs_listbox(self):
+        self.pairs_listbox.delete(0, tk.END)
+        for pair in self.config['pairs']:
+            self.pairs_listbox.insert(tk.END, str(pair))
+
+    def delete_pair(self):
+        selected_indices = self.pairs_listbox.curselection()
+        if selected_indices:
+            for index in selected_indices[::-1]:
+                del self.config['pairs'][index]
+            self.update_pairs_listbox()
+        else:
+            messagebox.showerror("Error", "Please select a pair to delete.")
+
     def _on_mousewheel(self, event):
         self.canvas.yview_scroll(-1 * (event.delta // 120), "units")   
 
@@ -497,7 +561,7 @@ class ConfigEditor:
                 f.write(f"    '{key_var.get()}': '{value_var.get()}',\n")
             f.write("}\n")
 
-            f.write(f"pairs = [ {pairs_input} ]\n")
+            f.write(f"pairs = {self.config['pairs']}\n")
 
             f.write("parameters = {\n")
             f.write(f"    'testby': pairs,\n") # Add 'testby' to the parameters, assigns the pairs value to it, this is not user-editable
@@ -549,10 +613,22 @@ class ConfigEditor:
             bat_file = scripts_dir / "run_plots.bat"
         else:
             bat_file = scripts_dir / "run_sequence.bat"
+            file_count = self.count_files_with_ending()
+            if file_count > 0:
+                self.show_progress_bar(file_count)
+            else:
+                messagebox.showerror("Error", "No files found with the specified file ending.")
+                
+
             
         print(f"Executing {bat_file}")
+        #subprocess.call([str(bat_file)])  # Execute sequence.bat
+        threading.Thread(target=self.run_subprocess, args=(bat_file,)).start()
+
+    def run_subprocess(self, bat_file):
         subprocess.call([str(bat_file)])  # Execute sequence.bat
-        # Redirect the terminal output to a text file
+        # Redirect the terminal output to a text file, seperate function to reduce interference with the process bar
+        scripts_dir = Path(bat_file).parent
         log_file = scripts_dir / "process_log.txt"
         with open(log_file, "w") as f:
             process = subprocess.Popen([str(bat_file)], stdout=f, stderr=subprocess.STDOUT)
@@ -591,6 +667,64 @@ class ConfigEditor:
     def run_suite2p(self):
         # Placeholder for running the Suite2P GUI
         messagebox.showinfo("Suite2P GUI", "Running Suite2P GUI... (implement this function)")
+
+###### Progress bar #####
+
+    def create_process_button(self):
+        process_frame = tk.Frame(self.scrollable_frame)
+        process_frame.pack(pady=10)
+
+        self.skip_suite2p_check = tk.Checkbutton(process_frame, text="Skip Suite2p", variable=self.skip_suite2p_var)
+        self.skip_suite2p_check.pack(side=tk.LEFT, padx=5)
+
+        tk.Button(process_frame, text="Process", command=self.process_files).pack(side=tk.LEFT, padx=5)
+
+    def process_files(self):
+        if not self.skip_suite2p_var.get():
+            file_count = self.count_files_with_ending()
+            if file_count > 0:
+                self.show_progress_bar(file_count)
+            else:
+                messagebox.showerror("Error", "No files found with the specified file ending.")
+        else:
+            messagebox.showinfo("Info", "Skipping Suite2p processing.")
+
+    def count_files_with_ending(self):
+        main_folder = self.main_folder_var.get().strip()
+        file_ending = self.data_extension_var.get().strip()
+        file_count = 0
+
+        for root, dirs, files in os.walk(main_folder):
+            for file in files:
+                if file.endswith(file_ending):
+                    file_count += 1
+
+        return file_count
+
+    def show_progress_bar(self, file_count):
+        progress_window = tk.Toplevel(self.scrollable_frame)
+        progress_window.title("Processing Files")
+
+        tk.Label(progress_window, text="Processing files...").pack(pady=10)
+
+        progress_bar = ttk.Progressbar(progress_window, length=300, mode='determinate')
+        progress_bar.pack(pady=10)
+
+        estimated_time = 55 * 60  # 55 minutes for 24 files
+        time_per_file = estimated_time / 24
+        total_time = time_per_file * file_count
+
+        def update_progress():
+            for i in range(file_count):
+                time.sleep(time_per_file)
+                progress_bar['value'] += (100 / file_count)
+                progress_window.update_idletasks()
+
+            progress_window.destroy()
+            messagebox.showinfo("Info", "Processing completed.")
+
+        threading.Thread(target=update_progress).start()
+
 
 if __name__ == "__main__":
     root = tk.Tk()
