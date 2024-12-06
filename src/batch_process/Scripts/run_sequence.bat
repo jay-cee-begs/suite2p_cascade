@@ -2,12 +2,8 @@
 
 :: Activate the first virtual environment, evt. use Activate.ps1
 
-<<<<<<< Updated upstream
-CALL "C:\miniforge3C:\Users\Justus\miniforge3\Scripts\activate.bat" suite2p
-=======
 CALL "C:\Users\jcbegs\miniforge3\Scripts\activate.bat" suite2p
->>>>>>> Stashed changes
-:: Run the first script
+
 
 set script_dir=%~dp0
 
@@ -20,16 +16,11 @@ python -m suite2p_detect
 CALL conda deactivate
 
 :: Activate the second virtual environment
-<<<<<<< Updated upstream
-CALL "C:\Users\Justus\miniforge3\Scripts\activate.bat" cascade
-=======
+
 CALL "C:\Users\jcbegs\miniforge3\Scripts\activate.bat" cascade
->>>>>>> Stashed changes
 
-:: Run the second script
-set script_dir=%~dp0
+CALL "C:\Users\jcbegs\miniforge3\Scripts\activate.bat" cascade
 
-set src_dir=%script_dir%..\..\
 
 cd "%src_dir%\run_cascade"
 python -m cascade_deconvolve
@@ -41,7 +32,10 @@ python -m cascade_deconvolve
 CALL conda deactivate
 
 :: Activate the third virtual environment
-CALL "C:\Users\Justus\miniforge3\Scripts\activate.bat" data_env
+
+pause 
+
+CALL "C:\Users\jcbegs\miniforge3\Scripts\activate.bat" data_env
 
 cd "%src_dir%\plotting"
 :: Run the third script 
