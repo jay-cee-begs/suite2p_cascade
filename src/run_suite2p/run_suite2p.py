@@ -3,9 +3,9 @@ import numpy as np
 import tqdm
 from pathlib import Path
 from PIL import Image
-from nd2reader import ND2Reader #only if converting to tiff
+# from nd2reader import ND2Reader #only if converting to tiff
 import shutil
-#import sys
+import sys
 # sys.path.insert(0, 'D:/users/JC/suite2p-0.14.0')
 from suite2p import run_s2p
 
@@ -154,7 +154,7 @@ def main():
     # iterConvert()
     main_folder = configurations.main_folder
     data_extension = configurations.data_extension
-    export_image_files_to_suite2p_format(main_folder, file_ending = '.' + data_extension)
+    # export_image_files_to_suite2p_format(main_folder, file_ending = '.' + data_extension)
     image_folders = get_all_image_folders_in_path(main_folder)
     process_files_with_suite2p(image_folders)
 

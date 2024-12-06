@@ -2,7 +2,11 @@
 
 :: Activate the first virtual environment, evt. use Activate.ps1
 
+<<<<<<< Updated upstream
 CALL "C:\miniforge3C:\Users\Justus\miniforge3\Scripts\activate.bat" suite2p
+=======
+CALL "C:\Users\jcbegs\miniforge3\Scripts\activate.bat" suite2p
+>>>>>>> Stashed changes
 :: Run the first script
 
 set script_dir=%~dp0
@@ -16,7 +20,11 @@ python -m suite2p_detect
 CALL conda deactivate
 
 :: Activate the second virtual environment
+<<<<<<< Updated upstream
 CALL "C:\Users\Justus\miniforge3\Scripts\activate.bat" cascade
+=======
+CALL "C:\Users\jcbegs\miniforge3\Scripts\activate.bat" cascade
+>>>>>>> Stashed changes
 
 :: Run the second script
 set script_dir=%~dp0
