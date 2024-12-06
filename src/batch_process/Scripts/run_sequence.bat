@@ -2,7 +2,7 @@
 
 :: Activate the first virtual environment, evt. use Activate.ps1
 
-CALL "C:\miniforge3C:\Users\jcbegs\miniforge3
+CALL "C:\miniforge3C:\Users\Justus\miniforge3\Scripts\activate.bat" suite2p
 :: Run the first script
 
 set script_dir=%~dp0
@@ -16,7 +16,7 @@ python -m suite2p_detect
 CALL conda deactivate
 
 :: Activate the second virtual environment
-CALL "C:\Users\jcbegs\miniforge3\Scripts\activate.bat" suite2p
+CALL "C:\Users\Justus\miniforge3\Scripts\activate.bat" cascade
 
 :: Run the second script
 set script_dir=%~dp0
@@ -33,9 +33,7 @@ python -m cascade_deconvolve
 CALL conda deactivate
 
 :: Activate the third virtual environment
-CALL "C:\Users\jcbegs\miniforge3\Scripts\activate.bat" data_env
-
-set script_dir=%~dp0
+CALL "C:\Users\Justus\miniforge3\Scripts\activate.bat" data_env
 
 cd "%src_dir%\plotting"
 :: Run the third script 
@@ -43,5 +41,4 @@ python -m plotting_constants
 
 
 
-:: keep terminal open 
-pause
+:: keep terminal open 'pause'
