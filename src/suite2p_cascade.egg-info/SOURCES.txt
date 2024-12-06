@@ -15,7 +15,7 @@ src/run_cascade/__init__.py
 src/run_cascade/cascade_deconvolve.py
 src/run_cascade/functions_data_transformation.py
 src/run_cascade/functions_general.py
-src/run_cascade/run_cascade.py
+src/run_cascade/run_cascade_script.py
 src/run_suite2p/__init__.py
 src/run_suite2p/run_suite2p.py
 src/run_suite2p/suite2p_detect.py
