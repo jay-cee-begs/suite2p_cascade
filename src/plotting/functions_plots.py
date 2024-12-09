@@ -197,7 +197,7 @@ def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
     stat = suite2p_dict['stat']
     iscell = suite2p_dict['iscell']
     MIN_PROB = 0 
-    min_radius = 2
+    min_radius = 3
     pixel2neuron = np.full(frame_shape, fill_value=np.nan, dtype=float)
     scatters = dict(x=[], y=[], color=[], text=[])
     nid2idx = {}
