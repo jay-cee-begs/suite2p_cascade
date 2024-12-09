@@ -88,7 +88,7 @@ def extract_and_plot_neuron_connections(node_graph, neuron_data, data_folder, sa
 
     community_sizes = {community_idx: len(community) for community_idx, community in enumerate(neuron_clubs)}
     raw_data = []
-    for node in node_graph.nodes:
+    for node, neuron in zip(node_graph.nodes, neuron_data):
         raw_data.append({
             "neuron_id":node,
             "x": neuron_data[node]["x"],
@@ -99,8 +99,8 @@ def extract_and_plot_neuron_connections(node_graph, neuron_data, data_folder, sa
             "clustering_coefficient": clustering_coeff_dict[node],
             "betweenness_centrality": betweenness_centrality_dict[node],
             "eigenvector_centrality": eigenvector_centrality_dict[node],
-            "total_predicted_spikes": neuron_data[node]['predicted_spikes'].sum(),
-            "avg_predicted_spikes": neuron_data[node]['predicted_spikes'].mean()
+            "total_predicted_spikes": np.nansum(neuron_data[neuron]['predicted_spikes']),
+            "avg_predicted_spikes": np.nanmean(neuron_data[neuron]['predicted_spikes'])
         })
     df_nodes = pd.DataFrame(raw_data)
     df_nodes.to_csv(os.path.join(data_folder, f"{sample_name}_graph_node_data.csv"), index=False)
