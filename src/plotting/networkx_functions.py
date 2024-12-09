@@ -55,20 +55,59 @@ def create_template_matrix(neuron_data):
     G = nx.relabel_nodes(G, mapping)
     return G
 
-def extract_and_plot_neuron_connections(node_graph, neuron_data, data_folder, sample_name):
+def getImg(ops):
+    """Accesses suite2p ops file (itemized) and pulls out a composite image to map ROIs onto"""
+    Img = ops["meanImg"] # Also "max_proj", "meanImg", "meanImgE"
+    mimg = Img # Use suite-2p source-code naming
+    mimg1 = np.percentile(mimg,1)
+    mimg99 = np.percentile(mimg,99)
+    mimg = (mimg - mimg1) / (mimg99 - mimg1)
+    mimg = np.clip(mimg, 0, 1)
+    mimg *= 255
+    mimg = mimg.astype(np.uint8)
+    return mimg
+
+def extract_and_plot_neuron_connections(node_graph, neuron_data, data_folder, sample_name, ops):
+    # Prepare image
+    mimg = getImg(ops)
+    plt.figure(figsize=(20, 20))
     
+    # Display the mean image
+    plt.imshow(mimg, cmap='gray', interpolation='nearest')
+    plt.title(f"Sample: {sample_name} - Overlayed Communities", fontsize=24)
+    
+    # Prepare graph layout
     for neuron_id, data in neuron_data.items():
-        node_graph.add_node(neuron_id, pos=(data['x'], data['y'])) 
+        node_graph.add_node(neuron_id, pos=(data['x'], data['y']))
     pos = nx.get_node_attributes(node_graph, 'pos')
     
-    #Community Detection
+    # Community Detection
     neuron_clubs = list(greedy_modularity_communities(node_graph))
     community_map = {
-        node:community_idx
+        node: community_idx
         for community_idx, community in enumerate(neuron_clubs)
         for node in community
     }
-    #Node statistics
+    
+    community_spikes = {}
+    for node, community_idx in community_map.items():
+        if community_idx not in community_spikes:
+            community_spikes[community_idx] = 0
+        community_spikes[community_idx] += np.nansum(neuron_data[node]['predicted_spikes'])
+    
+    plt.figure(figsize=(10,6))
+    communities = list(community_spikes.keys())
+    total_spikes = list(community_spikes.values())
+    plt.bar(communities, total_spikes, color='tab10')
+    plt.xlabel('Community', fontsize=14)
+    plt.ylabel('Total Predicted Spikes', fontsize=14)
+    plt.title(f"Total Predicted Spikes per Community - {sample_name}", fontsize=16)
+    plt.xticks(communities)
+    plt.tight_layout()
+    plt.savefig(os.path.join(data_folder, f"{sample_name}_total_spikes_per_community.png"))
+    plt.close()
+
+    # Node statistics
     node_degree_dict = dict(node_graph.degree)
     clustering_coeff_dict = nx.clustering(node_graph)
     betweenness_centrality_dict = nx.betweenness_centrality(node_graph)
@@ -76,25 +115,25 @@ def extract_and_plot_neuron_connections(node_graph, neuron_data, data_folder, sa
         eigenvector_centrality_dict = nx.eigenvector_centrality(node_graph)
     except nx.PowerIterationFailedConvergence:
         eigenvector_centrality_dict = {node: None for node in node_graph.nodes}
-
-    #Edge Statistics
-    edge_data =[]
-    for (u,v,data) in node_graph.edges(data=True):
+    
+    # Edge Statistics
+    edge_data = []
+    for (u, v, data) in node_graph.edges(data=True):
         edge_data.append({
             'source': u,
             "target": v,
             'weight': data.get("weight", 1),
         })
-
+    
     community_sizes = {community_idx: len(community) for community_idx, community in enumerate(neuron_clubs)}
     raw_data = []
     for node, neuron in zip(node_graph.nodes, neuron_data):
         raw_data.append({
-            "neuron_id":node,
+            "neuron_id": node,
             "x": neuron_data[node]["x"],
             "y": neuron_data[node]["y"],
             "community": community_map[node],
-            "community_size":community_sizes[community_map[node]],
+            "community_size": community_sizes[community_map[node]],
             "degree": node_degree_dict[node],
             "clustering_coefficient": clustering_coeff_dict[node],
             "betweenness_centrality": betweenness_centrality_dict[node],
@@ -103,26 +142,93 @@ def extract_and_plot_neuron_connections(node_graph, neuron_data, data_folder, sa
             "avg_predicted_spikes": np.nanmean(neuron_data[neuron]['predicted_spikes'])
         })
     df_nodes = pd.DataFrame(raw_data)
+    # df_nodes["community_spikes"]
     df_nodes.to_csv(os.path.join(data_folder, f"{sample_name}_graph_node_data.csv"), index=False)
-
-    df_edges = pd.DataFrame(edge_data)
-    df_edges.to_csv(os.path.join(data_folder, f"{sample_name}_graph_edge_data.csv"), index = False)
     
+    df_edges = pd.DataFrame(edge_data)
+    df_edges.to_csv(os.path.join(data_folder, f"{sample_name}_graph_edge_data.csv"), index=False)
+    
+    # Overlay graph on the image
     community_colors = [community_map[node] for node in node_graph.nodes]
-    unique_clubs = len(set(community_colors))
-    plt.figure(figsize=(20,20))
-    nx.draw(
+    nx.draw_networkx_nodes(
         node_graph,
         pos=pos,
-        with_labels=False,
         node_size=100,
         node_color=community_colors,
         cmap=plt.cm.tab10,  # Use a colormap with distinct colors
     )
-    plt.title(f"Community Detection with {unique_clubs} Communities (Corrected Positions)", fontsize = 24)
-    plt.xlabel(f"Sample: {sample_name}", fontsize = 18)
-    plt.savefig(os.path.join(data_folder, f"{sample_name}_networkx_connections.png"))
+    plt.tight_layout()
+    plt.savefig(os.path.join(data_folder, f"{sample_name}_networkx_image_overlay.png"))
     plt.close()
+
+# def extract_and_plot_neuron_connections(node_graph, neuron_data, data_folder, sample_name):
+    
+#     for neuron_id, data in neuron_data.items():
+#         node_graph.add_node(neuron_id, pos=(data['x'], data['y'])) 
+#     pos = nx.get_node_attributes(node_graph, 'pos')
+    
+#     #Community Detection
+#     neuron_clubs = list(greedy_modularity_communities(node_graph))
+#     community_map = {
+#         node:community_idx
+#         for community_idx, community in enumerate(neuron_clubs)
+#         for node in community
+#     }
+#     #Node statistics
+#     node_degree_dict = dict(node_graph.degree)
+#     clustering_coeff_dict = nx.clustering(node_graph)
+#     betweenness_centrality_dict = nx.betweenness_centrality(node_graph)
+#     try:
+#         eigenvector_centrality_dict = nx.eigenvector_centrality(node_graph)
+#     except nx.PowerIterationFailedConvergence:
+#         eigenvector_centrality_dict = {node: None for node in node_graph.nodes}
+
+#     #Edge Statistics
+#     edge_data =[]
+#     for (u,v,data) in node_graph.edges(data=True):
+#         edge_data.append({
+#             'source': u,
+#             "target": v,
+#             'weight': data.get("weight", 1),
+#         })
+
+#     community_sizes = {community_idx: len(community) for community_idx, community in enumerate(neuron_clubs)}
+#     raw_data = []
+#     for node, neuron in zip(node_graph.nodes, neuron_data):
+#         raw_data.append({
+#             "neuron_id":node,
+#             "x": neuron_data[node]["x"],
+#             "y": neuron_data[node]["y"],
+#             "community": community_map[node],
+#             "community_size":community_sizes[community_map[node]],
+#             "degree": node_degree_dict[node],
+#             "clustering_coefficient": clustering_coeff_dict[node],
+#             "betweenness_centrality": betweenness_centrality_dict[node],
+#             "eigenvector_centrality": eigenvector_centrality_dict[node],
+#             "total_predicted_spikes": np.nansum(neuron_data[neuron]['predicted_spikes']),
+#             "avg_predicted_spikes": np.nanmean(neuron_data[neuron]['predicted_spikes'])
+#         })
+#     df_nodes = pd.DataFrame(raw_data)
+#     df_nodes.to_csv(os.path.join(data_folder, f"{sample_name}_graph_node_data.csv"), index=False)
+
+#     df_edges = pd.DataFrame(edge_data)
+#     df_edges.to_csv(os.path.join(data_folder, f"{sample_name}_graph_edge_data.csv"), index = False)
+    
+#     community_colors = [community_map[node] for node in node_graph.nodes]
+#     unique_clubs = len(set(community_colors))
+#     plt.figure(figsize=(20,20))
+#     ax = plt.gca()
+#     nx.draw(
+#         node_graph,
+#         pos=pos,
+#         with_labels=False,
+#         node_size=250,
+#         node_color=community_colors,
+#         cmap=plt.cm.tab10,  # Use a colormap with distinct colors
+#     )
+#     ax.set_title(f"Community Detection with {unique_clubs} Communities (Corrected Positions)\nSample{sample_name}", fontsize = 24)
+#     plt.savefig(os.path.join(data_folder, f"{sample_name}_networkx_connections.png"))
+#     plt.close()
 
     
 def plot_neuron_connections(data_folder):
@@ -132,10 +238,14 @@ def plot_neuron_connections(data_folder):
     node_graph = create_template_matrix(neuron_data)
     sample_name = os.path.basename(data_folder)
     print(sample_name)
-    extract_and_plot_neuron_connections(node_graph, neuron_data, data_folder, sample_name)
+    ops = transform.load_npy_array(os.path.join(data_folder, *transform.SUITE2P_STRUCTURE["ops"])).item()
+    extract_and_plot_neuron_connections(node_graph, neuron_data, data_folder, sample_name, ops)
 
-if __name__ == '__main__':
+def main():
     for sample in transform.get_file_name_list(configurations.main_folder, file_ending = 'samples', supress_printing=False):
         print(f"Processing {sample}")
         plot_neuron_connections(sample)
         print('Finished processing')
+
+if __name__ == '__main__':
+    main()
