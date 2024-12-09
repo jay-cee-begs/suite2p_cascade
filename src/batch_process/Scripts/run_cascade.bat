@@ -1,7 +1,7 @@
 @echo off
 
 :: Activate the cascade virtual environment
-CALL "C:\Users\Justus\miniforge3\Scripts\activate.bat" cascade
+CALL "C:\miniforge3\Scripts\activate.bat" cascade
 
 :: Run the cascade script
 set script_dir=%~dp0
@@ -18,7 +18,7 @@ python -m cascade_deconvolve
 CALL conda deactivate
 
 :: Activate the plotting virtual environment
-CALL "C:\Users\Justus\miniforge3\Scripts\activate.bat" data_env
+CALL "C:\miniforge3\Scripts\activate.bat" data_env
 
 cd "%src_dir%\plotting"
 :: Run the plotting script 
