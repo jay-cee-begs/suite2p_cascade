@@ -8,20 +8,20 @@ yaml = yaml.YAML(typ='rt')
 
 from run_cascade import CASCADE_functions
 from run_cascade import functions_data_transformation 
-from plotting import functions_plots as fun_plot 
-from batch_process import gui_configurations
+from plotting import functions_plots as fun_plot, networkx_functions as nx_plot
+from batch_process import gui_configurations as configurations
 
 
 def main():
     # ## get the names of the deltaF files from the functions_data_transformation.py file
 
-    deltaF = functions_data_transformation.get_file_name_list(folder_path = gui_configurations.main_folder, file_ending = "deltaF.npy")
+    deltaF = functions_data_transformation.get_file_name_list(folder_path = configurations.main_folder, file_ending = "deltaF.npy")
     # if len(deltaF_files) == 0:
     #     deltaF_files = get_file_name_list(folder_path = configurations.main_folder, file_ending = "deltaF.npy")
-    deltaF_files =functions_data_transformation.get_file_name_list(folder_path = gui_configurations.main_folder, file_ending = "deltaF.npy")
+    deltaF_files =functions_data_transformation.get_file_name_list(folder_path = configurations.main_folder, file_ending = "deltaF.npy")
     try:
 
-        predictions_deltaF_files = functions_data_transformation.get_file_name_list(folder_path = gui_configurations.main_folder, file_ending = "predictions_deltaF.npy") ## get the names of the predicted spike files
+        predictions_deltaF_files = functions_data_transformation.get_file_name_list(folder_path = configurations.main_folder, file_ending = "predictions_deltaF.npy") ## get the names of the predicted spike files
         if len(predictions_deltaF_files) == 0:
             predictions_deltaF_files = []
     except FileNotFoundError as e:
@@ -32,14 +32,14 @@ def main():
         print("Cascade predictions for this dataset are missing, generating now...")
         for file in deltaF_files:
             CASCADE_functions.plots_and_basic_info(file)
-            CASCADE_functions.cascade_this(file, gui_configurations.nb_neurons)
+            CASCADE_functions.cascade_this(file, configurations.nb_neurons)
         print("Done Generating Prediction Files")
     else:
         print("Cascade prediction files already exist")
     
 
-    predictions_deltaF_files = functions_data_transformation.get_file_name_list(folder_path = gui_configurations.main_folder, file_ending = "predictions_deltaF.npy") ## get the names of the predicted spike files
-    output_directories = functions_data_transformation.get_file_name_list(folder_path = gui_configurations.main_folder, file_ending = "samples")
+    predictions_deltaF_files = functions_data_transformation.get_file_name_list(folder_path = configurations.main_folder, file_ending = "predictions_deltaF.npy") ## get the names of the predicted spike files
+    output_directories = functions_data_transformation.get_file_name_list(folder_path = configurations.main_folder, file_ending = "samples")
     
     for file, output in zip(predictions_deltaF_files, output_directories):
         fun_plot.histogram_total_estimated_spikes(file, output)
@@ -53,14 +53,15 @@ def main():
         fun_plot.plot_total_spikes_per_frame(file, spike_maximum, output)
         fun_plot.plot_average_spike_probability_per_frame(file, output)
 
-    functions_data_transformation.create_output_csv(gui_configurations.main_folder, overwrite = True, iscell_check = False, update_iscell=True)
-    functions_data_transformation.csv_to_pickle(gui_configurations.main_folder, overwrite = True)
+    functions_data_transformation.create_output_csv(configurations.main_folder, overwrite = True, iscell_check = False, update_iscell=True)
+    functions_data_transformation.csv_to_pickle(configurations.main_folder, overwrite = True)
     #TODO add an output for final_df for within python stuff
-    # create_final_df(gui_configurations.main_folder)
-    functions_data_transformation.create_experiment_overview(gui_configurations.main_folder, gui_configurations.groups)
+    # create_final_df(configurations.main_folder)
+    functions_data_transformation.create_experiment_overview(configurations.main_folder, configurations.groups)
 
 if __name__ == "__main__":
     main()
+    nx_plot.main()
 
 
 """To run:
