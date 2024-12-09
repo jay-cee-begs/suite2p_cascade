@@ -5,3 +5,4 @@ __pycache__
 *.txt
 !statannotations-req.txt
 *.egg-info\PKG-INFO
+src/batch_process/gui_configurations.py
