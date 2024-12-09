@@ -491,7 +491,7 @@ class ConfigEditor:
         # Update the GUI variables with the new values from the config
         self.main_folder_var.set(self.config.get('main_folder', ''))
         self.data_extension_var.set(self.config.get('data_extension', ''))
-        self.frame_rate_var.set(self.config.get('frame_rate', 0))
+        self.frame_rate_var.set(self.config.get('frame_rate', 10))
         self.ops_path_var.set(self.config.get('ops_path', ''))
         self.csc_path_var.set(self.config.get('cascade_file_path', ''))
         self.groups = self.config.get('groups', [])
