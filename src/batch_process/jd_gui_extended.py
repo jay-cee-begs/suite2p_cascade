@@ -48,6 +48,7 @@ class ConfigEditor:
             }
 
         self.main_folder_var = tk.StringVar(value=self.config.get('main_folder', ''))
+        self.selected_bat_file = tk.StringVar()  # Initialize selected_bat_file
         if 'pairs' not in self.config:
             self.config['pairs'] = []
         self.data_extension_var = tk.StringVar(value=self.config.get('data_extension', ''))
@@ -131,27 +132,30 @@ class ConfigEditor:
         # Editable pairs
         self.pairs_var = tk.StringVar()
         self.pairs_listbox = tk.Listbox()
-        self.setup_pairs_ui()
+        
 
 
         # Save button
         tk.Button(self.scrollable_frame, text="Save Configurations", command=self.save_config).pack(pady=10)
+        self.setup_ui()
 
         # Skip Suite2P option
-        self.skip_suite2p_var = tk.BooleanVar()
-        tk.Checkbutton(self.scrollable_frame, text="Skip Suite2P, no need to run it twice :)", variable=self.skip_suite2p_var).pack(anchor='w', padx=10, pady=5)
+        # self.selected_bat_file = tk.StringVar()
+        # tk.Checkbutton(self.scrollable_frame, text="Skip Suite2P, no need to run it twice :)", variable=self.skip_suite2p_var).pack(anchor='w', padx=10, pady=5)
 
-        # Processing button
-        tk.Button(self.scrollable_frame, text="Process", command=self.proceed).pack(pady=10)
 
         # Initialize empty TimePoints dictionary
         self.timepoints = {}
 
 
 ################ Functions AREA ################    put in seperate file eventually
-    def setup_pairs_ui(self):
-        # Setup the UI components here
+    def setup_ui(self):
+        # Setup the UI components in here in the future
+        # order is the order of appearance in the gui
         self.create_pairs_ui()
+        tk.Button(self.scrollable_frame, text="Save Configurations", command=self.save_config).pack(pady=10)
+        self.create_process_buttons()
+
 
     def create_pairs_ui(self):
         # Create the dropdown menus and "Add Pair" button
@@ -606,13 +610,43 @@ class ConfigEditor:
 
         tk.Button(log_window, text="Close", command=log_window.destroy).pack(pady=5)
 
+    def create_bat_file_radiobuttons(self, parent_frame):
+        bat_files = [
+            ("Skip Suite2p", "run_cascade.bat"),
+            ("Skip Suite2p AND Cascade", "run_plots.bat"),
+            ("Run Full Process", "run_sequence.bat")
+        ]
+
+        for text, value in bat_files:
+            tk.Radiobutton(parent_frame, text=text, variable=self.selected_bat_file, value=value).pack(anchor='w')
+    
+    def create_process_button(self, parent_frame):
+        tk.Button(parent_frame, text="Process", command=self.proceed).pack(pady=5)
+
+
+    def create_process_buttons(self):
+        """
+        Create buttons for selecting and executing different processing options.
+
+        This method creates a frame containing radio buttons for selecting different 
+        .bat files to run, and a button to start the processing based on the selected option.
+        """
+        process_frame = tk.Frame(self.scrollable_frame)
+        process_frame.pack(pady=10)
+
+        tk.Label(process_frame, text="Select Process:").pack(anchor='w')
+
+        self.create_bat_file_radiobuttons(process_frame)
+        self.create_process_button(process_frame)
+
+    
+
     def proceed(self):  #Option to skip suite2p, will execute a different .bat then
         current_dir = Path(__file__).parent
         scripts_dir = current_dir / "Scripts" 
-        if self.skip_suite2p_var.get():
-            bat_file = scripts_dir / "run_plots.bat"
-        else:
-            bat_file = scripts_dir / "run_sequence.bat"
+        bat_file = scripts_dir / self.selected_bat_file.get()
+        
+        if "run_sequence" in self.selected_bat_file.get():
             file_count = self.count_files_with_ending()
             if file_count > 0:
                 self.show_progress_bar(file_count)
@@ -670,14 +704,7 @@ class ConfigEditor:
 
 ###### Progress bar #####
 
-    def create_process_button(self):
-        process_frame = tk.Frame(self.scrollable_frame)
-        process_frame.pack(pady=10)
 
-        self.skip_suite2p_check = tk.Checkbutton(process_frame, text="Skip Suite2p", variable=self.skip_suite2p_var)
-        self.skip_suite2p_check.pack(side=tk.LEFT, padx=5)
-
-        tk.Button(process_frame, text="Process", command=self.process_files).pack(side=tk.LEFT, padx=5)
 
     def process_files(self):
         if not self.skip_suite2p_var.get():
