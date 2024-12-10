@@ -10,7 +10,7 @@ set script_dir=%~dp0
 set src_dir=%script_dir%..\..\
 
 cd "%src_dir%\run_suite2p"
-python -m suite2p_detect
+python run_suite2p.py
 
 :: Deactivate the first environment
 CALL conda deactivate
@@ -18,16 +18,11 @@ CALL conda deactivate
 :: Activate the second virtual environment
 CALL "C:\miniforge3\Scripts\activate.bat" cascade
 
-CALL "C:\Users\jcbegs\miniforge3\Scripts\activate.bat" cascade
-
-CALL "C:\Users\jcbegs\miniforge3\Scripts\activate.bat" cascade
-
-
 cd "%src_dir%\run_cascade"
-python -m cascade_deconvolve
+python run_cascade_script.py
 
 :: Run the second script again bc it failes the first time
-python -m cascade_deconvolve
+python run_cascade_script.py
 
 :: Deactivate the second environment
 CALL conda deactivate
