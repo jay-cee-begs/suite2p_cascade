@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 import matplotlib.cm as cm
 import random
-from scipy.signal import find_peaks
+# from scipy.signal import find_peaks
 import pandas as pd
 from scipy.ndimage import binary_dilation, binary_fill_holes
 import scipy.stats as stats
@@ -81,35 +81,35 @@ def plot_group_histogram(group, predictions_deltaF_files): ## plots histograms o
 
     ## add titles axes labeling etc.
 
-def single_cell_peak_plotting(input_f, title): ## input f needs to be single cell
-    threshold = np.nanmedian(input_f)+np.nanstd(input_f)
-    peaks, _ = find_peaks(input_f, distance = 5, height = threshold)
-    plt.figure(figsize=(5,5))
-    plt.plot(input_f)
-    plt.plot(peaks, input_f[peaks], "x")
-    plt.plot(np.full_like(input_f, threshold), "--",color = "grey") ## height in find_peaks
-    plt.plot(np.full_like(input_f, np.nanmean(input_f)), "--", color = 'r')
-    plt.title(title)
-    plt.xlabel("frames")
-    plt.show()
+# def single_cell_peak_plotting(input_f, title): ## input f needs to be single cell
+#     threshold = np.nanmedian(input_f)+np.nanstd(input_f)
+#     peaks, _ = find_peaks(input_f, distance = 5, height = threshold)
+#     plt.figure(figsize=(5,5))
+#     plt.plot(input_f)
+#     plt.plot(peaks, input_f[peaks], "x")
+#     plt.plot(np.full_like(input_f, threshold), "--",color = "grey") ## height in find_peaks
+#     plt.plot(np.full_like(input_f, np.nanmean(input_f)), "--", color = 'r')
+#     plt.title(title)
+#     plt.xlabel("frames")
+#     plt.show()
 
-    ## not sure how useful, maybe calculate peaks by AUC??? ##
+#     ## not sure how useful, maybe calculate peaks by AUC??? ##
 
-def visualization_process_single_cell(F_files, deltaF_files, predictions_deltaF_files, cells_plotted):
-    for file_number in range(len(predictions_deltaF_files)):
-        ## try with corrected trace too ??
-        prediction_array = np.load(rf"{predictions_deltaF_files[file_number]}", allow_pickle=True)
-        rawF_array = np.load(rf"{F_files[file_number]}", allow_pickle=True)
-        deltaF_array = np.load(rf"{deltaF_files[file_number]}", allow_pickle=True)
-        sample = np.random.randint(0,len(prediction_array), cells_plotted)
-        for cell in sample:
-            print(f"raw fluorescence {predictions_deltaF_files[file_number][len(configurations.main_folder)+1:-38]}, cell {cell}")
-            single_cell_peak_plotting(rawF_array[cell], f"Raw fluorescence {predictions_deltaF_files[file_number][-45:-38]}, cell {cell}")
-            print(f"delta F {predictions_deltaF_files[file_number][len(configurations.main_folder)+1:-38]}, cell {cell}")
-            single_cell_peak_plotting(deltaF_array[cell], f"DeltaF {predictions_deltaF_files[file_number][-45:-38]}, cell {cell}")
-            print(f"cascade predictions {predictions_deltaF_files[file_number][len(configurations.main_folder)+1:-38]}, cell {cell}")
-            single_cell_peak_plotting(prediction_array[cell], f"Cascade predictions {predictions_deltaF_files[file_number][-45:-38]}, cell {cell}")
-## maybe move those not used anymore to unused to other functions script
+# def visualization_process_single_cell(F_files, deltaF_files, predictions_deltaF_files, cells_plotted):
+#     for file_number in range(len(predictions_deltaF_files)):
+#         ## try with corrected trace too ??
+#         prediction_array = np.load(rf"{predictions_deltaF_files[file_number]}", allow_pickle=True)
+#         rawF_array = np.load(rf"{F_files[file_number]}", allow_pickle=True)
+#         deltaF_array = np.load(rf"{deltaF_files[file_number]}", allow_pickle=True)
+#         sample = np.random.randint(0,len(prediction_array), cells_plotted)
+#         for cell in sample:
+#             print(f"raw fluorescence {predictions_deltaF_files[file_number][len(configurations.main_folder)+1:-38]}, cell {cell}")
+#             single_cell_peak_plotting(rawF_array[cell], f"Raw fluorescence {predictions_deltaF_files[file_number][-45:-38]}, cell {cell}")
+#             print(f"delta F {predictions_deltaF_files[file_number][len(configurations.main_folder)+1:-38]}, cell {cell}")
+#             single_cell_peak_plotting(deltaF_array[cell], f"DeltaF {predictions_deltaF_files[file_number][-45:-38]}, cell {cell}")
+#             print(f"cascade predictions {predictions_deltaF_files[file_number][len(configurations.main_folder)+1:-38]}, cell {cell}")
+#             single_cell_peak_plotting(prediction_array[cell], f"Cascade predictions {predictions_deltaF_files[file_number][-45:-38]}, cell {cell}")
+# ## maybe move those not used anymore to unused to other functions script
 
 def get_max_spike_across_frames(predictions_deltaF_file_list):
     total_list=[]
