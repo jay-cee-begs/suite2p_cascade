@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import networkx as nx
-from networkx.algorithms.community import greedy_modularity_communities
+from networkx.algorithms.community import greedy_modularity_communities, louvain_communities
 import multiprocessing
 
 def load_for_networkx(data_folder):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for well_x)
@@ -25,6 +25,8 @@ def load_for_networkx(data_folder):  ## creates a dictionary for the suite2p pat
     stat = transform.load_npy_array(os.path.join(data_folder, *transform.SUITE2P_STRUCTURE["stat"]))
     cascade_predictions = transform.load_npy_array(os.path.join(data_folder, *transform.SUITE2P_STRUCTURE["cascade_predictions"]))
     iscell = transform.load_npy_array(os.path.join(data_folder, *transform.SUITE2P_STRUCTURE['iscell']))[:,0].astype(bool)
+    filtered_spike_predictions = cascade_predictions[iscell]
+
     neuron_data = {}
 
     for idx, neuron_stat in enumerate(stat):
@@ -44,7 +46,7 @@ def load_for_networkx(data_folder):  ## creates a dictionary for the suite2p pat
         if value["IsUsed"]:
             filtered_neuron_data[key] = value
     
-    return  filtered_neuron_data
+    return  filtered_neuron_data, filtered_spike_predictions
 
 def create_template_matrix(neuron_data):
     num_neurons = len(neuron_data)
@@ -67,6 +69,27 @@ def getImg(ops):
     mimg *= 255
     mimg = mimg.astype(np.uint8)
     return mimg
+
+def build_spike_communities(neuron_data, spike_threshold = 0.3):
+    graph = nx.Graph()
+
+    for neuron_id, data in neuron_data.items():
+        graph.add_node(neuron_id, pos=(data['x'],data['y']))
+    
+    neuron_ids = list(neuron_data.items())
+    for i, neuron_1 in enumerate(neuron_ids):
+        for j, neuron_2 in enumerate(neuron_ids):
+            if i<j:
+                spikes_1 = neuron_data[neuron_1]['predicted_spikes']
+                spikes_2 = neuron_data[neuron_2]['predicted_spikes']
+                mask = ~np.isnan(spikes_1) & ~np.isnan(spikes_2)
+
+                if np.any(mask):
+                    correlation = np.corrcoef(spikes_1[mask], spikes_2[mask])[0,1]
+                    if correlation > spike_threshold:
+                        graph.add_edge(neuron_1, neuron_2, weight = correlation)
+    communities = louvain_communities(graph, weight = "weight")
+    return graph, communities
 
 def extract_and_plot_neuron_connections(node_graph, neuron_data, data_folder, sample_name, ops):
     # Prepare image
@@ -141,20 +164,21 @@ def extract_and_plot_neuron_connections(node_graph, neuron_data, data_folder, sa
     
     # Overlay graph on the image
     community_colors = [community_map[node] for node in node_graph.nodes]
-    cmap = matplotlib.cm.get_cmap('tab10')
-    community_ids = sorted(set(community_map.values()))
-    colors = cmap.colors[:len(community_ids)]
-    community_color_map = {community_id: colors[i] for i, community_id in enumerate(community_ids)}
-    community_colors = [community_map[node] for node in node_graph.nodes]
-    
-    nx.draw_networkx_nodes(
+    unique_clubs = len(set(community_colors))
+    plt.figure(figsize=(20,20))
+    ax = plt.gca()
+    nx.draw(
         node_graph,
         pos=pos,
         node_size=100,
         node_color=community_colors,
+
+        cmap=plt.cm.tab10,  # Use a colormap with distinct colors
+        ax = ax
     )
-    plt.tight_layout()
-    plt.savefig(os.path.join(data_folder, f"{sample_name}_networkx_image_overlay.png"))
+    ax.set_title(f"Community Detection with {unique_clubs} Communities (Corrected Positions)", fontsize = 24)
+    ax.set_xlabel(f"Sample: {sample_name}", fontsize = 18)
+    plt.savefig(os.path.join(data_folder, f"{sample_name}_networkx_connections.png"))
     plt.close()
     plt.figure(figsize=(10,6))
     communities = list(community_spikes.keys())
@@ -257,7 +281,20 @@ def test_extract_and_plot_neuron_connections(node_graph, neuron_data, data_folde
     return community_spikes, communities, df_edges, df_nodes
 
 
-    
+def calculate_synchrony(neuron_data, node_graph):
+
+    synchrony_scores = {}
+
+    for u, v in node_graph.edges():
+        spikes_u = neuron_data[u]['predicted_spikes']
+        spikes_v = neuron_data[v]['predicted_spikes']
+        mask = ~np.isnan(spikes_u) & ~np.isnan(spikes_v)
+
+        if np.sum(mask) > 1:
+            correlation = np.corrcoef(spikes_u[mask])
+        else:
+            correlation = np.nan
+
 def plot_neuron_connections(data_folder):
     print('extracting neuron data for network x')
     neuron_data = load_for_networkx(data_folder)
