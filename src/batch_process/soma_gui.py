@@ -494,8 +494,8 @@ class ConfigEditor:
         self.frame_rate_var.set(self.config.get('frame_rate', 10))
         self.ops_path_var.set(self.config.get('ops_path', ''))
         self.csc_path_var.set(self.config.get('cascade_file_path', ''))
-        self.groups = self.config.get('groups', [])
-        self.exp_condition = {key: value for key, value in self.config.get('exp_condition', {}).items()}
+        # self.groups = self.config.get('groups', [])
+        # self.exp_condition = {key: value for key, value in self.config.get('exp_condition', {}).items()}
         # self.timepoints = self.config.get('TimePoints', {})
         
         # Update the GUI components to reflect the new values
