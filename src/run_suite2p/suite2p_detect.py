@@ -11,6 +11,11 @@ import pandas as pd
 import seaborn as sns
 import scipy.stats as stats
 import pickle
+## import functions ##
+from run_cascade import functions_general
+from run_cascade import CASCADE_functions
+from plotting import functions_plots 
+from run_cascade import functions_data_transformation 
 
 ## import gui_configurations ##
 from batch_process import gui_configurations as configurations
