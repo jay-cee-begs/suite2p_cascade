@@ -6,9 +6,12 @@ src/batch_process/gui_configurations.py
 src/batch_process/jd_default_ops.py
 src/batch_process/jd_gui_extended.py
 src/batch_process/jd_gui_test.py
+src/batch_process/soma_gui.py
+src/batch_process/tab_gui.py
 src/plotting/__init__.py
 src/plotting/functions_plots.py
 src/plotting/jd_plot_functions.py
+src/plotting/networkx_functions.py
 src/plotting/plotting_constants.py
 src/run_cascade/CASCADE_functions.py
 src/run_cascade/__init__.py
