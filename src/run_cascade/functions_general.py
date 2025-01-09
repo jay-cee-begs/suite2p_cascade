@@ -3,27 +3,27 @@ import os, warnings
 import numpy as np
 import matplotlib.pyplot as plt
 from batch_process import gui_configurations as configurations
-from scipy.signal import find_peaks, peak_prominences
+# from scipy.signal import find_peaks, peak_prominences
 
 
-def find_predicted_peaks(cascade_predictions, return_peaks = True):
-    """User overview to find"""
-    peaks_list = []
-    amplitudes_list = []
+# def find_predicted_peaks(cascade_predictions, return_peaks = True):
+#     """User overview to find"""
+#     peaks_list = []
+#     amplitudes_list = []
 
-    for cell in cascade_predictions:
+#     for cell in cascade_predictions:
     
-        peaks, _ = find_peaks(cell, distance = 5)  ## adjust !!!
-        amplitudes = cell[peaks]
+#         peaks, _ = find_peaks(cell, distance = 5)  ## adjust !!!
+#         amplitudes = cell[peaks]
 
-        peaks_list.append(peaks)
-        amplitudes_list.append(amplitudes)
+#         peaks_list.append(peaks)
+#         amplitudes_list.append(amplitudes)
 
 
-    if return_peaks:
-        return peaks_list
-    else:
-        return amplitudes_list
+#     if return_peaks:
+#         return peaks_list
+#     else:
+#         return amplitudes_list
 
 def return_baseline_F(F, Fneu):
     """Returns the calculated baseline fluorescence for each cell and appends to the final dictionary"""

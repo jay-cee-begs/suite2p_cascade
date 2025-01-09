@@ -103,13 +103,13 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
             if type == 'violin':                                                                                # violin plot extra to allow us to plot quartiles inside, otherwise not needed
                 fig= sns.catplot(
                     data=df, kind=type, col = plotby, inner = 'quartiles',
-                    x=x, y=f,  aspect=aspct, height=hght, hue='Group', palette=palette, legend=legend)
+                    x=x, y=f,  aspect=1.5, height=hght, hue='Group', palette=palette, legend=legend)
                 print('Inner lines display quartiles, change in function if needed')
                     
             else:
                 fig= sns.catplot(
                     data=df, kind=type, col = plotby,
-                    x=x, y=f,  aspect=aspct, height=hght, hue='Group', palette=palette, legend=legend)
+                    x=x, y=f,  aspect=1.5, height=hght, hue='Group', palette=palette, legend=legend)
             
             for ax in fig.axes.flat:
                 ax.set_xlabel(x_label, fontsize=15)
@@ -138,11 +138,9 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
 
 # import configurations
 
-# if __name__ == "__main__":
-#     TimePoints = configurations.TimePoints
-#     Groups = configurations.Groups
-#     path = configurations.main_folder + '\\extension'
-#     load_and_adjust(TimePoints, Groups)
-
-#     ez_sign_plot(df, x, feature, type, plotby, testby,
-#                  stat_test=None, group_order=None, y_label="", x_label="", location='inside', legend=False, palette='Set3', aspct=0.5, hght=4): 
+if __name__ == "__main__":
+    path = gui_configurations.main_folder + '\\extension'
+    df = load_and_adjust(gui_configurations.TimePoints, gui_configurations.exp_condition)
+    importlib.reload(gui_configurations)
+    parameters = gui_configurations.parameters
+    ez_sign_plot(df, **parameters)
