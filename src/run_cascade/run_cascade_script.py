@@ -53,8 +53,8 @@ def main():
         fun_plot.plot_total_spikes_per_frame(file, spike_maximum, output)
         fun_plot.plot_average_spike_probability_per_frame(file, output)
 
-    functions_data_transformation.create_output_csv(configurations.main_folder, overwrite = True, iscell_check = False, update_iscell=True)
-    functions_data_transformation.csv_to_pickle(configurations.main_folder, overwrite = True)
+    functions_data_transformation.create_output_csv(gui_configurations.main_folder, overwrite = gui_configurations.overwrite, iscell_check = gui_configurations.iscell_check, update_iscell=gui_configurations.update_iscell)
+    functions_data_transformation.csv_to_pickle(gui_configurations.main_folder, overwrite = True)
     #TODO add an output for final_df for within python stuff
     # create_final_df(configurations.main_folder)
     functions_data_transformation.create_experiment_overview(configurations.main_folder, configurations.groups)

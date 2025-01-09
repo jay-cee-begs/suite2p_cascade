@@ -34,6 +34,9 @@ def load_and_adjust(TimePoints, Groups):
 def remove_underscores(input_string):
     return input_string.replace("_", " ")
 
+def reapply_underscores(input_string):
+    return input_string.replace(" ", "_") 
+
 def general_plotting_function(df, x, y, type, plotby):
 
     """General plotting function for different types of plots. Will return a catplot unless 'Swarm' is chosen. 
@@ -79,6 +82,7 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
         if type == 'swarm':                                                                                     # only works when not trying to plot by index 
             df_sort = df.groupby(df[plotby])                                                                    # sorts by whatever column you want
             for s in df_sort.groups.keys():                                                                     #iterates over the groups unique keys
+                f = reapply_underscores(f)
                 df_unique = df_sort.get_group(s)
                 fig, ax = plt.subplots()                                                                        #create ax to use change it later if needed
                 sns.swarmplot(x=x, y=f, data=df_unique, hue='Group', ax=ax)
@@ -115,8 +119,7 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
             
 
             if stat_test:
-                def reapply_underscores(input_string):
-                    return input_string.replace(" ", "_")
+
                 f = reapply_underscores(f)
                 for ax in fig.axes.flat:
                     annotator = Annotator(ax, testby, x=x, y=f, data=df, x_order=group_order, y_order=None)
