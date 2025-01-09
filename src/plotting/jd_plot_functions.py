@@ -31,7 +31,11 @@ def load_and_adjust(TimePoints, Groups):
     df2['Group'] = df2['Group'].replace(Groups)
     return df2
 
+def remove_underscores(input_string):
+    return input_string.replace("_", " ")
 
+def reapply_underscores(input_string):
+    return input_string.replace(" ", "_") 
 
 def general_plotting_function(df, x, y, type, plotby):
 
@@ -78,6 +82,7 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
         if type == 'swarm':                                                                                     # only works when not trying to plot by index 
             df_sort = df.groupby(df[plotby])                                                                    # sorts by whatever column you want
             for s in df_sort.groups.keys():                                                                     #iterates over the groups unique keys
+                f = reapply_underscores(f)
                 df_unique = df_sort.get_group(s)
                 fig, ax = plt.subplots()                                                                        #create ax to use change it later if needed
                 sns.swarmplot(x=x, y=f, data=df_unique, hue='Group', ax=ax)
@@ -85,7 +90,8 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
                 # plot specifics
                 ax.set_title(df_unique.Time_Point.iloc[0])
                 ax.set_xlabel(x_label, fontsize=15)
-                ax.set_ylabel(y_label, fontsize=15)
+                f = remove_underscores(f)
+                ax.set_ylabel(f, fontsize=15)
                 ax.set_xticklabels(ax.get_xticklabels(), fontsize=10)
 
                 print("Swarm plot does not support statistical tests, please use another plot type")
@@ -97,21 +103,24 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
             if type == 'violin':                                                                                # violin plot extra to allow us to plot quartiles inside, otherwise not needed
                 fig= sns.catplot(
                     data=df, kind=type, col = plotby, inner = 'quartiles',
-                    x=x, y=f,  aspect=aspct, height=hght, hue='Group', palette=palette, legend=legend)
+                    x=x, y=f,  aspect=1.5, height=hght, hue='Group', palette=palette, legend=legend)
                 print('Inner lines display quartiles, change in function if needed')
                     
             else:
                 fig= sns.catplot(
                     data=df, kind=type, col = plotby,
-                    x=x, y=f,  aspect=aspct, height=hght, hue='Group', palette=palette, legend=legend)
+                    x=x, y=f,  aspect=1.5, height=hght, hue='Group', palette=palette, legend=legend)
             
             for ax in fig.axes.flat:
                 ax.set_xlabel(x_label, fontsize=15)
-                ax.set_ylabel(y_label, fontsize=15)
+                f = remove_underscores(f)
+                ax.set_ylabel(f, fontsize=15)
                 ax.set_xticklabels(ax.get_xticklabels(),fontsize=10)
             
 
             if stat_test:
+
+                f = reapply_underscores(f)
                 for ax in fig.axes.flat:
                     annotator = Annotator(ax, testby, x=x, y=f, data=df, x_order=group_order, y_order=None)
                     annotator.configure(test=stat_test, text_format='star', loc=location, hide_non_significant=True)
@@ -129,11 +138,9 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
 
 # import configurations
 
-# if __name__ == "__main__":
-#     TimePoints = configurations.TimePoints
-#     Groups = configurations.Groups
-#     path = configurations.main_folder + '\\extension'
-#     load_and_adjust(TimePoints, Groups)
-
-#     ez_sign_plot(df, x, feature, type, plotby, testby,
-#                  stat_test=None, group_order=None, y_label="", x_label="", location='inside', legend=False, palette='Set3', aspct=0.5, hght=4): 
+if __name__ == "__main__":
+    path = gui_configurations.main_folder + '\\extension'
+    df = load_and_adjust(gui_configurations.TimePoints, gui_configurations.exp_condition)
+    importlib.reload(gui_configurations)
+    parameters = gui_configurations.parameters
+    ez_sign_plot(df, **parameters)

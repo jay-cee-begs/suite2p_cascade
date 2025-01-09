@@ -5,5 +5,7 @@ __pycache__
 *.txt
 !statannotations-req.txt
 *.egg-info\PKG-INFO
-
-*.txt
+src/batch_process/gui_configurations.py
+src/batch_process/Scripts/run_s2p_gui.bat
+\notebook_scripts\*
+*.bat

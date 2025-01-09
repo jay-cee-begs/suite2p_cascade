@@ -23,10 +23,14 @@ import configurations
 
 """Activate cascade env"""
 from batch_process import gui_configurations as configurations
-from run_cascade import run_cascade_scripts as run_cascade
 from plotting import functions_plots as fun_plots
-if __name__ == "__main__":
-    run_cascade.main()
 
-configurations.groups
+"""Activate cascade env"""
+from run_cascade import run_cascade_script
+from plotting import networkx_functions
+
+if __name__ == "__main__":
+    run_cascade_script.main()
+    networkx_functions.main()
+
 
