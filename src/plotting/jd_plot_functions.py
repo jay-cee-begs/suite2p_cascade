@@ -136,10 +136,8 @@ def ez_sign_plot(df, x, feature, type, plotby, testby,
 # import configurations
 
 if __name__ == "__main__":
-    TimePoints = gui_configurations.TimePoints
-    Groups = gui_configurations.Groups
     path = gui_configurations.main_folder + '\\extension'
-    load_and_adjust(TimePoints, Groups)
-
-    ez_sign_plot(df, x, feature, type, plotby, testby,
-                 stat_test=None, group_order=None, y_label="", x_label="", location='inside', legend=False, palette='Set3', aspct=0.5, hght=4) 
+    df = load_and_adjust(gui_configurations.TimePoints, gui_configurations.exp_condition)
+    importlib.reload(gui_configurations)
+    parameters = gui_configurations.parameters
+    ez_sign_plot(df, **parameters)
