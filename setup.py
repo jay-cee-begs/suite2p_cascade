@@ -43,13 +43,7 @@ setup(
     version='0.1',
     packages=find_packages('src'),
     package_dir={'': 'src'},
-    extra_require = {
-        "suite2p":env_requirements['suite2p'],
-        'cascade':env_requirements['cascade'],
-        'data_env':env_requirements['data_env']
 
-    }
-        # List your project dependencies here
     
 )
 
