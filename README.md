@@ -25,7 +25,7 @@ It is easiest to follow the instructions of Carsen Stringer's lab on the suite2p
 
 Please follow their instructions for installing suite2p and the GUI user interface (e.g. python -m pip install suite2p[gui])
 
-once the environment is activated, please also install *chardet* and *pyyaml* using either conda or pip
+once the environment is activated, please also install *nd2* and *nd2reader* using either conda or pip
 
 
 # INSTALLING CASCADE
