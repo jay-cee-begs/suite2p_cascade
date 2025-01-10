@@ -10,7 +10,7 @@ Designed to make calcium imagin
 
 There are several things that should be done before we install the actual repository itself. 
 
---First: 
+--First: You will need to use a python interpretter (either Anaconda, miniforge, python.exe, etc)
 
 ## Setup and Installation 
 
@@ -21,13 +21,12 @@ you will also need to create a fork of Cascade so that you can create an editabl
 
 # INSTALLING SUITE2P
 
-navigate to this repository that you installed locally on your device (most likely in ..\Documents\GitHub\suite_cascade1p)
+It is easiest to follow the instructions of Carsen Stringer's lab on the suite2p Github (https://github.com/MouseLand/suite2p)
 
-create the suite2p environment with the command $conda env create -n suite2p -f suite2p-req.yml
-suite2p requires python=3.8 and suite2p (version 0.14.0) to run
+Please follow their instructions for installing suite2p and the GUI user interface (e.g. python -m pip install suite2p[gui])
 
+once the environment is activated, please also install *chardet* and *pyyaml* using either conda or pip
 
-if the editable installation of the project fails with (pip install -e .), manually check to install $pip install chardet pyyaml$
 
 # INSTALLING CASCADE
 
@@ -37,18 +36,22 @@ The preferred method (for me and this project) is to fork the cascade master rep
 
 From here you will then create a new environment using python 3.7 (conda create -n Cascade python=3.7)
 
---Then navigate to the local cascade repository (most likely in ..\Documents\GitHub\Cascade) and install the setup.py file as an editable installation
+--Then navigate to the local cascade repository (most likely in ..\Documents\GitHub\Cascade) using cd and the directory you want to navigate to
+
+To install cascade, then run pip install -e . within the forked and cloned local repository
 
 **NOTE**: in order for this to work properly, you will have to install the language Rust (using all of the default options) if it is not installed already (https://rustup.rs/) and enabled Desktop development with C++ in Visual Studio (https://visualgdb.com/support/getvcpp/)
 
+
 Alternatively: you can follow the installation instructions in the Cascade master repository (https://github.com/HelmchenLabSoftware/Cascade)
 
-# INSTALLING DATA_ENV
+# INSTALLING DATA_ENV for plotting
 - for statannotations it is advised to install getzzes frk instead: pip3 install git+https://github.com/getzze/statannotations.git@compat-seaborn-13
 
-you can create the environment
+you can create the environment for plotting (conda create -n <your_env_name>)
 
-conda env create -n data_env -f statannotations-req.txt
+- for statannotations it is advised to install getzzes frk instead: pip3 install git+https://github.com/getzze/statannotations.git@compat-seaborn-13
+
 
 # Environment pip editable installations
 
