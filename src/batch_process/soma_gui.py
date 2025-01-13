@@ -52,7 +52,7 @@ class ConfigEditor:
         if 'pairs' not in self.config:
             self.config['pairs'] = []
         self.data_extension_var = tk.StringVar(value=self.config.get('data_extension', ''))
-        self.frame_rate_var = tk.IntVar(value=self.config.get('frame_rate', 0))
+        self.frame_rate_var = tk.IntVar(value=self.config.get('frame_rate', 10))
         self.ops_path_var = tk.StringVar(value=self.config.get('ops_path', ''))
         self.csc_path_var = tk.StringVar(value=self.config.get('cascade_file_path', ''))
         self.groups = self.config.get('groups', [])
