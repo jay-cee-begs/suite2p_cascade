@@ -11,7 +11,7 @@ class ConfigEditor:
     def __init__(self, master):
         self.master = master
         self.master.title("Ultimate Suite2P + Cascade Configuration Editor")
-        self.master.geometry("750x750")  # Set initial window size
+        self.master.geometry("700x750")  # Set initial window size
 
         # Create a canvas and a scrollbar
         self.canvas = tk.Canvas(master)
@@ -106,13 +106,14 @@ class ConfigEditor:
 
         # Option c: Create new ops file
         tk.Button(self.ops_frame, text="Create New Ops File (WIP)", command=self.create_new_ops_file).pack(pady=5, side=tk.LEFT)
-        tk.Label(self.scrollable_frame, text="Press any key in terminal when GUI is stuck", background='yellow').pack( padx=10, pady=5)
+        
         
         # Frame rate input
         self.Frame_frame = tk.Frame(self.scrollable_frame)
         self.Frame_frame.pack(padx=10, pady=5, anchor='w')
         tk.Label(self.Frame_frame, text="Frame Rate:").pack(side=tk.LEFT)
         tk.Entry(self.Frame_frame, textvariable=self.frame_rate_var, width =7).pack(padx=10)
+        tk.Label(self.scrollable_frame, text="Press any key in terminal when GUI is stuck", background='yellow').pack( padx=10, pady=5)
 
         # Editable exp_condition
         # tk.Label(self.scrollable_frame, text="Same goes for your Groups, dont leave the brackets empty:").pack(anchor='w')
