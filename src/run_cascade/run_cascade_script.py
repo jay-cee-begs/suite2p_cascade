@@ -6,15 +6,17 @@ import scipy.io as sio
 import ruamel.yaml as yaml
 yaml = yaml.YAML(typ='rt')
 
+
+
 from run_cascade import CASCADE_functions
 from run_cascade import functions_data_transformation 
-from plotting import functions_plots as fun_plot, networkx_functions as nx_plot
+from plotting import functions_plots as fun_plot
 from batch_process import gui_configurations as configurations
 
 
 def main():
     # ## get the names of the deltaF files from the functions_data_transformation.py file
-
+    functions_data_transformation.get_file_name_list(folder_path = configurations.main_folder, file_ending ="samples", supress_printing = True)
     deltaF = functions_data_transformation.get_file_name_list(folder_path = configurations.main_folder, file_ending = "deltaF.npy")
     # if len(deltaF_files) == 0:
     #     deltaF_files = get_file_name_list(folder_path = configurations.main_folder, file_ending = "deltaF.npy")
@@ -53,15 +55,14 @@ def main():
         fun_plot.plot_total_spikes_per_frame(file, spike_maximum, output)
         fun_plot.plot_average_spike_probability_per_frame(file, output)
 
-    functions_data_transformation.create_output_csv(gui_configurations.main_folder, overwrite = gui_configurations.overwrite, iscell_check = gui_configurations.iscell_check, update_iscell=gui_configurations.update_iscell)
-    functions_data_transformation.csv_to_pickle(gui_configurations.main_folder, overwrite = True)
+    functions_data_transformation.create_output_csv(configurations.main_folder, overwrite = configurations.overwrite, iscell_check = configurations.iscell_check, update_iscell=configurations.update_iscell)
+    functions_data_transformation.csv_to_pickle(configurations.main_folder, overwrite = True)
     #TODO add an output for final_df for within python stuff
     # create_final_df(configurations.main_folder)
     functions_data_transformation.create_experiment_overview(configurations.main_folder, configurations.groups)
 
 if __name__ == "__main__":
     main()
-    nx_plot.main()
 
 
 """To run:

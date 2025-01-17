@@ -32,18 +32,42 @@ once the environment is activated, please also install *nd2* and *nd2reader* usi
 
 There are multiple options for installing cascade. 
 
-The preferred method (for me and this project) is to fork the cascade master repository from Github to your own github (https://github.com/HelmchenLabSoftware/Cascade)
+The preferred method (for me and this project) is to fork the cascade repository that we have modified for local installation (https://github.com/jay-cee-begs/Cascade)
 
-From here you will then create a new environment using python 3.7 (conda create -n Cascade python=3.7)
+To run properly, this repository will need to be installed in some capacity on your local machine and accessible from the user interface (see below)
 
---Then navigate to the local cascade repository (most likely in ..\Documents\GitHub\Cascade) using cd and the directory you want to navigate to
+Next we will follow the instructions from the Cascade-master Github
 
-To install cascade, then run pip install -e . within the forked and cloned local repository
+First navigate to the local cascade repository (most likely in ..\Documents\GitHub\Cascade) using cd and the directory you want to navigate to
+
+Next run the following command: 
+
+conda create -n Cascade python=3.7 tensorflow==2.3 keras==2.3.1 h5py numpy scipy matplotlib seaborn ruamel.yaml
+
+You will then need to run:
+
+pip install networkx leidenalg
+
+Then, run the command: 
+
+pip install -e . 
+
+To install cascade, install  then run pip install -e . within the forked and cloned local repository
 
 **NOTE**: in order for this to work properly, you will have to install the language Rust (using all of the default options) if it is not installed already (https://rustup.rs/) and enabled Desktop development with C++ in Visual Studio (https://visualgdb.com/support/getvcpp/)
 
+# Environment pip editable installations
 
-Alternatively: you can follow the installation instructions in the Cascade master repository (https://github.com/HelmchenLabSoftware/Cascade)
+Within your command prompt, navigate to the head of your local copy of the suite2p_cascade project
+
+from here we will activate all the environments that need to access our project's source code and run the following command:
+
+pip install -e .
+
+which installs editable, custom code into your environment so it is easily accessible from anywhere on your computer
+
+
+### ***LEGACY CODE***
 
 # INSTALLING DATA_ENV for plotting
 - for statannotations it is advised to install getzzes frk instead: pip3 install git+https://github.com/getzze/statannotations.git@compat-seaborn-13
@@ -53,24 +77,6 @@ you can create the environment for plotting (conda create -n <your_env_name>)
 - for statannotations it is advised to install getzzes frk instead: pip3 install git+https://github.com/getzze/statannotations.git@compat-seaborn-13
 
 
-# Environment pip editable installations
-
-You can make custom scripts installable by users so they are easily accessible within the virtual environment
-
-first navigate to your local copy of this repository (cd ..\Documents\Github\suite_cascade1p)
-
-pip install -e .[*ENV_NAME*]
-you will need to pip install for each name
-
-OR
-
-activate each environment (e.g. conda activate suite2p, conda activate Cascade, etc.) and then run pip install -e . 
-
-
-if there are errors:
-run $python setup.py develop$
-
-to see exactly where the errors occur
 
 ## Workflow
 
@@ -95,24 +101,3 @@ it can be launched with $python -m jd_gui_extended$
 - call the GUI by executing jd_gui_test.py (plan to adjust so it can be launched by doubleclick)
 
 *minimal necessary structure: 
-
-### please type in your main folder path manually for the first time and set group_number to 0: ###
-
-main_folder = r'C:/Users/YourName/ExperimentFolder/Experiment' 
-group_number = 0
-
-### the pairs list and the parameters dictionary will have to be initiated as well, all the values will be changable in the GUI ###
-pairs = [ ]
-parameters = {
-    'testby': pairs,
-    'feature': ['Active_Neuron_Proportion', 'Total_Estimated_Spikes_proportion_scaled'],
-    'x': 'Group',
-    'type': 'swarm',
-    'plotby': 'Time_Point',
-    'y_label': 'y label',
-    'x_label': '',
-    'stat_test': 'Mann-Whitney',
-    'legend': 'auto',
-    'location': 'inside',
-    'palette': 'viridis',
-}
