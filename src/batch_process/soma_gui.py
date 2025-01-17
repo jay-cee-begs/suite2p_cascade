@@ -92,7 +92,7 @@ class ConfigEditor:
         # Ops path input
         self.ops_frame = tk.Frame(self.scrollable_frame)
         self.ops_frame.pack(padx=10, pady=5, anchor='w')
-        tk.Label(self.ops_frame, text="Ops Path Options:").pack(side=tk.LEFT)
+        tk.Label(self.ops_frame, text="Ops.npy Path Options:").pack(side=tk.LEFT)
         #tk.Entry(self.ops_frame, textvariable=self.ops_path_var, width=40).pack(side=tk.LEFT)
         
         
