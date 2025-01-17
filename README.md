@@ -44,6 +44,10 @@ Next run the following command:
 
 conda create -n Cascade python=3.7 tensorflow==2.3 keras==2.3.1 h5py numpy scipy matplotlib seaborn ruamel.yaml
 
+You will then need to run:
+
+pip install networkx leidenalg
+
 Then, run the command: 
 
 pip install -e . 
