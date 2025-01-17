@@ -210,14 +210,14 @@ def create_output_csv(input_path, overwrite=False, iscell_check=True, update_isc
         parent_iscell = load_npy_array(iscell_path)
         print("parent_iscell type:", type(parent_iscell))
         print("parent_iscell shape:", np.shape(parent_iscell))
-        update_iscell = parent_iscell.copy()
+        updated_iscell = parent_iscell.copy()
         # update_iscell[nid2idx, 0] = 1.0
         # update_iscell[nid2idx_rejected, 0] = 0.0
         if update_iscell:
             for idx in nid2idx:
-                update_iscell[idx] = [1.0, update_iscell[idx][1]]
+                updated_iscell[idx] = [1.0, updated_iscell[idx][1]]
             for idxr in nid2idx_rejected:
-                update_iscell[idxr] = [0.0, update_iscell[idxr][1]]
+                updated_iscell[idxr] = [0.0, updated_iscell[idxr][1]]
             np.save(iscell_path, update_iscell)
             print(f"Updated iscell.npy saved for {folder}")
 
@@ -244,7 +244,6 @@ def list_all_files_of_type(input_path, filetype):
     return [os.path.join(input_path, path) for path in os.listdir(input_path) if path.endswith(filetype)]
 
 def csv_to_pickle(main_folder, overwrite=True):
-    """creates pkl, output -> main_folder+r'\pkl_files'"""
     csv_files = list_all_files_of_type(main_folder+r"/csv_files", ".csv")
     print((csv_files))
     output_path = main_folder+r"/pkl_files"
