@@ -11,7 +11,7 @@ class ConfigEditor:
     def __init__(self, master):
         self.master = master
         self.master.title("Ultimate Suite2P + Cascade Configuration Editor")
-        self.master.geometry("600x750")  # Set initial window size
+        self.master.geometry("700x750")  # Set initial window size
 
         # Create a canvas and a scrollbar
         self.canvas = tk.Canvas(master)
@@ -61,49 +61,59 @@ class ConfigEditor:
         self.bin_width_var = tk.IntVar(value=self.config.get("BIN_WIDTH", ))
 
         # Main folder input
-        tk.Label(self.scrollable_frame, text="Experiment / Main Folder Path:").pack(anchor='w', padx=10, pady=5)
-        tk.Entry(self.scrollable_frame, textvariable=self.main_folder_var, width=50).pack(padx=10)
-        
+        self.main_frame = tk.Frame(self.scrollable_frame)
+        self.main_frame.pack(padx=10, pady=5, anchor='w')
+        tk.Label(self.main_frame, text="Experiment / Main Folder Path:").pack(side=tk.LEFT)
+        tk.Entry(self.main_frame, textvariable=self.main_folder_var, width=50).pack(side=tk.LEFT)
         # Button to open file explorer for selecting a folder
-        tk.Button(self.scrollable_frame, text="Browse", command=self.browse_folder).pack(padx=10, pady=5)
+        tk.Button(self.main_frame, text="Browse", command=self.browse_folder).pack(side=tk.LEFT)
         
 
         # Data extension input
-        tk.Label(self.scrollable_frame, text="Data Extension:").pack(anchor='w', padx=10, pady=5)
-        tk.Entry(self.scrollable_frame, textvariable=self.data_extension_var).pack(padx=10)
+        self.data_frame = tk.Frame(self.scrollable_frame)
+        self.data_frame.pack(padx=10, pady=5, anchor='w')
+        tk.Label(self.data_frame, text="Data Extension:").pack(side=tk.LEFT)
+        tk.Entry(self.data_frame, textvariable=self.data_extension_var, width= 7).pack(padx=10)
 
         
         # Group input
         self.group_frame = tk.Frame(self.scrollable_frame)
-        self.group_frame.pack(padx=10, pady=5)
+        self.group_frame.pack(padx=10, pady=5, anchor='w')
         tk.Label(self.group_frame, text="Adds all subfolders from the Experiment:").pack(side=tk.LEFT)
         tk.Button(self.group_frame, text="Add Experiment Conditions", command=self.add_group).pack(side=tk.LEFT)
 
         #cascade path input
         self.csc_frame = tk.Frame(self.scrollable_frame)
-        self.csc_frame.pack(padx=10, pady=5)
-        tk.Label(self.csc_frame, text="Only Change when Cascade installation changed:").pack(side=tk.LEFT)
+        self.csc_frame.pack(padx=10, pady=5, anchor='w')
+        tk.Label(self.csc_frame, text="Cascade File Path:").pack(side=tk.LEFT)
         tk.Entry(self.csc_frame, textvariable=self.csc_path_var, width=40).pack(side=tk.LEFT)
+        tk.Button(self.csc_frame, text="Browse", command=self.browse_cascade).pack(side=tk.LEFT)
        
         # Ops path input
-        tk.Label(self.scrollable_frame, text="Ops Path Options:").pack(anchor='w', padx=10, pady=5)
-        #tk.Entry(self.scrollable_frame, textvariable=self.ops_path_var, width=50).pack(padx=10)
+        self.ops_frame = tk.Frame(self.scrollable_frame)
+        self.ops_frame.pack(padx=10, pady=5, anchor='w')
+        tk.Label(self.ops_frame, text="Ops.npy Path Options:").pack(side=tk.LEFT)
+        #tk.Entry(self.ops_frame, textvariable=self.ops_path_var, width=40).pack(side=tk.LEFT)
+        
         
         # Option a: Insert file path
-        ops_frame = tk.Frame(self.scrollable_frame)
-        ops_frame.pack(padx=10, pady=5)
-        tk.Entry(ops_frame, textvariable=self.ops_path_var, width=40).pack(side=tk.LEFT)
-        tk.Button(ops_frame, text="Browse", command=self.browse_ops_file).pack(side=tk.LEFT)
+       
+        tk.Entry(self.ops_frame, textvariable=self.ops_path_var, width=40).pack(side=tk.LEFT)
+        tk.Button(self.ops_frame, text="Browse", command=self.browse_ops_file).pack(side=tk.LEFT)
 
         # Option b: Edit default ops
-        tk.Button(self.scrollable_frame, text="Edit Default Ops", command=self.edit_default_ops).pack(pady=5)
+        tk.Button(self.ops_frame, text="Edit Default Ops", command=self.edit_default_ops).pack(side=tk.LEFT)
 
         # Option c: Create new ops file
-        tk.Button(self.scrollable_frame, text="Create New Ops File (WIP)", command=self.create_new_ops_file).pack(pady=5)
-        tk.Label(self.scrollable_frame, text="Press any key in terminal when GUI is stuck").pack(anchor='w', padx=10, pady=5)
+        tk.Button(self.ops_frame, text="Create New Ops File (WIP)", command=self.create_new_ops_file).pack(pady=5, side=tk.LEFT)
+        
+        
         # Frame rate input
-        tk.Label(self.scrollable_frame, text="Frame Rate:").pack(anchor='w', padx=10, pady=5)
-        tk.Entry(self.scrollable_frame, textvariable=self.frame_rate_var).pack(padx=10)
+        self.Frame_frame = tk.Frame(self.scrollable_frame)
+        self.Frame_frame.pack(padx=10, pady=5, anchor='w')
+        tk.Label(self.Frame_frame, text="Frame Rate:").pack(side=tk.LEFT)
+        tk.Entry(self.Frame_frame, textvariable=self.frame_rate_var, width =7).pack(padx=10)
+        tk.Label(self.scrollable_frame, text="Press any key in terminal when GUI is stuck", background='yellow').pack( padx=10, pady=5)
 
         # Editable exp_condition
         # tk.Label(self.scrollable_frame, text="Same goes for your Groups, dont leave the brackets empty:").pack(anchor='w')
@@ -156,6 +166,11 @@ class ConfigEditor:
         folder_selected = filedialog.askdirectory()
         if folder_selected:
             self.main_folder_var.set(folder_selected)
+    
+    def browse_cascade(self):
+        folder_selected = filedialog.askdirectory()
+        if folder_selected:
+            self.csc_path_var.set(folder_selected)
 
 
     def load_config(self, filepath):
