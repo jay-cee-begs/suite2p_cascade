@@ -114,6 +114,9 @@ def create_df(suite2p_dict, use_iscell = False): ## creates df structure for sin
                        "group": suite2p_dict["Group"],
                        "dataset":suite2p_dict["sample"],
                        "file_name": suite2p_dict["file_name"]})
+    
+    df.index.set_names("NeuronID", inplace=True)
+
     if not use_iscell:
         df["IsUsed"] = df["EstimatedSpikes"] > 0
     else:
@@ -167,7 +170,7 @@ def load_suite2p_paths(data_folder, groups, main_folder, use_iscell = False):  #
    
     suite2p_dict["sample"] = sample_dict[data_folder]  ## gets the sample number for the corresponding well folder from the sample dict
  
-    suite2p_dict["file_name"] = str(os.path.join(data_folder, *SUITE2P_STRUCTURE["cascade_predictions"]))
+    suite2p_dict["file_name"] = str(os.path.join(data_folder.split('\\')[-1], *SUITE2P_STRUCTURE["cascade_predictions"]))
  
     return suite2p_dict
 
