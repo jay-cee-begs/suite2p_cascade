@@ -96,21 +96,14 @@ def create_df(suite2p_dict, use_iscell = False): ## creates df structure for sin
     avg_instantaneous_spike_rate, avg_cell_sds, avg_cell_cvs, avg_time_stamp_mean, avg_time_stamp_sds, avg_time_stamp_cvs = g_func.basic_stats_per_cell(suite2p_dict["cascade_predictions"])
     
    
-    df = pd.DataFrame({
-                    #    "ImgShape": ImgShape,
-                    #    "npix": suite2p_dict["stat"]["npix"],
-                    #    "xpix": suite2p_dict["stat"]["xpix"],
-                    #    "ypix": suite2p_dict["stat"]["ypix"],
-                    #    "Skew": suite2p_dict["stat"]["skew"],
+    df = pd.DataFrame({"IsUsed":suite2p_dict['IsUsed'],
                        "Baseline_F": F_baseline,
                        "EstimatedSpikes": estimated_spike_total,
                        "SD_Estimated_Spks":basic_cell_stats[1],
                        "cv_Estimated_Spks":basic_cell_stats[2],
                        "Total Frames": len(suite2p_dict["F"].T)-64,
                        "SpikesFreq": avg_instantaneous_spike_rate, ## -64 because first and last entries in cascade are NaN, thus not considered in estimated spikes)
-                    #    "Baseline_F": F_baseline,
-                    #    "Spikes_std": avg_cell_sds,
-                    #    "Spikes_CV": avg_cell_cvs, 
+
                        "group": suite2p_dict["Group"],
                        "dataset":suite2p_dict["sample"],
                        "file_name": suite2p_dict["file_name"]})
@@ -118,7 +111,7 @@ def create_df(suite2p_dict, use_iscell = False): ## creates df structure for sin
     df.index.set_names("NeuronID", inplace=True)
 
     if not use_iscell:
-        df["IsUsed"] = df["EstimatedSpikes"] > 0
+        df["IsUsed"] = df["EstimatedSpikes"] > 0.01
     else:
         df["IsUsed"] = suite2p_dict["IsUsed"]
 
