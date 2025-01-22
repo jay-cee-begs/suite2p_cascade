@@ -18,8 +18,8 @@ def main():
     # ## get the names of the deltaF files from the functions_data_transformation.py file
     functions_data_transformation.get_file_name_list(folder_path = configurations.main_folder, file_ending ="samples", supress_printing = True)
     deltaF = functions_data_transformation.get_file_name_list(folder_path = configurations.main_folder, file_ending = "deltaF.npy")
-    # if len(deltaF_files) == 0:
-    #     deltaF_files = get_file_name_list(folder_path = configurations.main_folder, file_ending = "deltaF.npy")
+    if len(deltaF) == 0:
+        deltaF_files = functions_data_transformation.get_file_name_list(folder_path = configurations.main_folder, file_ending = "deltaF.npy")
     deltaF_files =functions_data_transformation.get_file_name_list(folder_path = configurations.main_folder, file_ending = "deltaF.npy")
     try:
 
