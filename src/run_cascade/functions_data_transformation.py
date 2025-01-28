@@ -106,7 +106,8 @@ def create_df(suite2p_dict, use_iscell = False): ## creates df structure for sin
 
                        "group": suite2p_dict["Group"],
                        "dataset":suite2p_dict["sample"],
-                       "file_name": suite2p_dict["file_name"]})
+                       "file_name": suite2p_dict["file_name"]},
+                       index = range(0,len(suite2p_dict["F"])))
     
     df.index.set_names("NeuronID", inplace=True)
 
@@ -211,9 +212,10 @@ def create_output_csv(input_path, overwrite=False, iscell_check=True, update_isc
         # update_iscell[nid2idx_rejected, 0] = 0.0
         if update_iscell:
             for idx in nid2idx:
-                updated_iscell[idx] = [1.0, updated_iscell[idx][1]]
+                updated_iscell[idx, 0] = 1.0  # Update only the first column
             for idxr in nid2idx_rejected:
-                updated_iscell[idxr] = [0.0, updated_iscell[idxr][1]]
+                updated_iscell[idxr, 0] = 0.0
+
             np.save(iscell_path, update_iscell)
             print(f"Updated iscell.npy saved for {folder}")
 
