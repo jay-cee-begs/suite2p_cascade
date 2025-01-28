@@ -40,7 +40,7 @@ def plot_with_stats(data, metric, plot_type="violin"):
 
     # Add annotations
     annotator = Annotator(ax, pairs, data=filtered_data, x="Group", y=metric)
-    annotator.configure(test="t-test_ind", text_format="star", loc="inside", verbose=2)
+    annotator.configure(test="Kruskal", text_format="star", loc="inside", verbose=2)
     annotator.apply_and_annotate()
 
     # Customize and show the plot
