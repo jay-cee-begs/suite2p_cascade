@@ -15,7 +15,12 @@ python run_cascade_script.py
 python run_cascade_script.py
 
 :: Deactivate the second environment
-CALL conda deactivate
+
+cd "%src_dir%\plotting"
+
+python output_plots.py
+
+pause 
 
 :: Activate the plotting virtual environment
 @REM CALL "C:\miniforge3\Scripts\activate.bat" data_env
