@@ -216,7 +216,7 @@ def create_output_csv(input_path, overwrite=False, iscell_check=True, update_isc
             for idxr in nid2idx_rejected:
                 updated_iscell[idxr, 0] = 0.0
 
-            np.save(iscell_path, update_iscell)
+            np.save(iscell_path, updated_iscell)
             print(f"Updated iscell.npy saved for {folder}")
 
         else:
