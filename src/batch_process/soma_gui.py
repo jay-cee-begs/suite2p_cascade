@@ -56,7 +56,7 @@ class ConfigEditor:
         self.ops_path_var = tk.StringVar(value=self.config.get('ops_path', ''))
         self.csc_path_var = tk.StringVar(value=self.config.get('cascade_file_path', ''))
         self.groups = self.config.get('groups', [])
-        self.exp_condition = {key: value for key, value in self.config.get('exp_condition', {}).items()}
+        self.exp_condition = {}#{key: value for key, value in self.config.get('exp_condition', {}).items()}
         self.exp_dur_var = tk.IntVar(value=self.config.get("EXPERIMENT_DURATION", 60))
         self.bin_width_var = tk.IntVar(value=self.config.get("BIN_WIDTH", ))
 
