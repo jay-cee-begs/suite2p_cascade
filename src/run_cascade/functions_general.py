@@ -41,7 +41,7 @@ def return_baseline_F(F, Fneu):
         F_baseline = np.median(F_sample)
         baseline_F.append(F_baseline)
     baseline_F = np.array(baseline_F)
-    baseline_F = np.mean(baseline_F)
+    # baseline_F = np.mean(baseline_F)
     # np.save(f"{savepath}/F_baseline.npy", baseline_F, allow_pickle=True)
 
     return baseline_F
