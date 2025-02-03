@@ -189,7 +189,7 @@ class ConfigEditor:
     def add_group(self):
         self.groups.clear()
         main_folder = self.main_folder_var.get().strip()
-        if not os.path.exists(main_folder):
+        if not Path(main_folder).exists():
             messagebox.showerror("Error", "Main folder does not exist.")
             return
         
@@ -299,15 +299,20 @@ class ConfigEditor:
         BIN_WIDTH = self.bin_width_var.get()
         EXPERIMENT_DURATION = self.exp_dur_var.get()
 
-        if not os.path.exists(main_folder):
+        if not Path(main_folder).exists():
             messagebox.showerror("Error", "Main folder does not exist.")
             return
 
         exp_condition = {key_var.get(): value_var.get() for key_var, (key_var, value_var) in self.dict_vars.items()} ### ????????????? is this still needed?? 
 
         # Construct the absolute path to the configuration file, saving uses the same logic as loading now
-        script_dir = os.path.dirname(__file__)
-        config_filepath = os.path.join(script_dir, 'gui_configurations.py')
+        script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
+        config_filepath = (script_dir / "../../config").resolve()
+        if not config_filepath.exists():
+            config_filepath.mkdir(parents=True, exist_ok=True)
+        json_filepath = (script_dir / "../../config/config.json").resolve()  # Navigate to config folder
+        analysis_params_path = (script_dir / "../../config/analysis_params.json")
+        if analysis_params_path.exists():
 
         with open(config_filepath, 'w') as f:
             f.write('import numpy as np \n')
