@@ -6,6 +6,7 @@ import os
 import subprocess
 import time
 import threading 
+import json
 
 class ConfigEditor:
     def __init__(self, master):
@@ -36,7 +37,7 @@ class ConfigEditor:
         self.scrollbar.pack(side="right", fill="y")
 
         # Load existing configurations, needs an existing file to load from
-        self.config = self.load_config("gui_configurations.py")
+        self.config = self.load_config("config.json")
         
         if 'parameters' not in self.config:
             self.config['parameters'] = {
@@ -174,15 +175,12 @@ class ConfigEditor:
 
 
     def load_config(self, filepath):
-        config = {}
-        try:
-            # Get the directory of the current script
-            script_dir = os.path.dirname(__file__)
-            # Construct the absolute path to the configuration file
-            abs_filepath = os.path.join(script_dir, filepath)
-            
-            with open(abs_filepath) as f:
-                exec(f.read(), config)
+        try:    
+            script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
+            config_file_path = (script_dir / "../../config/config.json").resolve()  # Navigate to config folder
+
+            with open(config_file_path, 'r')as f:
+                config = json.load(f)
         except FileNotFoundError:
             messagebox.showerror("Error", "Configuration file not found. Starting with default settings.")
             return {}
