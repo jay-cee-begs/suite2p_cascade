@@ -38,7 +38,7 @@ def return_baseline_F(F, Fneu):
         middle = 0.5*len(corrected_trace)
         F_sample = (np.concatenate((corrected_trace[0:amount], corrected_trace[int(middle-amount/2):int(middle+amount/2)], 
                     corrected_trace[len(corrected_trace)-amount:len(corrected_trace)])))  #dynamically chooses beginning, middle, end 12.5%, changeable
-        F_baseline = np.mean(F_sample)
+        F_baseline = np.median(F_sample)
         baseline_F.append(F_baseline)
     baseline_F = np.array(baseline_F)
     # baseline_F = np.mean(baseline_F)

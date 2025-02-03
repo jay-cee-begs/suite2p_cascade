@@ -154,7 +154,10 @@ def main():
     # iterConvert()
     main_folder = configurations.main_folder
     data_extension = configurations.data_extension
-    # export_image_files_to_suite2p_format(main_folder, file_ending = '.' + data_extension)
+    first_pass_image_folders = get_all_image_folders_in_path(main_folder)
+    if len(first_pass_image_folders) == 0:
+        export_image_files_to_suite2p_format(main_folder, file_ending = '.' + data_extension)
+    
     image_folders = get_all_image_folders_in_path(main_folder)
     process_files_with_suite2p(image_folders)
 

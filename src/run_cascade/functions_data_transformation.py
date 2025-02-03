@@ -96,26 +96,23 @@ def create_df(suite2p_dict, use_iscell = False): ## creates df structure for sin
     avg_instantaneous_spike_rate, avg_cell_sds, avg_cell_cvs, avg_time_stamp_mean, avg_time_stamp_sds, avg_time_stamp_cvs = g_func.basic_stats_per_cell(suite2p_dict["cascade_predictions"])
     
    
-    df = pd.DataFrame({
-                    #    "ImgShape": ImgShape,
-                    #    "npix": suite2p_dict["stat"]["npix"],
-                    #    "xpix": suite2p_dict["stat"]["xpix"],
-                    #    "ypix": suite2p_dict["stat"]["ypix"],
-                    #    "Skew": suite2p_dict["stat"]["skew"],
+    df = pd.DataFrame({"IsUsed":suite2p_dict['IsUsed'],
                        "Baseline_F": F_baseline,
                        "EstimatedSpikes": estimated_spike_total,
                        "SD_Estimated_Spks":basic_cell_stats[1],
                        "cv_Estimated_Spks":basic_cell_stats[2],
                        "Total Frames": len(suite2p_dict["F"].T)-64,
                        "SpikesFreq": avg_instantaneous_spike_rate, ## -64 because first and last entries in cascade are NaN, thus not considered in estimated spikes)
-                    #    "Baseline_F": F_baseline,
-                    #    "Spikes_std": avg_cell_sds,
-                    #    "Spikes_CV": avg_cell_cvs, 
+
                        "group": suite2p_dict["Group"],
                        "dataset":suite2p_dict["sample"],
-                       "file_name": suite2p_dict["file_name"]})
+                       "file_name": suite2p_dict["file_name"]},
+                       index = range(0,len(suite2p_dict["F"])))
+    
+    df.index.set_names("NeuronID", inplace=True)
+
     if not use_iscell:
-        df["IsUsed"] = df["EstimatedSpikes"] > 0
+        df["IsUsed"] = df["EstimatedSpikes"] > 0.01
     else:
         df["IsUsed"] = suite2p_dict["IsUsed"]
 
@@ -167,7 +164,7 @@ def load_suite2p_paths(data_folder, groups, main_folder, use_iscell = False):  #
    
     suite2p_dict["sample"] = sample_dict[data_folder]  ## gets the sample number for the corresponding well folder from the sample dict
  
-    suite2p_dict["file_name"] = str(os.path.join(data_folder, *SUITE2P_STRUCTURE["cascade_predictions"]))
+    suite2p_dict["file_name"] = str(os.path.join(data_folder.split('\\')[-1], *SUITE2P_STRUCTURE["cascade_predictions"]))
  
     return suite2p_dict
 
@@ -215,10 +212,11 @@ def create_output_csv(input_path, overwrite=False, iscell_check=True, update_isc
         # update_iscell[nid2idx_rejected, 0] = 0.0
         if update_iscell:
             for idx in nid2idx:
-                updated_iscell[idx] = [1.0, updated_iscell[idx][1]]
+                updated_iscell[idx, 0] = 1.0  # Update only the first column
             for idxr in nid2idx_rejected:
-                updated_iscell[idxr] = [0.0, updated_iscell[idxr][1]]
-            np.save(iscell_path, update_iscell)
+                updated_iscell[idxr, 0] = 0.0
+
+            np.save(iscell_path, updated_iscell)
             print(f"Updated iscell.npy saved for {folder}")
 
         else:

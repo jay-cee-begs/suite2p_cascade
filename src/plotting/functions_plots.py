@@ -196,7 +196,7 @@ def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
     """Accesses suite2p stats on ROIs and filters ROIs based on cascade spike probability being >= 1 into nid2idx and nid2idx_rejected (respectively)"""
     stat = suite2p_dict['stat']
     iscell = suite2p_dict['iscell']
-    MIN_PROB = 0.0001
+    MIN_PROB = 0.1
     min_radius = 3
     pixel2neuron = np.full(frame_shape, fill_value=np.nan, dtype=float)
     scatters = dict(x=[], y=[], color=[], text=[])

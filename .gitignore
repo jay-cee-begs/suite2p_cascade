@@ -10,7 +10,6 @@ __pycache__/
 src/batch_process/gui_configurations.py
 *.bat
 notebook_scripts/*
-src/batch_process/gui_configurations.py
 src/suite2p_cascade.egg-info/dependency_links.txt
 src/suite2p_cascade.egg-info/SOURCES.txt
 src/suite2p_cascade.egg-info/top_level.txt

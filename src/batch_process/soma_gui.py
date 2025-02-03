@@ -56,7 +56,7 @@ class ConfigEditor:
         self.ops_path_var = tk.StringVar(value=self.config.get('ops_path', ''))
         self.csc_path_var = tk.StringVar(value=self.config.get('cascade_file_path', ''))
         self.groups = self.config.get('groups', [])
-        self.exp_condition = {key: value for key, value in self.config.get('exp_condition', {}).items()}
+        self.exp_condition = {}#{key: value for key, value in self.config.get('exp_condition', {}).items()}
         self.exp_dur_var = tk.IntVar(value=self.config.get("EXPERIMENT_DURATION", 60))
         self.bin_width_var = tk.IntVar(value=self.config.get("BIN_WIDTH", ))
 
@@ -293,11 +293,11 @@ class ConfigEditor:
         messagebox.showinfo("Config Reloaded", "Configuration file has been reloaded successfully.")
     
     def save_config(self):
-        main_folder = self.main_folder_var.get().strip()
+        main_folder = str(Path(self.main_folder_var.get().strip()).resolve())
         data_extension = self.data_extension_var.get().strip()
         frame_rate = self.frame_rate_var.get()
-        ops_path = self.ops_path_var.get().strip()
-        csc_path = self.csc_path_var.get().strip()
+        ops_path = str(Path(self.ops_path_var.get().strip()).resolve())
+        csc_path = str(Path(self.csc_path_var.get().strip()).resolve())
         BIN_WIDTH = self.bin_width_var.get()
         EXPERIMENT_DURATION = self.exp_dur_var.get()
 
