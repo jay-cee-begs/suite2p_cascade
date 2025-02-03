@@ -313,48 +313,80 @@ class ConfigEditor:
         json_filepath = (script_dir / "../../config/config.json").resolve()  # Navigate to config folder
         analysis_params_path = (script_dir / "../../config/analysis_params.json")
         if analysis_params_path.exists():
+            with open(analysis_params_path, 'r') as f:
+                analysis_params = json.load(f)
+        else:
+            analysis_params = {'overwrite_csv': False,
+            'overwrite_pkl': False,
+            'skew_threshold': 1.0,
+            'compactness_threshold': 1.4, #TODO implement cutoff / filter to rule out compact failing ROIs
+            "peak_detection_threshold": 4.5,
+            'peak_count_threshold': 2,
+            'Img_Overlay': 'max_proj',
+            'use_suite2p_ROI_classifier': False,
+            'update_suite2p_iscell': True,
+            'return_decay_times': False,
+            }
 
-        with open(config_filepath, 'w') as f:
-            f.write('import numpy as np \n')
-            f.write(f"main_folder = r'{main_folder}'\n")
-            for i, group in enumerate(self.groups, start=1):
-                f.write(f"group{i} = main_folder + r'{group}'\n")
-            f.write(f"group_number = {len(self.groups)}\n")
-            f.write(f"data_extension = '{data_extension}'\n")
-            f.write(f"frame_rate = {frame_rate}\n")
-            f.write(f"cascade_file_path = r'{csc_path}'\n")
-            f.write(f"ops_path = r'{ops_path}'\n")
-            f.write("ops = np.load(ops_path, allow_pickle=True).item()\n")
-            f.write("ops['frame_rate'] = frame_rate\n")
-            f.write("ops['input_format'] = data_extension\n")
-            f.write(f"BIN_WIDTH = {BIN_WIDTH}\n")
-            f.write(f"EXPERIMENT_DURATION = {EXPERIMENT_DURATION}\n")
-            f.write("FRAME_INTERVAL = 1 / frame_rate\n")
-            f.write("FILTER_NEURONS = True\n")
-            f.write("exp_condition = {\n")
-            for key, (key_var, value_var) in self.dict_vars.items():
-                f.write(f"    '{key_var.get()}': '{value_var.get()}',\n")
-            f.write("}\n")
+        config_data = {
+            "general_settings":{
+                "main_folder": main_folder,
+                "groups": [str(Path(main_folder) / condition) for condition in self.dict_vars.keys()],
+                "group_number": len(self.groups),
+                "exp_condition": {key_var.get(): value_var.get() for key_var, (key_var, value_var) in self.dict_vars.items()},
+                "data_extension": data_extension,
+                "frame_rate": frame_rate,
+                "ops_path": ops_path,
+                "BIN_WIDTH": BIN_WIDTH,
+                "EXPERIMENT_DURATION": EXPERIMENT_DURATION,
+                "FRAME_INTERVAL": 1 / float(frame_rate),
+                "FILTER_NEURONS": True,
+            },
+            "cascade_settings": {},
+            "analysis_params": {}, #TODO add in analysis parameters calls
+        }
+        with open(json_filepath, 'w') as json_file:
+            json.dump(config_data, json_file, indent = 1)
 
-            if self.iscell_var.get() == False:
-                f.write("overwrite = True \n")
-                f.write("iscell_check= False \n")
-                f.write("update_iscell = True \n")
-            else:
-                f.write("overwrite = False \n")
-                f.write("iscell_check= True \n")
-                f.write("update_iscell = False \n")
+        # with open(config_filepath, 'w') as f:
+        #     f.write('import numpy as np \n')
+        #     f.write(f"main_folder = r'{main_folder}'\n")
+        #     for i, group in enumerate(self.groups, start=1):
+        #         f.write(f"group{i} = main_folder + r'{group}'\n")
+        #     f.write(f"group_number = {len(self.groups)}\n")
+        #     f.write(f"data_extension = '{data_extension}'\n")
+        #     f.write(f"frame_rate = {frame_rate}\n")
+        #     f.write(f"cascade_file_path = r'{csc_path}'\n")
+        #     f.write(f"ops_path = r'{ops_path}'\n")
+        #     f.write("ops = np.load(ops_path, allow_pickle=True).item()\n")
+        #     f.write("ops['frame_rate'] = frame_rate\n")
+        #     f.write("ops['input_format'] = data_extension\n")
+        #     f.write(f"BIN_WIDTH = {BIN_WIDTH}\n")
+        #     f.write(f"EXPERIMENT_DURATION = {EXPERIMENT_DURATION}\n")
+        #     f.write("FRAME_INTERVAL = 1 / frame_rate\n")
+        #     f.write("FILTER_NEURONS = True\n")
+        #     f.write("exp_condition = {\n")
+        #     for key, (key_var, value_var) in self.dict_vars.items():
+        #         f.write(f"    '{key_var.get()}': '{value_var.get()}',\n")
+        #     f.write("}\n")
+
+            #TODO examine iscell_var to fix calls for json file
+
+            # if self.iscell_var.get() == False:
+            #     f.write("overwrite = True \n")
+            #     f.write("iscell_check= False \n")
+            #     f.write("update_iscell = True \n")
+            # else:
+            #     f.write("overwrite = False \n")
+            #     f.write("iscell_check= True \n")
+            #     f.write("update_iscell = False \n")
             
-            #### Add addtionals here, maybe make them editable in the gui as well
-            f.write("## Additional configurations\n")
-            f.write("nb_neurons = 16\n")
-            f.write('model_name = "Global_EXC_10Hz_smoothing200ms"\n')
-            f.write("FILTER_NEURONS = True\n")
-            f.write("groups = []\n")
-            f.write("for n in range(group_number):\n")
-            f.write("    group_name = f\"group{n + 1}\"\n")
-            f.write("    if group_name in locals():\n")
-            f.write("        groups.append(locals()[group_name])\n")
+            # #### Add addtionals here, maybe make them editable in the gui as well
+            # #TODO implement additional parameters to json file
+            # f.write("## Additional configurations\n")
+            # f.write("nb_neurons = 16\n")
+            # f.write('model_name = "Global_EXC_10Hz_smoothing200ms"\n')
+            # f.write("FILTER_NEURONS = True\n")
         messagebox.showinfo("Success", "Configurations saved successfully.")
 
         #reload the gui
@@ -480,8 +512,6 @@ class ConfigEditor:
         messagebox.showinfo("Suite2P GUI", "Running Suite2P GUI... (implement this function)")
 
 ###### Progress bar #####
-
-
 
     def process_files(self):
         if not self.skip_suite2p_var.get():
