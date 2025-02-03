@@ -56,47 +56,28 @@ which will allow you to install models for deconvolution based on experimental s
 # Workflow
 
 * Prior to starting you should organize your data into the following experiment structure
-
+```
     \path\to\experiment\folder
-
     ├───experiment_condition_folder_1
-
     │   ├───image_or_image_folder_1
-
     │   ├───image_or_image_folder_2
-
     │   ├───image_or_image_folder_3
-
     │       
-
     ├───experiment_condition_folder_2
-
     │   ├───image_or_image_folder_1
-
     │   ├───image_or_image_folder_2
-
     │   └───image_or_image_folder_3
-
     │       
-
     ├───experiment_condition_folder_3
-
     │   ├───image_or_image_folder_1
-
     │   ├───image_or_image_folder_2
-
     │   └───image_or_image_folder_3
-
     │       
-
     ├───experiment_condition_folder_4
-
     │   ├───image_or_image_folder_1
-
     │   ├───image_or_image_folder_2
-
     │   ├───image_or_image_folder_3
-
+```
 * Both image files and folders with images are acceptable. The code will look for image folders containing single image files; if it finds none, it will move all image files of a particular type (e.g. nd2 / tif) into folders of the same name automatically
 
 
