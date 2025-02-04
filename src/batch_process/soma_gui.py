@@ -149,7 +149,48 @@ class ConfigEditor:
         scripts_dir = current_dir / "Scripts"
         bat_file = scripts_dir / "edit_cascade_settings.bat"
         subprocess.call([str(bat_file)])  # Execute run_default_ops.bat
+        self.merge_cascade_settings()
 
+    def merge_cascade_settings(self):
+        script_dir = Path(__file__).resolve().parent
+        cascade_settings_file = script_dir / "../../config/cascade_settings.json"
+        config_file_path = script_dir / "../../config/config.json"
+
+        if Path(cascade_settings_file).exists():
+            with open(cascade_settings_file, 'r') as f:
+                cascade_settings = json.load(f)
+        
+            if Path(config_file_path).exists():
+                with open(config_file_path, 'r') as f:
+                    config_data = json.load(f)
+            else:
+                config_data = {}
+            
+            config_data['cascade_settings'] = cascade_settings
+            with open(config_file_path, 'w') as f:
+                json.dump(config_data, f, indent=1)
+
+            messagebox.showinfo("Success","Cascade settings were updated! \n Merged with config.json was successful!")
+        else:
+            messagebox.showerror("Error", "No analysis parameters found;\n using default parameters")
+            
+            cascade_settings = { #self.default_cascade_parameters
+            'predicted_spike_threshold': 0.1, #need to check if 0.0 or 0.1 gives different results
+            'nb_neurons': 16,
+            'model_name': "Global_EXC_10Hz_smoothing200ms",
+            'use_suite2p_ROI_classifier': False,
+            'update_suite2p_iscell': True,
+            'overwrite_existing_cascade_output': False,
+        }
+            if Path(config_file_path).exists():
+                with open(config_file_path, 'r') as f:
+                    config_data = json.load(f)
+            else:
+                config_data = {}
+            
+            config_data['cascade_settings'] = cascade_settings
+
+    
     def create_new_ops_file(self):
         """Call the function to create new ops file"""
         current_dir = Path(__file__).parent
