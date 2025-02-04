@@ -102,9 +102,7 @@ class ConfigEditor:
         tk.Entry(self.ops_frame, textvariable=self.ops_path_var, width=40).pack(side=tk.LEFT)
         tk.Button(self.ops_frame, text="Browse", command=self.browse_ops_file).pack(side=tk.LEFT)
 
-        # Option b: Edit default ops
-        tk.Button(self.ops_frame, text="Edit Default Ops", command=self.edit_default_ops).pack(side=tk.LEFT)
-
+        
         # Option c: Create new ops file
         tk.Button(self.ops_frame, text="Create New Ops File (WIP)", command=self.create_new_ops_file).pack(pady=5, side=tk.LEFT)
         
@@ -138,16 +136,18 @@ class ConfigEditor:
     def setup_ui(self):
         # Setup the UI components in here in the future
         tk.Button(self.scrollable_frame, text="Save Configurations", command=self.save_config).pack(pady=10)
+        tk.Button(self.scrollable_frame, text="Edit Cascade Settings", command=self.edit_cascade_settings).pack(pady=5)
+
         self.create_process_buttons()
 
     def _on_mousewheel(self, event):
         self.canvas.yview_scroll(-1 * (event.delta // 120), "units")   
 
-    def edit_default_ops(self):
+    def edit_cascade_settings(self):
         """Call the function to edit default ops"""
         current_dir = Path(__file__).parent
         scripts_dir = current_dir / "Scripts"
-        bat_file = scripts_dir / "run_default_ops.bat"
+        bat_file = scripts_dir / "edit_cascade_settings.bat"
         subprocess.call([str(bat_file)])  # Execute run_default_ops.bat
 
     def create_new_ops_file(self):
@@ -311,12 +311,12 @@ class ConfigEditor:
         if not config_filepath.exists():
             config_filepath.mkdir(parents=True, exist_ok=True)
         json_filepath = (script_dir / "../../config/config.json").resolve()  # Navigate to config folder
-        analysis_params_path = (script_dir / "../../config/analysis_params.json")
-        if analysis_params_path.exists():
-            with open(analysis_params_path, 'r') as f:
-                analysis_params = json.load(f)
+        cascade_settings_path = (script_dir / "../../config/cascade_settings.json")
+        if cascade_settings_path.exists():
+            with open(cascade_settings_path, 'r') as f:
+                cascade_settings = json.load(f)
         else:
-            analysis_params = {'overwrite_csv': False,
+            cascade_settings = {'overwrite_csv': False,
             'overwrite_pkl': False,
             'skew_threshold': 1.0,
             'compactness_threshold': 1.4, #TODO implement cutoff / filter to rule out compact failing ROIs
@@ -333,7 +333,7 @@ class ConfigEditor:
                 "main_folder": main_folder,
                 "groups": [str(Path(main_folder) / condition) for condition in self.dict_vars.keys()],
                 "group_number": len(self.groups),
-                "exp_condition": {key_var.get(): value_var.get() for key_var, (key_var, value_var) in self.dict_vars.items()},
+                # "exp_condition": {key_var.get(): value_var.get() for key_var, (key_var, value_var) in self.dict_vars.items()},
                 "data_extension": data_extension,
                 "frame_rate": frame_rate,
                 "ops_path": ops_path,
@@ -342,8 +342,8 @@ class ConfigEditor:
                 "FRAME_INTERVAL": 1 / float(frame_rate),
                 "FILTER_NEURONS": True,
             },
-            "cascade_settings": {},
-            "analysis_params": {}, #TODO add in analysis parameters calls
+            "cascade_settings": cascade_settings,
+            "cascade_settings": {}, #TODO add in analysis parameters calls
         }
         with open(json_filepath, 'w') as json_file:
             json.dump(config_data, json_file, indent = 1)
