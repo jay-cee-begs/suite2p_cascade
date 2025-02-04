@@ -89,12 +89,12 @@ def create_df(suite2p_dict, use_iscell = False): ## creates df structure for sin
  
     ## spike_amplitudes = find_predicted_peaks(suite2p_dict["cascade_predictions"], return_peaks = False) ## removed
     # spikes_per_neuron = find_predicted_peaks(suite2p_dict["cascade_predictions"]) ## removed
- 
-    estimated_spike_total = np.array(g_func.summed_spike_probs_per_cell(suite2p_dict["cascade_predictions"]))
+    masked_cascade_prediction = np.array(g_func.filter_cascade_predictions(suite2p_dict['cascade_predictions']))
+    estimated_spike_total = np.array(g_func.summed_spike_probs_per_cell(masked_cascade_prediction))
     # estimated_spike_std = np.std(np.array(summed_spike_probs_per_cell(suite2p_dict["cascade_predictions"])))
-    basic_cell_stats = g_func.basic_estimated_stats_per_cell(suite2p_dict['cascade_predictions'])
+    basic_cell_stats = g_func.basic_estimated_stats_per_cell(masked_cascade_prediction)
     F_baseline = g_func.return_baseline_F(suite2p_dict["F"], suite2p_dict["Fneu"])
-    avg_instantaneous_spike_rate, avg_cell_sds, avg_cell_cvs, avg_time_stamp_mean, avg_time_stamp_sds, avg_time_stamp_cvs = g_func.basic_stats_per_cell(suite2p_dict["cascade_predictions"])
+    avg_instantaneous_spike_rate, avg_cell_sds, avg_cell_cvs, avg_time_stamp_mean, avg_time_stamp_sds, avg_time_stamp_cvs = g_func.basic_stats_per_cell(masked_cascade_prediction)
     
    
     df = pd.DataFrame({"IsUsed":suite2p_dict['IsUsed'],
