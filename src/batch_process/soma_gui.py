@@ -37,7 +37,7 @@ class ConfigEditor:
         self.scrollbar.pack(side="right", fill="y")
 
         # Load existing configurations, needs an existing file to load from
-        self.config = self.load_config("config.json")
+        self.config = self.load_config()
         
         if 'parameters' not in self.config:
             self.config['parameters'] = {
@@ -174,7 +174,7 @@ class ConfigEditor:
             self.csc_path_var.set(folder_selected)
 
 
-    def load_config(self, filepath):
+    def load_config(self):
         try:    
             script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
             config_file_path = (script_dir / "../../config/config.json").resolve()  # Navigate to config folder
@@ -275,7 +275,7 @@ class ConfigEditor:
     
     def reload_config(self):
         """Reload the configuration file to refresh the GUI."""
-        self.config = self.load_config("gui_configurations.py")  # Reload the configuration file
+        self.config = self.load_config("config.json")  # Reload the configuration file
         # Update the GUI variables with the new values from the config
         self.main_folder_var.set(self.config.get('main_folder', ''))
         self.data_extension_var.set(self.config.get('data_extension', ''))
