@@ -16,12 +16,10 @@ class OpsEditor:
         # Load default operations
         
     # Define the parameters you want to allow editing, optionally have all be editable? CHANGE TO RELEVANT PARAMETERS
-        self.editable_params = { #self.default_analysis_parameters
+        self.editable_params = { #self.default_cascade_parameters
             'predicted_spike_threshold': 0.1, #need to check if 0.0 or 0.1 gives different results
             'nb_neurons': 16,
-            "peak_detection_threshold": 4.5,
-            'peak_count_threshold': 2,
-            'model_name': 'max_proj',
+            'model_name': "Global_EXC_10Hz_smoothing200ms",
             'use_suite2p_ROI_classifier': False,
             'update_suite2p_iscell': True,
             'overwrite_existing_cascade_output': False,
@@ -40,8 +38,8 @@ class OpsEditor:
         else:
             return self.editable_params
     
-    def save_analysis_params(self):
-        analysis_params = Path(__file__).resolve().parent / "../../config/analysis_params.json"
+    def save_cascade_params(self):
+        cascade_params = Path(__file__).resolve().parent / "../../config/cascade_params.json"
         updated_params = {}
 
         # Create input fields for each parameter
@@ -56,7 +54,7 @@ class OpsEditor:
                 except ValueError:
                     messagebox.showerror("Error", f"Invalid value for {param}")
         
-        with open(analysis_params, 'w') as f:
+        with open(cascade_params, 'w') as f:
             json.dump(updated_params, f, indent = 4)
         
         self.master.quit()
@@ -88,7 +86,7 @@ class OpsEditor:
                 tk.Entry(self.master, textvariable=var, width=20).grid(row=idx, column=1, padx=10, pady=5)
             self.vars[param] = var
 
-        tk.Button(self.master, text="Save Configurations", command=self.save_analysis_params).grid(row=len(self.editable_params), column=0, columnspan=2, pady=20)
+        tk.Button(self.master, text="Save Configurations", command=self.save_cascade_params).grid(row=len(self.editable_params), column=0, columnspan=2, pady=20)
 
 if __name__ == "__main__":
     root = tk.Tk()
