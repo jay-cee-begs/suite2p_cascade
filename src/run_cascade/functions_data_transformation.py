@@ -3,8 +3,9 @@ import os
 import pandas as pd
 import numpy as np
 from run_cascade import functions_general as g_func
-from batch_process import gui_configurations as configurations 
+from batch_process.config_loader import load_json_config_file, load_json_dict
 from plotting import functions_plots as fun_plot 
+config = load_json_config_file()
 
 SUITE2P_STRUCTURE = {
     "F": ["suite2p", "plane0", "F.npy"],
@@ -191,7 +192,7 @@ def create_output_csv(input_path, overwrite=False, iscell_check=True, update_isc
             print(f"CSV file {translated_path} already exists!")
             continue
 
-        suite2p_dict = load_suite2p_paths(folder, configurations.groups, input_path)
+        suite2p_dict = load_suite2p_paths(folder, config.general_settings.groups, input_path)
 
         output_df = create_df(suite2p_dict)
     
@@ -226,7 +227,7 @@ def create_output_csv(input_path, overwrite=False, iscell_check=True, update_isc
         image_save_path = os.path.join(input_path, f"{folder}_plot.png") #TODO explore changing "input path" to "folder" to save the processing in the same 
         fun_plot.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
 
-    print(f"{len(well_folders)} .csv files were saved under {configurations.main_folder+r'/csv_files'}")
+    print(f"{len(well_folders)} .csv files were saved under {config.general_settings.main_folder+r'/csv_files'}")
 
 ## create .pkl and final df ##
 def get_pkl_file_name_list(folder_path): 
@@ -252,10 +253,10 @@ def csv_to_pickle(main_folder, overwrite=True):
         df = pd.read_csv(file)
         pkl_path = os.path.join(output_path, 
                                         f"{os.path.basename(file[:-4])}"
-                                        f"Dur{int(configurations.EXPERIMENT_DURATION)}s"
-                                        f"Int{int(configurations.FRAME_INTERVAL*1000)}ms"
-                                        f"Bin{int(configurations.BIN_WIDTH*1000)}ms"
-                                            + ("_filtered" if configurations.FILTER_NEURONS else "") +
+                                        f"Dur{int(config.general_settings.EXPERIMENT_DURATION)}s"
+                                        f"Int{int(config.general_settings.FRAME_INTERVAL*1000)}ms"
+                                        f"Bin{int(config.general_settings.BIN_WIDTH*1000)}ms"
+                                            + ("_filtered" if config.general_settings.FILTER_NEURONS else "") +
                                         ".pkl")
         if os.path.exists(pkl_path) and not overwrite:
             print(f"Processed file {pkl_path} already exists!")
@@ -382,5 +383,5 @@ def create_experiment_overview(main_folder, groups):
 
 
 if __name__ == "__main__":
-    create_output_csv(configurations.main_folder, overwrite=True, iscell_check=False, update_iscell=True)
-    csv_to_pickle(configurations.main_folder, overwrite = True)
+    create_output_csv(config.general_settings.main_folder, overwrite=True, iscell_check=False, update_iscell=True)
+    csv_to_pickle(config.general_settings.main_folder, overwrite = True)
