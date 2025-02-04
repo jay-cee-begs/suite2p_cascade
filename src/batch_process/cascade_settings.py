@@ -39,7 +39,7 @@ class OpsEditor:
             return self.editable_params
     
     def save_cascade_params(self):
-        cascade_params = Path(__file__).resolve().parent / "../../config/cascade_params.json"
+        cascade_params = Path(__file__).resolve().parent / "../../config/cascade_settings.json"
         updated_params = {}
 
         # Create input fields for each parameter
@@ -86,7 +86,7 @@ class OpsEditor:
                 tk.Entry(self.master, textvariable=var, width=20).grid(row=idx, column=1, padx=10, pady=5)
             self.vars[param] = var
 
-        tk.Button(self.master, text="Save Configurations", command=self.save_cascade_params).grid(row=len(self.editable_params), column=0, columnspan=2, pady=20)
+        tk.Button(self.master, text="Close", command=self.save_cascade_params).grid(row=len(self.editable_params), column=0, columnspan=2, pady=20)
 
 if __name__ == "__main__":
     root = tk.Tk()
