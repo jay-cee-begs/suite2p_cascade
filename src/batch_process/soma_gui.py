@@ -47,19 +47,26 @@ class ConfigEditor:
                 'legend': 'auto',                        # Default legend option
                 # Add other default parameters as needed
             }
+        general_settings = self.config.get("general_settings", {})
 
-        self.main_folder_var = tk.StringVar(value=self.config.get('main_folder', ''))
+        
+        # if 'parameters' not in self.config:
+        #     self.config['parameters'] = {
+        #         'feature': ['Active_Neuron_Proportion'],  # Default features
+        #         'legend': 'auto',                        # Default legend option
+        #         # Add other default parameters as needed
+        #     }
+
+        self.main_folder_var = tk.StringVar(value=general_settings.get('main_folder', ''))
         self.selected_bat_file = tk.StringVar()  # Initialize selected_bat_file
-        if 'pairs' not in self.config:
-            self.config['pairs'] = []
-        self.data_extension_var = tk.StringVar(value=self.config.get('data_extension', ''))
-        self.frame_rate_var = tk.IntVar(value=self.config.get('frame_rate', 10))
-        self.ops_path_var = tk.StringVar(value=self.config.get('ops_path', ''))
-        self.csc_path_var = tk.StringVar(value=self.config.get('cascade_file_path', ''))
-        self.groups = self.config.get('groups', [])
+        self.data_extension_var = tk.StringVar(value=general_settings.get('data_extension', ''))
+        self.frame_rate_var = tk.IntVar(value=general_settings.get('frame_rate', 10))
+        self.ops_path_var = tk.StringVar(value=general_settings.get('ops_path', ''))
+        self.csc_path_var = tk.StringVar(value=general_settings.get('cascade_file_path', ''))
+        self.groups = general_settings.get('groups', [])
         self.exp_condition = {}#{key: value for key, value in self.config.get('exp_condition', {}).items()}
-        self.exp_dur_var = tk.IntVar(value=self.config.get("EXPERIMENT_DURATION", 60))
-        self.bin_width_var = tk.IntVar(value=self.config.get("BIN_WIDTH", ))
+        self.exp_dur_var = tk.IntVar(value=general_settings.get("EXPERIMENT_DURATION", 60))
+        self.bin_width_var = tk.IntVar(value=general_settings.get("BIN_WIDTH", ))
 
         # Main folder input
         self.main_frame = tk.Frame(self.scrollable_frame)
@@ -144,7 +151,7 @@ class ConfigEditor:
         self.canvas.yview_scroll(-1 * (event.delta // 120), "units")   
 
     def edit_cascade_settings(self):
-        """Call the function to edit default ops"""
+        """Call the function to edit cascade analysis settings"""
         current_dir = Path(__file__).parent
         scripts_dir = current_dir / "Scripts"
         bat_file = scripts_dir / "edit_cascade_settings.bat"
@@ -376,6 +383,7 @@ class ConfigEditor:
                 "group_number": len(self.groups),
                 # "exp_condition": {key_var.get(): value_var.get() for key_var, (key_var, value_var) in self.dict_vars.items()},
                 "data_extension": data_extension,
+                "cascade_file_path": csc_path,
                 "frame_rate": frame_rate,
                 "ops_path": ops_path,
                 "BIN_WIDTH": BIN_WIDTH,
