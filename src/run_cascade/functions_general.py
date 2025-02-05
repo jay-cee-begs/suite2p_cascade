@@ -51,7 +51,7 @@ def filter_cascade_predictions(predictions_file):
     """Filter cells in cascade to remove cells with total activity less than threshold
     by setting immediately to 0 predicted spikes"""
     cascade_prediction = np.nan_to_num(predictions_file)
-    mask = np.sum(cascade_prediction, axis=1) <  config.cascade_settings.predicted_spike_threshold
+    mask = np.sum(cascade_prediction, axis=1) <  float(config.cascade_settings.predicted_spike_threshold)
     cascade_prediction[mask] = 0
     return cascade_prediction
 
