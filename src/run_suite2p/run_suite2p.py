@@ -150,8 +150,8 @@ def process_files_with_suite2p(image_list, ops):
                  print(f"Error processing {image_path}: {e}")
 
 def main():
-    main_folder = config.general_settings_main_folder
-    data_extension = config.general_settings_data_extension
+    main_folder = config.general_settings.main_folder
+    data_extension = config.general_settings.data_extension
     first_pass_image_folders = get_all_image_folders_in_path(main_folder)
     if len(first_pass_image_folders) == 0:
         export_image_files_to_suite2p_format(main_folder, file_ending = '.' + data_extension)
