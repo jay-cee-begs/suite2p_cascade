@@ -158,7 +158,8 @@ def main():
     
     image_folders = get_all_image_folders_in_path(main_folder)
     ops = np.load(config.general_settings.ops_path, allow_pickle=True).item()
-    #potential place to add in changes to ops to be done in post
+    ops['frame_rate'] = int(config.general_settings.frame_rate)
+    ops['input_format'] = config.general_settings.data_extension
     process_files_with_suite2p(image_folders, ops)
 
 
