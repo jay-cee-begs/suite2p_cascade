@@ -38,21 +38,14 @@ class ConfigEditor:
 
         # Load existing configurations, needs an existing file to load from
         self.config = self.load_config()
-        
-        if 'parameters' not in self.config:
-            self.config['parameters'] = {
-                'feature': ['Active_Neuron_Proportion'],  # Default features
-                'stat_test': 't-test',                   # Default stat_test
-                'type': 'box',                           # Default plot type
-                'legend': 'auto',                        # Default legend option
-                # Add other default parameters as needed
-            }
         general_settings = self.config.get("general_settings", {})
 
         
         # if 'parameters' not in self.config:
         #     self.config['parameters'] = {
         #         'feature': ['Active_Neuron_Proportion'],  # Default features
+        #         'stat_test': 't-test',                   # Default stat_test
+        #         'type': 'box',                           # Default plot type
         #         'legend': 'auto',                        # Default legend option
         #         # Add other default parameters as needed
         #     }
@@ -142,8 +135,9 @@ class ConfigEditor:
 ################ Functions AREA ################    put in seperate file eventually
     def setup_ui(self):
         # Setup the UI components in here in the future
-        tk.Button(self.scrollable_frame, text="Save Configurations", command=self.save_config).pack(pady=10)
         tk.Button(self.scrollable_frame, text="Edit Cascade Settings", command=self.edit_cascade_settings).pack(pady=5)
+        tk.Button(self.scrollable_frame, text="Edit Graphical Outputs", command=self.edit_graphical_outputs).pack(pady=10)
+        tk.Button(self.scrollable_frame, text="Save Configurations", command=self.save_config).pack(pady=10)
 
         self.create_process_buttons()
 
@@ -157,6 +151,14 @@ class ConfigEditor:
         bat_file = scripts_dir / "edit_cascade_settings.bat"
         subprocess.call([str(bat_file)])  # Execute run_default_ops.bat
         self.merge_cascade_settings()
+    
+    def edit_graphical_outputs(self):
+        """Call GUI to edit graphical outputs"""
+        current_dir = Path(__file__).parent
+        scripts_dir = current_dir / "Scripts"
+        bat_file = scripts_dir / "edit_graphical_outputs.bat"
+        subprocess.call([str(bat_file)])  # Execute run_default_ops.bat
+        self.merge_graphical_outputs()
 
     def merge_cascade_settings(self):
         script_dir = Path(__file__).resolve().parent
@@ -197,6 +199,43 @@ class ConfigEditor:
             
             config_data['cascade_settings'] = cascade_settings
 
+    def merge_graphical_outputs(self):
+            script_dir = Path(__file__).resolve().parent
+            graphical_outputs_file = script_dir / "../../config/cascade_settings.json"
+            config_file_path = script_dir / "../../config/config.json"
+
+            if Path(graphical_outputs_file).exists():
+                with open(graphical_outputs_file, 'r') as f:
+                    graphical_outputs = json.load(f)
+            
+                if Path(config_file_path).exists():
+                    with open(config_file_path, 'r') as f:
+                        config_data = json.load(f)
+                else:
+                    config_data = {}
+                
+                config_data['graphical_outputs'] = graphical_outputs
+                with open(config_file_path, 'w') as f:
+                    json.dump(config_data, f, indent=1)
+
+                messagebox.showinfo("Success","Graph Outputs were updated! \n Merged with config.json was successful!")
+            else:
+                messagebox.showerror("Error", "No graphical output json file was found;\n using default parameters")
+                
+                graphical_outputs = { #self.default_cascade_parameters
+                'total_estimated_spike_histogram': False, #need to check if 0.0 or 0.1 gives different results
+                'total_estimated_spikes_per_frame': True,
+                'avg_estimated_spikes_per_frame': True,
+                'Img_ROI_Overlay': 'max_proj',
+                
+            }
+                if Path(config_file_path).exists():
+                    with open(config_file_path, 'r') as f:
+                        config_data = json.load(f)
+                else:
+                    config_data = {}
+                
+                config_data['graphical_outputs'] = graphical_outputs
     
     def create_new_ops_file(self):
         """Call the function to create new ops file"""
@@ -360,6 +399,7 @@ class ConfigEditor:
             config_filepath.mkdir(parents=True, exist_ok=True)
         json_filepath = (script_dir / "../../config/config.json").resolve()  # Navigate to config folder
         cascade_settings_path = (script_dir / "../../config/cascade_settings.json")
+        graph_settings_path = (script_dir / "../../config/graph_settings.json")
         if cascade_settings_path.exists():
             with open(cascade_settings_path, 'r') as f:
                 cascade_settings = json.load(f)
@@ -374,6 +414,16 @@ class ConfigEditor:
             'use_suite2p_ROI_classifier': False,
             'update_suite2p_iscell': True,
             'return_decay_times': False,
+            }
+        if graph_settings_path.exists():
+            with open(graph_settings_path, 'r') as f:
+                graph_settings = json.load(f)
+        else:
+            graph_settings = {
+                'total_estimated_spike_histogram': False, 
+            'total_estimated_spikes_per_frame': True,
+            'avg_estimated_spikes_per_frame': True,
+            'Img_ROI_Overlay': 'max_proj',
             }
 
         config_data = {
@@ -392,7 +442,7 @@ class ConfigEditor:
                 "FILTER_NEURONS": True,
             },
             "cascade_settings": cascade_settings,
-            "cascade_settings": {}, #TODO add in analysis parameters calls
+            "graph_settings": graph_settings,
         }
         with open(json_filepath, 'w') as json_file:
             json.dump(config_data, json_file, indent = 1)
