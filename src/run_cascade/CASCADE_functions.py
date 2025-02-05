@@ -20,7 +20,8 @@ def check_for_cascade_model():
     cascade_file_path = config.general_settings.cascade_file_path
     cascade_path = Path(cascade_file_path).resolve()
     model_folder = cascade_path / "Pretrained_models"
-    available_model_path = cascade_file_path / "Pretrained_models/{config.cascade_settings.model_name}"
+    model_name = config.cascade_settings.model_name
+    available_model_path = model_folder / model_name
     if not available_model_path.exists():
        cascade.download_model(config.cascade_settings.model_name, model_folder=model_folder, verbose = 1)
        print(f"Successfully downloaded {cascade}")
