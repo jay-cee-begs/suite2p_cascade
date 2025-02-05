@@ -6,6 +6,7 @@ import os
 import subprocess
 import time
 import threading 
+import json
 
 class ConfigEditor:
     def __init__(self, master):
@@ -36,29 +37,29 @@ class ConfigEditor:
         self.scrollbar.pack(side="right", fill="y")
 
         # Load existing configurations, needs an existing file to load from
-        self.config = self.load_config("gui_configurations.py")
-        
-        if 'parameters' not in self.config:
-            self.config['parameters'] = {
-                'feature': ['Active_Neuron_Proportion'],  # Default features
-                'stat_test': 't-test',                   # Default stat_test
-                'type': 'box',                           # Default plot type
-                'legend': 'auto',                        # Default legend option
-                # Add other default parameters as needed
-            }
+        self.config = self.load_config()
+        general_settings = self.config.get("general_settings", {})
 
-        self.main_folder_var = tk.StringVar(value=self.config.get('main_folder', ''))
+        
+        # if 'parameters' not in self.config:
+        #     self.config['parameters'] = {
+        #         'feature': ['Active_Neuron_Proportion'],  # Default features
+        #         'stat_test': 't-test',                   # Default stat_test
+        #         'type': 'box',                           # Default plot type
+        #         'legend': 'auto',                        # Default legend option
+        #         # Add other default parameters as needed
+        #     }
+
+        self.main_folder_var = tk.StringVar(value=general_settings.get('main_folder', ''))
         self.selected_bat_file = tk.StringVar()  # Initialize selected_bat_file
-        if 'pairs' not in self.config:
-            self.config['pairs'] = []
-        self.data_extension_var = tk.StringVar(value=self.config.get('data_extension', ''))
-        self.frame_rate_var = tk.IntVar(value=self.config.get('frame_rate', 10))
-        self.ops_path_var = tk.StringVar(value=self.config.get('ops_path', ''))
-        self.csc_path_var = tk.StringVar(value=self.config.get('cascade_file_path', ''))
-        self.groups = self.config.get('groups', [])
+        self.data_extension_var = tk.StringVar(value=general_settings.get('data_extension', ''))
+        self.frame_rate_var = tk.IntVar(value=general_settings.get('frame_rate', 10))
+        self.ops_path_var = tk.StringVar(value=general_settings.get('ops_path', ''))
+        self.csc_path_var = tk.StringVar(value=general_settings.get('cascade_file_path', ''))
+        self.groups = general_settings.get('groups', [])
         self.exp_condition = {}#{key: value for key, value in self.config.get('exp_condition', {}).items()}
-        self.exp_dur_var = tk.IntVar(value=self.config.get("EXPERIMENT_DURATION", 60))
-        self.bin_width_var = tk.IntVar(value=self.config.get("BIN_WIDTH", ))
+        self.exp_dur_var = tk.IntVar(value=general_settings.get("EXPERIMENT_DURATION", 60))
+        self.bin_width_var = tk.IntVar(value=general_settings.get("BIN_WIDTH", ))
 
         # Main folder input
         self.main_frame = tk.Frame(self.scrollable_frame)
@@ -101,9 +102,7 @@ class ConfigEditor:
         tk.Entry(self.ops_frame, textvariable=self.ops_path_var, width=40).pack(side=tk.LEFT)
         tk.Button(self.ops_frame, text="Browse", command=self.browse_ops_file).pack(side=tk.LEFT)
 
-        # Option b: Edit default ops
-        tk.Button(self.ops_frame, text="Edit Default Ops", command=self.edit_default_ops).pack(side=tk.LEFT)
-
+        
         # Option c: Create new ops file
         tk.Button(self.ops_frame, text="Create New Ops File (WIP)", command=self.create_new_ops_file).pack(pady=5, side=tk.LEFT)
         
@@ -136,19 +135,108 @@ class ConfigEditor:
 ################ Functions AREA ################    put in seperate file eventually
     def setup_ui(self):
         # Setup the UI components in here in the future
+        tk.Button(self.scrollable_frame, text="Edit Cascade Settings", command=self.edit_cascade_settings).pack(pady=5)
+        tk.Button(self.scrollable_frame, text="Edit Graphical Outputs", command=self.edit_graphical_outputs).pack(pady=10)
         tk.Button(self.scrollable_frame, text="Save Configurations", command=self.save_config).pack(pady=10)
+
         self.create_process_buttons()
 
     def _on_mousewheel(self, event):
         self.canvas.yview_scroll(-1 * (event.delta // 120), "units")   
 
-    def edit_default_ops(self):
-        """Call the function to edit default ops"""
+    def edit_cascade_settings(self):
+        """Call the function to edit cascade analysis settings"""
         current_dir = Path(__file__).parent
         scripts_dir = current_dir / "Scripts"
-        bat_file = scripts_dir / "run_default_ops.bat"
+        bat_file = scripts_dir / "edit_cascade_settings.bat"
         subprocess.call([str(bat_file)])  # Execute run_default_ops.bat
+        self.merge_cascade_settings()
+    
+    def edit_graphical_outputs(self):
+        """Call GUI to edit graphical outputs"""
+        current_dir = Path(__file__).parent
+        scripts_dir = current_dir / "Scripts"
+        bat_file = scripts_dir / "edit_graphical_outputs.bat"
+        subprocess.call([str(bat_file)])  # Execute run_default_ops.bat
+        self.merge_graphical_outputs()
 
+    def merge_cascade_settings(self):
+        script_dir = Path(__file__).resolve().parent
+        cascade_settings_file = script_dir / "../../config/cascade_settings.json"
+        config_file_path = script_dir / "../../config/config.json"
+
+        if Path(cascade_settings_file).exists():
+            with open(cascade_settings_file, 'r') as f:
+                cascade_settings = json.load(f)
+        
+            if Path(config_file_path).exists():
+                with open(config_file_path, 'r') as f:
+                    config_data = json.load(f)
+            else:
+                config_data = {}
+            
+            config_data['cascade_settings'] = cascade_settings
+            with open(config_file_path, 'w') as f:
+                json.dump(config_data, f, indent=1)
+
+            messagebox.showinfo("Success","Cascade settings were updated! \n Merged with config.json was successful!")
+        else:
+            messagebox.showerror("Error", "No analysis parameters found;\n using default parameters")
+            
+            cascade_settings = { #self.default_cascade_parameters
+            'predicted_spike_threshold': 0.1, #need to check if 0.0 or 0.1 gives different results
+            'nb_neurons': 16,
+            'model_name': "Global_EXC_10Hz_smoothing200ms",
+            'use_suite2p_ROI_classifier': False,
+            'update_suite2p_iscell': True,
+            'overwrite_existing_cascade_output': False,
+        }
+            if Path(config_file_path).exists():
+                with open(config_file_path, 'r') as f:
+                    config_data = json.load(f)
+            else:
+                config_data = {}
+            
+            config_data['cascade_settings'] = cascade_settings
+
+    def merge_graphical_outputs(self):
+            script_dir = Path(__file__).resolve().parent
+            graphical_outputs_file = script_dir / "../../config/cascade_settings.json"
+            config_file_path = script_dir / "../../config/config.json"
+
+            if Path(graphical_outputs_file).exists():
+                with open(graphical_outputs_file, 'r') as f:
+                    graphical_outputs = json.load(f)
+            
+                if Path(config_file_path).exists():
+                    with open(config_file_path, 'r') as f:
+                        config_data = json.load(f)
+                else:
+                    config_data = {}
+                
+                config_data['graphical_outputs'] = graphical_outputs
+                with open(config_file_path, 'w') as f:
+                    json.dump(config_data, f, indent=1)
+
+                messagebox.showinfo("Success","Graph Outputs were updated! \n Merged with config.json was successful!")
+            else:
+                messagebox.showerror("Error", "No graphical output json file was found;\n using default parameters")
+                
+                graphical_outputs = { #self.default_cascade_parameters
+                'total_estimated_spike_histogram': False, #need to check if 0.0 or 0.1 gives different results
+                'total_estimated_spikes_per_frame': True,
+                'avg_estimated_spikes_per_frame': True,
+                'Img_ROI_Overlay': 'max_proj',
+                
+            }
+                if Path(config_file_path).exists():
+                    with open(config_file_path, 'r') as f:
+                        config_data = json.load(f)
+                else:
+                    config_data = {}
+                
+                config_data['graphical_outputs'] = graphical_outputs
+    
     def create_new_ops_file(self):
         """Call the function to create new ops file"""
         current_dir = Path(__file__).parent
@@ -173,16 +261,13 @@ class ConfigEditor:
             self.csc_path_var.set(folder_selected)
 
 
-    def load_config(self, filepath):
-        config = {}
-        try:
-            # Get the directory of the current script
-            script_dir = os.path.dirname(__file__)
-            # Construct the absolute path to the configuration file
-            abs_filepath = os.path.join(script_dir, filepath)
-            
-            with open(abs_filepath) as f:
-                exec(f.read(), config)
+    def load_config(self):
+        try:    
+            script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
+            config_file_path = (script_dir / "../../config/config.json").resolve()  # Navigate to config folder
+
+            with open(config_file_path, 'r')as f:
+                config = json.load(f)
         except FileNotFoundError:
             messagebox.showerror("Error", "Configuration file not found. Starting with default settings.")
             return {}
@@ -191,7 +276,7 @@ class ConfigEditor:
     def add_group(self):
         self.groups.clear()
         main_folder = self.main_folder_var.get().strip()
-        if not os.path.exists(main_folder):
+        if not Path(main_folder).exists():
             messagebox.showerror("Error", "Main folder does not exist.")
             return
         
@@ -277,7 +362,7 @@ class ConfigEditor:
     
     def reload_config(self):
         """Reload the configuration file to refresh the GUI."""
-        self.config = self.load_config("gui_configurations.py")  # Reload the configuration file
+        self.config = self.load_config("config.json")  # Reload the configuration file
         # Update the GUI variables with the new values from the config
         self.main_folder_var.set(self.config.get('main_folder', ''))
         self.data_extension_var.set(self.config.get('data_extension', ''))
@@ -301,57 +386,106 @@ class ConfigEditor:
         BIN_WIDTH = self.bin_width_var.get()
         EXPERIMENT_DURATION = self.exp_dur_var.get()
 
-        if not os.path.exists(main_folder):
+        if not Path(main_folder).exists():
             messagebox.showerror("Error", "Main folder does not exist.")
             return
 
         exp_condition = {key_var.get(): value_var.get() for key_var, (key_var, value_var) in self.dict_vars.items()} ### ????????????? is this still needed?? 
 
         # Construct the absolute path to the configuration file, saving uses the same logic as loading now
-        script_dir = os.path.dirname(__file__)
-        config_filepath = os.path.join(script_dir, 'gui_configurations.py')
+        script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
+        config_filepath = (script_dir / "../../config").resolve()
+        if not config_filepath.exists():
+            config_filepath.mkdir(parents=True, exist_ok=True)
+        json_filepath = (script_dir / "../../config/config.json").resolve()  # Navigate to config folder
+        cascade_settings_path = (script_dir / "../../config/cascade_settings.json")
+        graph_settings_path = (script_dir / "../../config/graph_settings.json")
+        if cascade_settings_path.exists():
+            with open(cascade_settings_path, 'r') as f:
+                cascade_settings = json.load(f)
+        else:
+            cascade_settings = {'overwrite_csv': False,
+            'overwrite_pkl': False,
+            'skew_threshold': 1.0,
+            'compactness_threshold': 1.4, #TODO implement cutoff / filter to rule out compact failing ROIs
+            "peak_detection_threshold": 4.5,
+            'peak_count_threshold': 2,
+            'Img_Overlay': 'max_proj',
+            'use_suite2p_ROI_classifier': False,
+            'update_suite2p_iscell': True,
+            'return_decay_times': False,
+            }
+        if graph_settings_path.exists():
+            with open(graph_settings_path, 'r') as f:
+                graph_settings = json.load(f)
+        else:
+            graph_settings = {
+                'total_estimated_spike_histogram': False, 
+            'total_estimated_spikes_per_frame': True,
+            'avg_estimated_spikes_per_frame': True,
+            'Img_ROI_Overlay': 'max_proj',
+            }
 
-        with open(config_filepath, 'w') as f:
-            f.write('import numpy as np \n')
-            f.write(f"main_folder = r'{main_folder}'\n")
-            for i, group in enumerate(self.groups, start=1):
-                f.write(f"group{i} = main_folder + r'{group}'\n")
-            f.write(f"group_number = {len(self.groups)}\n")
-            f.write(f"data_extension = '{data_extension}'\n")
-            f.write(f"frame_rate = {frame_rate}\n")
-            f.write(f"cascade_file_path = r'{csc_path}'\n")
-            f.write(f"ops_path = r'{ops_path}'\n")
-            f.write("ops = np.load(ops_path, allow_pickle=True).item()\n")
-            f.write("ops['frame_rate'] = frame_rate\n")
-            f.write("ops['input_format'] = data_extension\n")
-            f.write(f"BIN_WIDTH = {BIN_WIDTH}\n")
-            f.write(f"EXPERIMENT_DURATION = {EXPERIMENT_DURATION}\n")
-            f.write("FRAME_INTERVAL = 1 / frame_rate\n")
-            f.write("FILTER_NEURONS = True\n")
-            f.write("exp_condition = {\n")
-            for key, (key_var, value_var) in self.dict_vars.items():
-                f.write(f"    '{key_var.get()}': '{value_var.get()}',\n")
-            f.write("}\n")
+        config_data = {
+            "general_settings":{
+                "main_folder": main_folder,
+                "groups": [str(Path(main_folder) / condition) for condition in self.dict_vars.keys()],
+                "group_number": len(self.groups),
+                # "exp_condition": {key_var.get(): value_var.get() for key_var, (key_var, value_var) in self.dict_vars.items()},
+                "data_extension": data_extension,
+                "cascade_file_path": csc_path,
+                "frame_rate": frame_rate,
+                "ops_path": ops_path,
+                "BIN_WIDTH": BIN_WIDTH,
+                "EXPERIMENT_DURATION": EXPERIMENT_DURATION,
+                "FRAME_INTERVAL": 1 / float(frame_rate),
+                "FILTER_NEURONS": True,
+            },
+            "cascade_settings": cascade_settings,
+            "graph_settings": graph_settings,
+        }
+        with open(json_filepath, 'w') as json_file:
+            json.dump(config_data, json_file, indent = 1)
 
-            if self.iscell_var.get() == False:
-                f.write("overwrite = True \n")
-                f.write("iscell_check= False \n")
-                f.write("update_iscell = True \n")
-            else:
-                f.write("overwrite = False \n")
-                f.write("iscell_check= True \n")
-                f.write("update_iscell = False \n")
+        # with open(config_filepath, 'w') as f:
+        #     f.write('import numpy as np \n')
+        #     f.write(f"main_folder = r'{main_folder}'\n")
+        #     for i, group in enumerate(self.groups, start=1):
+        #         f.write(f"group{i} = main_folder + r'{group}'\n")
+        #     f.write(f"group_number = {len(self.groups)}\n")
+        #     f.write(f"data_extension = '{data_extension}'\n")
+        #     f.write(f"frame_rate = {frame_rate}\n")
+        #     f.write(f"cascade_file_path = r'{csc_path}'\n")
+        #     f.write(f"ops_path = r'{ops_path}'\n")
+        #     f.write("ops = np.load(ops_path, allow_pickle=True).item()\n")
+        #     f.write("ops['frame_rate'] = frame_rate\n")
+        #     f.write("ops['input_format'] = data_extension\n")
+        #     f.write(f"BIN_WIDTH = {BIN_WIDTH}\n")
+        #     f.write(f"EXPERIMENT_DURATION = {EXPERIMENT_DURATION}\n")
+        #     f.write("FRAME_INTERVAL = 1 / frame_rate\n")
+        #     f.write("FILTER_NEURONS = True\n")
+        #     f.write("exp_condition = {\n")
+        #     for key, (key_var, value_var) in self.dict_vars.items():
+        #         f.write(f"    '{key_var.get()}': '{value_var.get()}',\n")
+        #     f.write("}\n")
+
+            #TODO examine iscell_var to fix calls for json file
+
+            # if self.iscell_var.get() == False:
+            #     f.write("overwrite = True \n")
+            #     f.write("iscell_check= False \n")
+            #     f.write("update_iscell = True \n")
+            # else:
+            #     f.write("overwrite = False \n")
+            #     f.write("iscell_check= True \n")
+            #     f.write("update_iscell = False \n")
             
-            #### Add addtionals here, maybe make them editable in the gui as well
-            f.write("## Additional configurations\n")
-            f.write("nb_neurons = 16\n")
-            f.write('model_name = "Global_EXC_10Hz_smoothing200ms"\n')
-            f.write("FILTER_NEURONS = True\n")
-            f.write("groups = []\n")
-            f.write("for n in range(group_number):\n")
-            f.write("    group_name = f\"group{n + 1}\"\n")
-            f.write("    if group_name in locals():\n")
-            f.write("        groups.append(locals()[group_name])\n")
+            # #### Add addtionals here, maybe make them editable in the gui as well
+            # #TODO implement additional parameters to json file
+            # f.write("## Additional configurations\n")
+            # f.write("nb_neurons = 16\n")
+            # f.write('model_name = "Global_EXC_10Hz_smoothing200ms"\n')
+            # f.write("FILTER_NEURONS = True\n")
         messagebox.showinfo("Success", "Configurations saved successfully.")
 
         #reload the gui
@@ -477,8 +611,6 @@ class ConfigEditor:
         messagebox.showinfo("Suite2P GUI", "Running Suite2P GUI... (implement this function)")
 
 ###### Progress bar #####
-
-
 
     def process_files(self):
         if not self.skip_suite2p_var.get():

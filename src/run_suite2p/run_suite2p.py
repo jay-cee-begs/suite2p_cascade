@@ -9,56 +9,56 @@ import sys
 # sys.path.insert(0, 'D:/users/JC/suite2p-0.14.0')
 from suite2p import run_s2p
 
-from batch_process import gui_configurations as configurations
-#potential issue here in that gui_configurations would need to 
-#be accessed in both virtual environments if we define a directory here
+from batch_process. config_loader import load_json_config_file, load_json_dict
+config = load_json_config_file()
 
-BASE_DIR = configurations.main_folder
 
-def getFilesWithExt(top_dir, files_ext):
-    matches = []
-    for root, dirnames, filenames in os.walk(str(top_dir)):
-        for _dir in dirnames:
-            matches += getFilesWithExt(_dir, files_ext)
-        for filename in filenames:
-            full_path = os.path.join(root, filename)
-            if full_path.endswith(files_ext):
-                matches.append(Path(os.path.join(root, filename)))
-    return matches
+# BASE_DIR = config.general_settings.main_folder
 
-def convertND2toTiff(fp_pathlib):
+# def getFilesWithExt(top_dir, files_ext):
+#     matches = []
+#     for root, dirnames, filenames in os.walk(str(top_dir)):
+#         for _dir in dirnames:
+#             matches += getFilesWithExt(_dir, files_ext)
+#         for filename in filenames:
+#             full_path = os.path.join(root, filename)
+#             if full_path.endswith(files_ext):
+#                 matches.append(Path(os.path.join(root, filename)))
+#     return matches
+
+# def convertND2toTiff(fp_pathlib):
     
-    print("Attempting to convert:", str(fp_pathlib))
-    save_fp = tiffPathFromND2(fp_pathlib)
-    save_dir = save_fp.parent
-    print(f"Saving to: {save_fp} in dir: {save_dir}")
-    save_dir.mkdir(parents=False, exist_ok = True)
-    with ND2Reader(str(fp_pathlib)) as images:
-        images_li=[]
-        images.iter_axes='t'
-        for idx in range(len(images)):
-            images_li.append(Image.fromarray(np.array(images[idx])))
-        images_li[0].save(save_fp, save_all=True, append_images=images_li[1:])
-        print("Done converting")
+#     print("Attempting to convert:", str(fp_pathlib))
+#     save_fp = tiffPathFromND2(fp_pathlib)
+#     save_dir = save_fp.parent
+#     print(f"Saving to: {save_fp} in dir: {save_dir}")
+#     save_dir.mkdir(parents=False, exist_ok = True)
+#     with ND2Reader(str(fp_pathlib)) as images:
+#         images_li=[]
+#         images.iter_axes='t'
+#         for idx in range(len(images)):
+#             images_li.append(Image.fromarray(np.array(images[idx])))
+#         images_li[0].save(save_fp, save_all=True, append_images=images_li[1:])
+#         print("Done converting")
         
-def tiffPathFromND2(_file):
-    return Path(f"{_file.parent}/{_file.stem}/{_file.stem}.tif")
+# def tiffPathFromND2(_file):
+#     return Path(f"{_file.parent}/{_file.stem}/{_file.stem}.tif")
 
-def iterConvert():
-    tiff_files = getFilesWithExt(BASE_DIR, ".tif")
-    files_to_convert = [_file for _file in getFilesWithExt(BASE_DIR, ".nd2")
-                       if tiffPathFromND2(_file) not in tiff_files]
-    print("Files to convert:", files_to_convert)
-    print("Total number of files to convert:", len(files_to_convert))
-    for fp in tqdm.tqdm(files_to_convert):
-        print(f"Processing {fp.name}.tif")
-        convertND2toTiff(fp)
+# def iterConvert():
+#     tiff_files = getFilesWithExt(BASE_DIR, ".tif")
+#     files_to_convert = [_file for _file in getFilesWithExt(BASE_DIR, ".nd2")
+#                        if tiffPathFromND2(_file) not in tiff_files]
+#     print("Files to convert:", files_to_convert)
+#     print("Total number of files to convert:", len(files_to_convert))
+#     for fp in tqdm.tqdm(files_to_convert):
+#         print(f"Processing {fp.name}.tif")
+#         convertND2toTiff(fp)
 
 #iterConvert()
 
 
 
-def export_image_files_to_suite2p_format(parent_directory, file_ending= configurations.data_extension):
+def export_image_files_to_suite2p_format(parent_directory, file_ending= config.general_settings.data_extension):
     """Export each image file (with variable file extension) into its own folder for suite2p processing, for all directories within a given parent directory."""
     
     if not os.path.exists(parent_directory):
@@ -102,7 +102,7 @@ def get_all_image_folders_in_path(path):
     - check_for_single_image_file_in_folder: Checks if a given directory contains exactly one .nd2 file.
     """
 
-    def check_for_single_image_file_in_folder(current_path, file_ending = configurations.data_extension):
+    def check_for_single_image_file_in_folder(current_path, file_ending = config.general_settings.data_extension):
         """
         Check if the specified path contains exactly one .nd2 file.
         """
@@ -122,9 +122,9 @@ def get_all_image_folders_in_path(path):
 # image_folders = get_all_image_folders_in_path('/path/to/search')
 # print(image_folders)
 
-def process_files_with_suite2p(image_list):
+def process_files_with_suite2p(image_list, ops):
         """
-        Processes a list of image paths using the run_s2p function, applying specified gui_configurations.
+        Processes a list of image paths using the run_s2p function, applying specified config.json.
 
         Args:
         image_list (list of str): List of file paths to the images to be processed.
@@ -145,21 +145,21 @@ def process_files_with_suite2p(image_list):
                     'fast_disk': fast_disk_path, # string which specifies where the binary file will be stored (should be an SSD)
                  }
             
-                 opsEnd = run_s2p(ops=configurations.ops, db=db)
+                 opsEnd = run_s2p(ops=ops, db=db)
             except (ValueError, AssertionError, IndexError) as e:
                  print(f"Error processing {image_path}: {e}")
 
 def main():
-    # BASE_DIR = configurations.main_folder
-    # iterConvert()
-    main_folder = configurations.main_folder
-    data_extension = configurations.data_extension
+    main_folder = config.general_settings.main_folder
+    data_extension = config.general_settings.data_extension
     first_pass_image_folders = get_all_image_folders_in_path(main_folder)
     if len(first_pass_image_folders) == 0:
         export_image_files_to_suite2p_format(main_folder, file_ending = '.' + data_extension)
     
     image_folders = get_all_image_folders_in_path(main_folder)
-    process_files_with_suite2p(image_folders)
+    ops = np.load(config.general_settings.ops_path, allow_pickle=True).item()
+    #potential place to add in changes to ops to be done in post
+    process_files_with_suite2p(image_folders, ops)
 
 
 if __name__ == "__main__":

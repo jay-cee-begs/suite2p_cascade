@@ -1,15 +1,32 @@
 ## CASCADE functions ##
 
 import os, warnings
+from pathlib import Path
 import sys
 import numpy as np
-from batch_process import gui_configurations as configurations
+import ruamel.yaml as yaml
+yaml = yaml.YAML(typ='rt')
+from batch_process.config_loader import load_json_config_file, load_json_dict
 import matplotlib.pyplot as plt
+config = load_json_config_file()
 
-sys.path.insert(0,configurations.cascade_file_path) # cascade2p packages, imported from the downloaded Github repository
+# sys.path.insert(0,config.general_settings.cascade_file_path) # likely optional if running pip install -e from Cascade repo
 from cascade2p import cascade # local folder
 from cascade2p.utils import plot_dFF_traces, plot_noise_level_distribution, plot_noise_matched_ground_truth, calculate_noise_levels
 
+def check_for_cascade_model():
+    """A full list of available models can be found in cascade_available_models.txt"""
+    config = load_json_config_file()
+    cascade_file_path = config.general_settings.cascade_file_path
+    cascade_path = Path(cascade_file_path).resolve()
+    model_folder = cascade_path / "Pretrained_models"
+    model_name = config.cascade_settings.model_name
+    available_model_path = model_folder / model_name
+    if not available_model_path.exists():
+       cascade.download_model(config.cascade_settings.model_name, model_folder=model_folder, verbose = 1)
+       print(f"Successfully downloaded {cascade}")
+    else:
+       print(f"{config.cascade_settings.model_name} already exists in Cascade\Pretrained_models")
 
 def load_neurons_x_time(file_path):
     """Custom method to load data as 2d array with shape (neurons, nr_timepoints)"""
@@ -45,7 +62,7 @@ def plots_and_basic_info(deltaF_file): ## maybe make into one function with casc
       warnings.filterwarnings('ignore')
       plt.rcParams['figure.figsize'] = [12, 5]
       # plt.show()
-      noise_levels = plot_noise_level_distribution(traces,configurations.frame_rate)
+      noise_levels = plot_noise_level_distribution(traces,config.general_settings.frame_rate)
 
       ## df/f plots
       plt.rcParams['figure.figsize'] = [13, 13]
@@ -54,7 +71,7 @@ def plots_and_basic_info(deltaF_file): ## maybe make into one function with casc
       plot_number = 6 ## or if fixed percentage plot_number = int(0.05*ROI_number)
       if plot_number <4: plot_number = 4 ## can be removed
       neuron_indices = np.random.randint(traces.shape[0], size=plot_number)  ## if removed set number here or add plot_number = n at top
-      time_axis = plot_dFF_traces(traces,neuron_indices,configurations.frame_rate)
+      time_axis = plot_dFF_traces(traces,neuron_indices,config.general_settings.frame_rate)
       # plt.show()
 
     except Exception as e:
@@ -68,7 +85,7 @@ def cascade_this(deltaF_file, nb_neurons):
 
     print(f"{deltaF_file}")
     traces = load_neurons_x_time(rf'{deltaF_file}')
-    noise_levels = calculate_noise_levels(traces, configurations.frame_rate)
+    noise_levels = calculate_noise_levels(traces, config.general_settings.frame_rate)
 
     #@markdown If this takes too long, make sure that the GPU runtime is activated (*Menu > Runtime > Change Runtime Type*).
 
@@ -77,7 +94,7 @@ def cascade_this(deltaF_file, nb_neurons):
     # If the expected array size is too large for the Colab Notebook, split up for processing
     if total_array_size < 10:
 
-      spike_prob = cascade.predict(configurations.model_name, traces, model_folder = configurations.cascade_file_path+r"\Pretrained_models", verbosity=1)
+      spike_prob = cascade.predict(config.cascade_settings.model_name, traces, model_folder = config.general_settings.cascade_file_path+r"\Pretrained_models", verbosity=1)
 
     # Will only be use for large input arrays (long recordings or many neurons)
     else:
@@ -93,12 +110,12 @@ def cascade_this(deltaF_file, nb_neurons):
       chunks = np.array_split(range(nb_neurons), nb_chunks)
       # infer spike rates independently for each chunk
       for part_array in range(nb_chunks):
-        spike_prob[chunks[part_array],:] = cascade.predict(configurations.model_name, traces[chunks[part_array],:])
+        spike_prob[chunks[part_array],:] = cascade.predict(config.cascade_settings.model_name, traces[chunks[part_array],:])
 
   ## The dF/F traces are shown in blue, the inferred spike probability is plotted in orange (shifted downwards by 1 for better visibility).
     print(f"\ncurrent file: {deltaF_file}")
     neuron_indices = np.random.randint(traces.shape[0], size=nb_neurons)
-    time_axis = plot_dFF_traces(traces,neuron_indices,configurations.frame_rate,spike_prob,y_range=(-1.5, 3))
+    time_axis = plot_dFF_traces(traces,neuron_indices,config.general_settings.frame_rate,spike_prob,y_range=(-1.5, 3))
     # plt.show()
 
 
@@ -110,8 +127,8 @@ def cascade_this(deltaF_file, nb_neurons):
 
     median_noise = np.round(np.maximum(2,np.median(noise_levels)))
     nb_traces = 16
-    duration = max(time_axis) - 64/configurations.frame_rate # seconds
-    plot_noise_matched_ground_truth(configurations.model_name, median_noise, configurations.frame_rate, nb_traces, duration, configurations.cascade_file_path)
+    duration = max(time_axis) - 64/config.general_settings.frame_rate # seconds
+    plot_noise_matched_ground_truth(config.cascade_settings.model_name, median_noise, config.general_settings.frame_rate, nb_traces, duration, config.general_settings.cascade_file_path)
     # plt.show()
 
     #@markdown By default saves as variable **`spike_prob`** both to a *.mat-file and a *.npy-file. You can uncomment the file format that you do not need or leave it as it is.

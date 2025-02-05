@@ -6,7 +6,9 @@ import matplotlib
 import leidenalg as la
 import networkx as nx
 from run_cascade import functions_data_transformation as transform
-from batch_process import gui_configurations as configurations
+from batch_process.config_loader import load_json_config_file, load_json_dict
+
+config = load_json_config_file()
 
 
 
@@ -312,7 +314,7 @@ def plot_neuron_connections(data_folder):
     
 
 def main():
-    for sample in transform.get_file_name_list(configurations.main_folder, file_ending = 'samples', supress_printing=False):
+    for sample in transform.get_file_name_list(config.general_settings.main_folder, file_ending = 'samples', supress_printing=False):
         print(f"Processing {sample}")
         plot_neuron_connections(sample)
         print('Finished processing')
