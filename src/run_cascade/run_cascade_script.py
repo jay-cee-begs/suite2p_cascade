@@ -18,6 +18,7 @@ config = load_json_config_file()
 
 def main():
     # ## get the names of the deltaF files from the functions_data_transformation.py file
+    CASCADE_functions.check_for_cascade_model()
     functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending ="samples", supress_printing = True)
     deltaF = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "deltaF.npy")
     if len(deltaF) == 0:
