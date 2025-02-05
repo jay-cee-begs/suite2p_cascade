@@ -67,20 +67,7 @@ class OpsEditor:
                 var = tk.BooleanVar(value=value)
                 check_box = tk.Checkbutton(self.master, variable = var)
                 check_box.grid(row=idx, column=1, padx=10,pady=5)
-
-            elif param == "Img_Overlay":
-                var = tk.StringVar(value=value)
-                dropdown = ttk.Combobox(
-                    self.master, textvariable=var, values=["max_proj", "meanImg"], state = 'readonly', width=20
-                )
-                dropdown.grid(row=idx, column = 1, padx=10, pady=5)
-            # elif param == "peak_threshold":
-            #     var = tk.IntVar(value=value)
-            #     dropdown = ttk.Combobox(
-            #         self.master, textvariable=var, values=[0,1,2,3,4,5], state = 'readonly', width=20
-            #     )
-            #     dropdown.grid(row=idx, column = 1, padx=10, pady=5)
-            
+                            
             else:
                 var = tk.StringVar(value=str(value))
                 tk.Entry(self.master, textvariable=var, width=20).grid(row=idx, column=1, padx=10, pady=5)
