@@ -12,7 +12,7 @@ from run_cascade import functions_data_transformation as fdt, functions_general
 from plotting import functions_plots
 from batch_process.config_loader import load_json_config_file
 
-def visualize_culture_activity(suite2p_dict):
+def visualize_culture_activity(suite2p_dict, save_path):
     iscell_mask = suite2p_dict['iscell'][:,0] == 1
     active_neurons = {}
     for key in suite2p_dict.keys():
@@ -34,15 +34,25 @@ def visualize_culture_activity(suite2p_dict):
     # zscore activity (each neuron activity trace is then mean 0 and standard-deviation 1)
     spks = zscore(spks, axis=1)
     
-    
-    model = Rastermap(n_clusters=None, # None turns off clustering and sorts single neurons 
-                  n_PCs=32, # use fewer PCs than neurons
-                  locality=0.1, # some locality in sorting (this is a value from 0-1)
-                  time_lag_window=15, # use future timepoints to compute correlation
-                  grid_upsample=0, # 0 turns off upsampling since we're using single neurons
-                ).fit(spks)
-    y = model.embedding # neurons x 1
-    isort = model.isort
+    try:
+        model = Rastermap(n_clusters=None, # None turns off clustering and sorts single neurons 
+                    n_PCs=32, # use fewer PCs than neurons
+                    locality=0.1, # some locality in sorting (this is a value from 0-1)
+                    time_lag_window=15, # use future timepoints to compute correlation
+                    grid_upsample=0, # 0 turns off upsampling since we're using single neurons
+                    ).fit(spks)
+        y = model.embedding # neurons x 1
+        isort = model.isort
+    except ValueError as e:
+        print("Too many neurons, setting nclusters to 100")
+        model = Rastermap(n_clusters=100, # None turns off clustering and sorts single neurons 
+                    n_PCs=128, # use fewer PCs than neurons
+                    locality=0.1, # some locality in sorting (this is a value from 0-1)
+                    time_lag_window=15, # use future timepoints to compute correlation
+                    grid_upsample=0, # 0 turns off upsampling since we're using single neurons
+                    ).fit(spks)
+        y = model.embedding # neurons x 1
+        isort = model.isort
     
     xmin = 0
     xmax = len(suite2p_dict['F'].T)
