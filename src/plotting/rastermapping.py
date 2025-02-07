@@ -61,34 +61,44 @@ def visualize_culture_activity(suite2p_dict, save_path):
     # make figure with grid for easy plotting
     fig = plt.figure(figsize=(16,8), dpi=200)
     grid = plt.GridSpec(10, 40, figure=fig, wspace = 0.1, hspace = 0.4)
+    
 
     # plot total estimated spikes
-    ax = plt.subplot(grid[1, :20])
-    ax.plot(total_activity[xmin:xmax], color=0.5*np.ones(3))
-    ax.xaxis.set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-    ax.set_title("Total Estimated Spikes per Frame")
+    ax1 = plt.subplot(grid[1, :20])
+    ax1.plot(total_activity[xmin:xmax], color=0.5*np.ones(3))
+    ax1.xaxis.set_visible(False)
+    ax1.spines['top'].set_visible(False)
+    ax1.spines['right'].set_visible(False)
+    ax1.spines['bottom'].set_visible(False)
+    ax1.set_title("Total Estimated Spikes per Frame")
 
     # plot sorted neural activity
-    ax = plt.subplot(grid[2:, :20])
-    ax.imshow(spks[isort, xmin:xmax], cmap="gray_r", vmin=0, vmax=2, aspect="auto")
-    num_ticks = 10
+    ax2 = plt.subplot(grid[2:, :20])
+    raster = ax2.imshow(spks[isort, xmin:xmax], cmap="gray_r", vmin=0, vmax=2, aspect="auto")
+    num_ticks = 8
     tick_positions = np.linspace(xmin, xmax, num_ticks, dtype=int)
     tick_labels = (tick_positions / frame_rate).astype(int)
-    ax.set_xticks(tick_positions)
-    ax.set_xticklabels(tick_labels)
-    ax.set_xlabel("Time (seconds)")
-    ax.set_ylabel("NeuronID")
-    # plt.show()
+    ax2.set_xticks(tick_positions)
+    ax2.set_xticklabels(tick_labels)
+    ax2.set_xlabel("Time (seconds)")
+    ax2.set_ylabel("NeuronID")
 
-    ax = plt.subplot(grid[2:, 20:])
+    # Add colorbar for z-score scale
+    # cbar = plt.colorbar(raster, ax=ax2, orientation='vertical', pad=0.02)
+    # cbar.set_label('Z-score', rotation=270, labelpad=15)
+    # cbar.set_ticks([0, 1, 2])  # Adjust ticks as necessary
+    # cbar.ax.set_yticklabels(['0', '1', '2'])  # Adjust labels as necessary
+
+
+    ax1.set_xlim(ax2.get_xlim())  # Sync x-limits
+    plt.subplots_adjust(hspace=0.1)
+
+    ax3 = plt.subplot(grid[2:, 20:])
     ops = suite2p_dict["ops"]
     Img = functions_plots.getImg(ops)
     scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.create_df(suite2p_dict), use_iscell = False)
-    functions_plots.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax)
-    plt.show()
+    functions_plots.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
+    plt.savefig(os.path.join(save_path, "suite2p-cascade_summary.png"))
 
 def culture_PCA_clusters(suite2p_dict):
     iscell_mask = suite2p_dict['iscell'][:,0] == 1
