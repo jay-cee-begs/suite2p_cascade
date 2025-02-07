@@ -21,7 +21,7 @@ def load_for_networkx(data_folder):  ## creates a dictionary for the suite2p pat
     cascade_predictions = transform.load_npy_array(os.path.join(data_folder, *transform.SUITE2P_STRUCTURE["cascade_predictions"]))
     deltaF = transform.load_npy_array(os.path.join(data_folder, *transform.SUITE2P_STRUCTURE['deltaF']))
     iscell = transform.load_npy_array(os.path.join(data_folder, *transform.SUITE2P_STRUCTURE['iscell']))[:,0].astype(bool)
-    filtered_spike_predictions = cascade_predictions[iscell]
+    filtered_spike_predictions = np.nan_to_num(cascade_predictions[iscell])
     filtered_dF = deltaF[iscell]
 
     neuron_data = {}
@@ -30,13 +30,15 @@ def load_for_networkx(data_folder):  ## creates a dictionary for the suite2p pat
         #assign location for each ROI; attach cascade predictions to each for spike analysis at end
         x_median = np.median(neuron_stat['xpix'])
         y_median = np.median(neuron_stat['ypix'])
-        predicted_spikes = cascade_predictions[idx,:]
+        predicted_spikes = np.nan_to_num(cascade_predictions[idx,:])
+        deltaF = deltaF
 
         neuron_data[f"neuron_{idx}"] = {
             "x": x_median,
             "y": y_median,
             "predicted_spikes": predicted_spikes,
-            "IsUsed": iscell[idx]
+            "deltaF": np.array(deltaF),
+            "IsUsed": iscell[idx],
         }
         #create a new dict for filtering by Iscell values (from previous experiments)
     filtered_neuron_data = {}
