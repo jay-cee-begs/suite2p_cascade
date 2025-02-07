@@ -72,6 +72,11 @@ def build_spike_communities(data_folder, neuron_data, deltaF, threshold = 0.5):
     
     correlation_matrix = np.corrcoef(deltaF)
     np.fill_diagonal(correlation_matrix, 0)
+    #Plot Histogram of neuron-to-neuron deltaF correlations
+    plt.hist(correlation_matrix.flatten(), bins = 50, color = 'skyblue')
+    plt.xlabel("Correlation")
+    plt.ylabel("Frequency")
+    plt.show()
 
     for i, neuron_1 in enumerate(neuron_ids):
         for j, neuron_2 in enumerate(neuron_ids):
@@ -81,7 +86,6 @@ def build_spike_communities(data_folder, neuron_data, deltaF, threshold = 0.5):
                        node_graph.add_edge(neuron_1, neuron_2, weight = correlation)
     
     # Step 3: Convert to a format compatible with Leiden
-    import igraph as ig
     ig_graph = ig.Graph.TupleList(node_graph.edges(data=True), directed=False, weights="weight")
     # Step 4: Apply Leiden method
     partition = la.find_partition(ig_graph, la.ModularityVertexPartition)#la.RBConfigurationVertexPartition, resolution_parameter=1.0)
