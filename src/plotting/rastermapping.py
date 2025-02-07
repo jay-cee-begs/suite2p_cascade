@@ -100,7 +100,7 @@ def visualize_culture_activity(suite2p_dict, save_path):
     functions_plots.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
     plt.savefig(os.path.join(save_path, "suite2p-cascade_summary.png"))
 
-def culture_PCA_clusters(suite2p_dict):
+def culture_PCA_clusters(suite2p_dict, n_clusters):
     iscell_mask = suite2p_dict['iscell'][:,0] == 1
     active_neurons = {}
     for key in suite2p_dict.keys():
@@ -127,7 +127,7 @@ def culture_PCA_clusters(suite2p_dict):
 
 
     pc_colors = plt.get_cmap("viridis")(np.linspace(0,0.9,8))
-    for j in range(8):
+    for j in range(n_clusters):
         ax = plt.subplot(grid[j+1])
         ax.plot(Vsv[0:599, j], color=pc_colors[j])
         ax.set_xlim([0, 599-0])
