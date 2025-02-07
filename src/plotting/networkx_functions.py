@@ -4,22 +4,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib
 import leidenalg as la
+import igraph as ig
 import networkx as nx
 from run_cascade import functions_data_transformation as transform
+from plotting import functions_plots
 from batch_process.config_loader import load_json_config_file, load_json_dict
 
 config = load_json_config_file()
-
-
-
-from run_cascade import functions_data_transformation as transform
-import numpy as np
-import matplotlib.pyplot as plt
-import os
-import pandas as pd
-import networkx as nx
 from networkx.algorithms.community import greedy_modularity_communities, louvain_communities
-import multiprocessing
 
 def load_for_networkx(data_folder):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for well_x)
     """
@@ -65,19 +57,7 @@ def create_template_matrix(neuron_data):
     G = nx.relabel_nodes(G, mapping)
     return G
 
-def getImg(ops):
-    """Accesses suite2p ops file (itemized) and pulls out a composite image to map ROIs onto"""
-    Img = ops["meanImg"] # Also "max_proj", "meanImg", "meanImgE"
-    mimg = Img # Use suite-2p source-code naming
-    mimg1 = np.percentile(mimg,1)
-    mimg99 = np.percentile(mimg,99)
-    mimg = (mimg - mimg1) / (mimg99 - mimg1)
-    mimg = np.clip(mimg, 0, 1)
-    mimg *= 255
-    mimg = mimg.astype(np.uint8)
-    return mimg
-
-def build_spike_communities(data_folder, neuron_data, deltaF, threshold = 0.3):
+def build_spike_communities(data_folder, neuron_data, deltaF, threshold = 0.5):
     node_graph = create_template_matrix(neuron_data)
     neuron_ids = list(neuron_data.keys())
     sample_name = os.path.basename(data_folder)
@@ -163,7 +143,7 @@ def build_spike_communities(data_folder, neuron_data, deltaF, threshold = 0.3):
 def extract_and_plot_neuron_connections(node_graph, neuron_data, neuron_communities, community_spikes, data_folder, ops):
     # Prepare image
     sample_name = os.path.basename(data_folder)
-    mimg = getImg(ops)
+    mimg = functions_plots.getImg(ops)
     plt.figure(figsize=(20, 20))
     pos = nx.get_node_attributes(node_graph, 'pos')
     
