@@ -134,7 +134,7 @@ def culture_PCA_clusters(suite2p_dict, n_clusters):
         ax.axis("off")
         ax.set_title(f"PC {j+1}", color=pc_colors[j])
 
-if __name__ == '__main__':
+def main():
     print("Executing rastermap")
     config = load_json_config_file()
     from run_cascade.functions_data_transformation import load_suite2p_paths, get_file_name_list
@@ -145,3 +145,5 @@ if __name__ == '__main__':
                                           config.general_settings.main_folder) 
         visualize_culture_activity(suite2p_dict, folder)
 
+if __name__ == '__main__':
+    main()
