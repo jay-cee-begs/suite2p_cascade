@@ -233,14 +233,23 @@ def calculate_synchrony(neuron_data, node_graph):
     synchrony_scores = {}
 
     for u, v in node_graph.edges():
-        spikes_u = neuron_data[u]['predicted_spikes']
-        spikes_v = neuron_data[v]['predicted_spikes']
-        mask = ~np.isnan(spikes_u) & ~np.isnan(spikes_v)
+            spikes_u = neuron_data[u]['predicted_spikes']
+            spikes_v = neuron_data[v]['predicted_spikes']
+            
+            # Create a mask to filter out NaN values
+            mask = ~np.isnan(spikes_u) & ~np.isnan(spikes_v)
 
-        if np.sum(mask) > 1:
-            correlation = np.corrcoef(spikes_u[mask])
-        else:
-            correlation = np.nan
+            if np.sum(mask) > 1:  # Ensure there are enough data points
+                # Calculate the correlation coefficient
+                correlation_matrix = np.corrcoef(spikes_u[mask], spikes_v[mask])
+                correlation = correlation_matrix[0, 1]  # Get the correlation between u and v
+            else:
+                correlation = np.nan  # Not enough data to compute correlation
+
+            synchrony_scores[(u, v)] = correlation  # Store the synchrony score
+
+        return synchrony_scores
+
 
 def plot_neuron_connections(data_folder):
     print('extracting neuron data for network x')
