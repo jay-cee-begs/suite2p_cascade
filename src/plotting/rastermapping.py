@@ -49,7 +49,7 @@ def visualize_culture_activity(suite2p_dict, save_path):
                     n_PCs=128, # use fewer PCs than neurons
                     locality=0.1, # some locality in sorting (this is a value from 0-1)
                     time_lag_window=15, # use future timepoints to compute correlation
-                    grid_upsample=0, # 0 turns off upsampling since we're using single neurons
+                    grid_upsample=10, # 10 is default value and good for 'large recordings' turn on for visualization                    ).fit(spks)
                     ).fit(spks)
         y = model.embedding # neurons x 1
         isort = model.isort
@@ -133,3 +133,15 @@ def culture_PCA_clusters(suite2p_dict, n_clusters):
         ax.set_xlim([0, 599-0])
         ax.axis("off")
         ax.set_title(f"PC {j+1}", color=pc_colors[j])
+
+if __name__ == '__main__':
+    print("Executing rastermap")
+    config = load_json_config_file()
+    from run_cascade.functions_data_transformation import load_suite2p_paths, get_file_name_list
+    suite2p_folders = get_file_name_list(config.general_settings.main_folder, "samples", supress_printing=False)
+    for folder in suite2p_folders:
+        suite2p_dict = load_suite2p_paths(folder, 
+                                          config.general_settings.groups, 
+                                          config.general_settings.main_folder) 
+        visualize_culture_activity(suite2p_dict, folder)
+
