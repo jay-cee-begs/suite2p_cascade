@@ -160,6 +160,7 @@ def main():
     ops = np.load(config.general_settings.ops_path, allow_pickle=True).item()
     ops['frame_rate'] = int(config.general_settings.frame_rate)
     ops['input_format'] = config.general_settings.data_extension
+    ops['diameter'] = 15
     process_files_with_suite2p(image_folders, ops)
 
 
