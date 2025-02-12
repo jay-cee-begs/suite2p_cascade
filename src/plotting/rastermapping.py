@@ -11,7 +11,7 @@ from scipy.stats import zscore
 from run_cascade import functions_data_transformation as fdt, functions_general
 from plotting import functions_plots
 from batch_process.config_loader import load_json_config_file
-
+config = load_json_config_file()
 def visualize_culture_activity(suite2p_dict, save_path):
     iscell_mask = suite2p_dict['iscell'][:,0] == 1
     active_neurons = {}
@@ -96,9 +96,9 @@ def visualize_culture_activity(suite2p_dict, save_path):
     ax3 = plt.subplot(grid[2:, 20:])
     ops = suite2p_dict["ops"]
     Img = functions_plots.getImg(ops)
-    scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.create_df(suite2p_dict), use_iscell = False)
+    scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.create_df(suite2p_dict), use_iscell = config.cascade_settings.use_suite2p_ROI_classifier)
     functions_plots.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
-    plt.savefig(os.path.join(save_path, "suite2p-cascade_summary.png"))
+    plt.savefig(os.path.join(save_path, "raster_summary.png"))
 
 def culture_PCA_clusters(suite2p_dict, n_clusters):
     iscell_mask = suite2p_dict['iscell'][:,0] == 1
@@ -142,7 +142,7 @@ def main():
     for folder in suite2p_folders:
         suite2p_dict = load_suite2p_paths(folder, 
                                           config.general_settings.groups, 
-                                          config.general_settings.main_folder) 
+                                          config.general_settings.main_folder, use_iscell = config.cascade_settings.use_suite2p_ROI_classifier) 
         visualize_culture_activity(suite2p_dict, folder)
 
 if __name__ == '__main__':
