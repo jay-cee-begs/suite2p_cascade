@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib
 import leidenalg as la
+import seaborn as sns
 import igraph as ig
 import networkx as nx
 from run_cascade import functions_data_transformation as transform
@@ -150,13 +151,17 @@ def extract_and_plot_neuron_connections(node_graph, neuron_data, neuron_communit
     # Prepare image
     sample_name = os.path.basename(data_folder)
     mimg = functions_plots.getImg(ops)
-    plt.figure(figsize=(20, 20))
-    pos = nx.get_node_attributes(node_graph, 'pos')
+    fig = plt.figure(figsize=(20, 20), dpi=200)
+    grid = plt.GridSpec(10, 40, figure=fig, wspace = 0.1, hspace = 0.4)
     
-    # Display the mean image
-    plt.imshow(mimg, cmap='gray', interpolation='nearest')
-    plt.title(f"Sample: {sample_name} - Overlayed Communities", fontsize=24)
-  
+
+    # plot NetworkX Graph
+    ax1 = fig.add_subplot(grid[0:8, 0:40])
+    #Display Suite2p image base
+    ax1.imshow(mimg, cmap='gray', interpolation='nearest')
+    ax1.set_title(f"Sample: {sample_name} - Overlayed Communities", fontsize=24)
+    ax1 = plt.gca()
+ 
     neuron_communities_dict = {
         node: community_idx
         for community_idx, community in enumerate(neuron_communities)
@@ -165,8 +170,8 @@ def extract_and_plot_neuron_connections(node_graph, neuron_data, neuron_communit
     # Overlay graph on the image
     community_colors = [neuron_communities_dict[node] for node in node_graph.nodes]
     unique_clubs = len(set(community_colors))
-    # plt.figure(figsize=(20,20))
-    ax = plt.gca()
+    pos = nx.get_node_attributes(node_graph, 'pos')
+
     nx.draw(
         node_graph,
         pos=pos,
@@ -174,11 +179,11 @@ def extract_and_plot_neuron_connections(node_graph, neuron_data, neuron_communit
         node_color=community_colors,
         edge_color = (1,1,1,0), #make edges transparent
         cmap=plt.cm.tab10,  # Use a colormap with distinct colors
-        ax = ax
+        ax = ax1
     )
-    ax.set_title(f"Community Detection with {unique_clubs} Communities (Corrected Positions)", fontsize = 24)
-    ax.set_xlabel(f"Sample: {sample_name}", fontsize = 18)
-    plt.show()
+    ax1.set_title(f"Community Detection with {unique_clubs} Communities (Corrected Positions)", fontsize = 24)
+    ax1.set_xlabel(f"Sample: {sample_name}", fontsize = 18)
+
     #TODO implement way to show bar plot of networkX total estimated spikes
     # plt.savefig(os.path.join(data_folder, f"{sample_name}_networkx_connections.png"))
     # plt.close()
@@ -195,32 +200,33 @@ def extract_and_plot_neuron_connections(node_graph, neuron_data, neuron_communit
     # # plt.savefig(os.path.join(data_folder, f"{sample_name}_total_spikes_per_community.png"))
     # plt.close()
 
-    plt.figure(figsize=(12, 8))
+    # plt.figure(figsize=(12, 8))
     #TODO need to find a way to put ylabel in the center of the figure
     max_spike = max([spikes.max() for spikes in community_spikes.values()])
     num_communities = len(community_spikes)
 
+    ax2 = fig.add_subplot(grid[8:, 0:40])
     for idx, (community, spikes) in enumerate(community_spikes.items()):
-        ax = plt.subplot(num_communities, 1, idx+1)
-        ax.plot(spikes, label = f'{community}', color = 'black')
-        ax.legend(loc = 'upper right', fontsize = 10)
+        # ax2 = plt.subplot(num_communities, 1, idx+1)
+        ax2.plot(spikes, label = f'{community}')
+        ax2.legend(loc = 'upper right', fontsize = 10)
 
         # if idx == 1:
         #    ax.set_ylabel("Spikes", fontsize = 12)
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['bottom'].set_visible(False if idx < num_communities -1 else True)
+        ax2.spines['top'].set_visible(False)
+        ax2.spines['right'].set_visible(False)
+        ax2.spines['bottom'].set_visible(False if idx < num_communities -1 else True)
 
         if idx < num_communities - 1:
-            ax.tick_params(axis='x', which = 'both', bottom = False, labelbottom = False)
+            ax2.tick_params(axis='x', which = 'both', bottom = False, labelbottom = False)
 
         if idx == num_communities - 1:
-            ax.set_xlabel("Frame", fontsize = 14)   
+            ax2.set_xlabel("Frame", fontsize = 14)   
     # plt.xlabel('Frame', fontsize=14)
-        plt.ylim(-0.1,max_spike)
-        # plt.xlabel("Frame", fontsize = 14)
-        # plt.ylabel("Spikes", fontsize = 14)
-        plt.suptitle("Total Estimated Spikes per Frame")
+        ax2.set_ylim(-0.1,max_spike)
+        ax2.set_xlabel("Frame", fontsize = 14)
+        ax2.set_ylabel("Spikes", fontsize = 14)
+        ax2.set_title("Total Estimated Spikes per Frame")
     plt.show()
     # plt.title(f"Total Predicted Spikes per Community (Line Plot) - {sample_name}", fontsize=16)
     # plt.legend()
@@ -248,7 +254,34 @@ def calculate_synchrony(neuron_data, node_graph):
 
             synchrony_scores[(u, v)] = correlation  # Store the synchrony score
 
-        return synchrony_scores
+    return synchrony_scores
+
+def plot_synchrony_heatmap(synchrony_scores):
+    # Convert the synchrony scores dictionary to a DataFrame
+    neuron_pairs = list(synchrony_scores.keys())
+    
+    # Extract unique neuron names
+    neurons = sorted(set([neuron for pair in neuron_pairs for neuron in pair]))
+    neuron_id = []
+    for neuron in neurons:
+        neuron_id.append(neuron.split('_')[1])
+    # Create a DataFrame for the heatmap
+    heatmap_data = pd.DataFrame(np.nan, index=neuron_id, columns=neuron_id)
+    # heatmap_data.index = [neuron.split('_')[1] for neuron in heatmap_data.index]
+    # heatmap_data.columns = [neuron.split('_')[1] for neuron in heatmap_data.columns]
+    
+    for (neuron1, neuron2), score in synchrony_scores.items():
+        heatmap_data.at[neuron1, neuron2] = score
+        heatmap_data.at[neuron2, neuron1] = score  # Symmetric matrix
+
+    # Plotting the heatmap
+    plt.figure(figsize=(12, 10))
+    sns.heatmap(heatmap_data, annot=True, fmt=".2f", cmap='coolwarm', center=0, cbar_kws={"shrink": .8})
+    plt.title('Neuron Synchrony Scores Heatmap')
+    plt.xlabel('Neurons')
+    plt.ylabel('Neurons')
+    plt.tight_layout
+    plt.show()
 
 
 def plot_neuron_connections(data_folder):
@@ -258,8 +291,8 @@ def plot_neuron_connections(data_folder):
     node_graph, neuron_communities, neuron_data, community_spikes = build_spike_communities(data_folder, neuron_data, deltaF, threshold = 0.3)
     ops = transform.load_npy_array(os.path.join(data_folder, *transform.SUITE2P_STRUCTURE["ops"])).item()
     extract_and_plot_neuron_connections(node_graph, neuron_data, neuron_communities, community_spikes, data_folder, ops)
-    
-
+    synchrony = calculate_synchrony(neuron_data, node_graph)
+    plot_synchrony_heatmap(synchrony)
 def main():
     for sample in transform.get_file_name_list(config.general_settings.main_folder, file_ending = 'samples', supress_printing=False):
         print(f"Processing {sample}")
