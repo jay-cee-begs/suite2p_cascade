@@ -404,8 +404,7 @@ class ConfigEditor:
             with open(cascade_settings_path, 'r') as f:
                 cascade_settings = json.load(f)
         else:
-            cascade_settings = {'overwrite_csv': False,
-            'overwrite_pkl': False,
+            cascade_settings = {'overwrite_suite2p': False,
             'skew_threshold': 1.0,
             'compactness_threshold': 1.4, #TODO implement cutoff / filter to rule out compact failing ROIs
             "peak_detection_threshold": 4.5,

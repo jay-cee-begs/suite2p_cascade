@@ -17,6 +17,7 @@ class OpsEditor:
         
     # Define the parameters you want to allow editing, optionally have all be editable? CHANGE TO RELEVANT PARAMETERS
         self.editable_params = { #self.default_cascade_parameters
+            "overwrite_suite2p": False,
             'predicted_spike_threshold': 0.1, #need to check if 0.0 or 0.1 gives different results
             'nb_neurons': 16,
             'model_name': "Global_EXC_10Hz_smoothing200ms",
