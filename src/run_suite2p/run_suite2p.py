@@ -163,12 +163,16 @@ def main():
     export_image_files_to_suite2p_format(main_folder, file_ending = '.' + data_extension)
     image_folders = get_all_image_folders_in_path(main_folder)
     suite2p_samples = functions_data_transformation.get_file_name_list(config.general_settings.main_folder, file_ending="samples", supress_printing=True)
-    unprocessed_samples = []
-    for image in image_folders:
-        if image not in suite2p_samples:
-            unprocessed_samples.append(image)
-    
-    process_files_with_suite2p(unprocessed_samples, ops)
+    if not config.cascade_settings.overwrite_suite2p:
+        unprocessed_samples = []
+        for image in image_folders:
+            if image not in suite2p_samples:
+                unprocessed_samples.append(image)
+        process_files_with_suite2p(unprocessed_samples, ops)
+    else:
+        for image in suite2p_samples:
+            os.remove(os.path.join(image, *functions_data_transformation.SUITE2P_STRUCTURE['deltaF']))
+        process_files_with_suite2p(image_folders, ops)
 
 
 if __name__ == "__main__":
