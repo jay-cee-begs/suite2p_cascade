@@ -171,7 +171,7 @@ def load_suite2p_paths(data_folder, groups, main_folder, use_iscell = False):  #
     return suite2p_dict
 
 
-def create_output_csv(input_path, overwrite=False, iscell_check=True, update_iscell = True): ## creates output csv for all wells and saves them in .csv folder
+def create_output_csv(input_path, iscell_check=True, update_iscell = True): ## creates output csv for all wells and saves them in .csv folder
     """This will create .csv files for each video loaded from out data fram function below.
         The structure will consist of columns that list: "Amplitudes": spike_amplitudes})
         
@@ -189,9 +189,6 @@ def create_output_csv(input_path, overwrite=False, iscell_check=True, update_isc
     for folder in well_folders:
         output_directory = (os.path.relpath(folder, input_path)).replace("\\", "-")
         translated_path = os.path.join(output_path, f"{output_directory}.csv")
-        if os.path.exists(translated_path) and not overwrite:
-            print(f"CSV file {translated_path} already exists!")
-            continue
 
         suite2p_dict = load_suite2p_paths(folder, config.general_settings.groups, input_path)
 
@@ -243,7 +240,7 @@ def get_pkl_file_name_list(folder_path):
 def list_all_files_of_type(input_path, filetype):
     return [os.path.join(input_path, path) for path in os.listdir(input_path) if path.endswith(filetype)]
 
-def csv_to_pickle(main_folder, overwrite=True):
+def csv_to_pickle(main_folder):
     csv_files = list_all_files_of_type(main_folder+r"/csv_files", ".csv")
     print((csv_files))
     output_path = main_folder+r"/pkl_files"
@@ -259,9 +256,6 @@ def csv_to_pickle(main_folder, overwrite=True):
                                         f"Bin{int(config.general_settings.BIN_WIDTH*1000)}ms"
                                             + ("_filtered" if config.general_settings.FILTER_NEURONS else "") +
                                         ".pkl")
-        if os.path.exists(pkl_path) and not overwrite:
-            print(f"Processed file {pkl_path} already exists!")
-            continue
 
         df.to_pickle(pkl_path)
         print(f"{pkl_path} created")
