@@ -11,7 +11,7 @@ from scipy.stats import zscore
 from run_cascade import functions_data_transformation as fdt, functions_general
 from plotting import functions_plots
 from batch_process.config_loader import load_json_config_file
-
+config = load_json_config_file()
 def visualize_culture_activity(suite2p_dict, save_path):
     iscell_mask = suite2p_dict['iscell'][:,0] == 1
     active_neurons = {}
@@ -49,7 +49,7 @@ def visualize_culture_activity(suite2p_dict, save_path):
                     n_PCs=128, # use fewer PCs than neurons
                     locality=0.1, # some locality in sorting (this is a value from 0-1)
                     time_lag_window=15, # use future timepoints to compute correlation
-                    grid_upsample=0, # 0 turns off upsampling since we're using single neurons
+                    grid_upsample=10, # 10 is default value and good for 'large recordings' turn on for visualization                    ).fit(spks)
                     ).fit(spks)
         y = model.embedding # neurons x 1
         isort = model.isort
@@ -96,9 +96,9 @@ def visualize_culture_activity(suite2p_dict, save_path):
     ax3 = plt.subplot(grid[2:, 20:])
     ops = suite2p_dict["ops"]
     Img = functions_plots.getImg(ops)
-    scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.create_df(suite2p_dict), use_iscell = False)
+    scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.create_df(suite2p_dict), use_iscell = config.cascade_settings.use_suite2p_ROI_classifier)
     functions_plots.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
-    plt.savefig(os.path.join(save_path, "suite2p-cascade_summary.png"))
+    plt.savefig(os.path.join(save_path, "raster_summary.png"))
 
 def culture_PCA_clusters(suite2p_dict, n_clusters):
     iscell_mask = suite2p_dict['iscell'][:,0] == 1
@@ -133,3 +133,17 @@ def culture_PCA_clusters(suite2p_dict, n_clusters):
         ax.set_xlim([0, 599-0])
         ax.axis("off")
         ax.set_title(f"PC {j+1}", color=pc_colors[j])
+
+def main():
+    print("Executing rastermap")
+    config = load_json_config_file()
+    from run_cascade.functions_data_transformation import load_suite2p_paths, get_file_name_list
+    suite2p_folders = get_file_name_list(config.general_settings.main_folder, "samples", supress_printing=False)
+    for folder in suite2p_folders:
+        suite2p_dict = load_suite2p_paths(folder, 
+                                          config.general_settings.groups, 
+                                          config.general_settings.main_folder, use_iscell = config.cascade_settings.use_suite2p_ROI_classifier) 
+        visualize_culture_activity(suite2p_dict, folder)
+
+if __name__ == '__main__':
+    main()

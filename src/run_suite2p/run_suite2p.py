@@ -10,6 +10,7 @@ import sys
 from suite2p import run_s2p
 
 from batch_process. config_loader import load_json_config_file, load_json_dict
+from run_cascade import functions_data_transformation
 config = load_json_config_file()
 
 
@@ -83,7 +84,7 @@ def export_image_files_to_suite2p_format(parent_directory, file_ending= config.g
                 destination = os.path.join(folder_path, file)
 
                 try:
-                    shutil.copy(source, destination)
+                    shutil.copy2(source, destination)
                     os.remove(source)
                     print(f"Processed and moved {file} to {folder_path}")
                 except Exception as e:
@@ -146,21 +147,28 @@ def process_files_with_suite2p(image_list, ops):
                  }
             
                  opsEnd = run_s2p(ops=ops, db=db)
-            except (ValueError, AssertionError, IndexError) as e:
+            except (ValueError, AssertionError, IndexError, Exception) as e:
                  print(f"Error processing {image_path}: {e}")
 
 def main():
+    
+    config = load_json_config_file()
     main_folder = config.general_settings.main_folder
     data_extension = config.general_settings.data_extension
-    first_pass_image_folders = get_all_image_folders_in_path(main_folder)
-    if len(first_pass_image_folders) == 0:
-        export_image_files_to_suite2p_format(main_folder, file_ending = '.' + data_extension)
-    
+
+    ops_path = config.general_settings.ops_path
+    ops = np.load(ops_path, allow_pickle=True).item()
+    ops['frame_rate'] = config.general_settings.frame_rate
+    ops['input_format'] = data_extension
+    export_image_files_to_suite2p_format(main_folder, file_ending = '.' + data_extension)
     image_folders = get_all_image_folders_in_path(main_folder)
-    ops = np.load(config.general_settings.ops_path, allow_pickle=True).item()
-    ops['frame_rate'] = int(config.general_settings.frame_rate)
-    ops['input_format'] = config.general_settings.data_extension
-    process_files_with_suite2p(image_folders, ops)
+    suite2p_samples = functions_data_transformation.get_file_name_list(config.general_settings.main_folder, file_ending="samples", supress_printing=True)
+    unprocessed_samples = []
+    for image in image_folders:
+        if image not in suite2p_samples:
+            unprocessed_samples.append(image)
+    
+    process_files_with_suite2p(unprocessed_samples, ops)
 
 
 if __name__ == "__main__":

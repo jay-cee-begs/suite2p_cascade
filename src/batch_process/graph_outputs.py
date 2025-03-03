@@ -20,7 +20,9 @@ class OpsEditor:
                 'total_estimated_spike_histogram': False, 
                 'total_estimated_spikes_per_frame': True,
                 'avg_estimated_spikes_per_frame': True,
-                'Img_ROI_Overlay': 'max_proj',
+                'Img_ROI_Overlay': 'meanImg',
+                'rastermap_plot': True,
+                'NetworkX_connectivity': False
                 
             }
 

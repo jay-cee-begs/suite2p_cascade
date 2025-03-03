@@ -158,6 +158,7 @@ def load_suite2p_paths(data_folder, groups, main_folder, use_iscell = False):  #
         raise KeyError ("'IsUsed' was not defined correctly either")
     if "Group" not in suite2p_dict:
         raise KeyError("'Group' key not found in suite2p_dict.")
+        #TODO find a way to ignore files not in the group list if manually removed
     if not found_group:
         raise KeyError(f"No group found in the data_folder path: {data_folder}")
 
@@ -202,7 +203,7 @@ def create_output_csv(input_path, overwrite=False, iscell_check=True, update_isc
 
         ops = suite2p_dict["ops"]
         Img = fun_plot.getImg(ops)
-        scatters, nid2idx, nid2idx_rejected, pixel2neuron = fun_plot.getStats(suite2p_dict, Img.shape, output_df, use_iscell=iscell_check)
+        scatters, nid2idx, nid2idx_rejected, pixel2neuron = fun_plot.getStats(suite2p_dict, Img.shape, output_df, use_iscell=config.cascade_settings.use_suite2p_ROI_classifier)
         iscell_path = os.path.join(folder, *SUITE2P_STRUCTURE['iscell'])
         new_path = os.path.join(folder + r'\suite2p\plane0\new_iscell.npy')
         parent_iscell = load_npy_array(iscell_path)
