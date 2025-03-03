@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from statannotations.Annotator import Annotator
 
 
-def plot_with_stats(data, metric, plot_type="violin"):
+def plot_with_stats(data, metric, plot_type="violin", groups = None):
     """
     Plots the specified metric for all groups in the 'Group' column and adds statistical annotations.
 
@@ -14,10 +14,12 @@ def plot_with_stats(data, metric, plot_type="violin"):
     - plot_type: str, the type of plot (e.g., "violin", "box", "swarm", "bar", "point").
     """
     # Dynamically fetch all groups from the 'Group' column
-    
-    groups = data["Group"].unique().tolist()
-
+    if groups is None:
+        groups = data["Group"].unique().tolist()
+    else:
+        groups = groups
     # Filter the data for the specified groups (in case you want to look at only a few of the groups)
+
     filtered_data = data[data["Group"].isin(groups)]
 
     # Create the plot
