@@ -28,7 +28,7 @@ cd "%src_dir%\plotting"
 CALL conda deactivate
 
 :: Activate the second virtual environment
-CALL "C:\Users\jcbegs\miniforge3\Scripts\activate.bat" suite2p
+CALL "C:\Users\jcbegs\miniforge3\Scripts\activate.bat" analysis
 python output_plots.py
 :: Deactivate the second environment
 CALL conda deactivate

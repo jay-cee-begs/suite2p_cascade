@@ -1,7 +1,7 @@
 @echo off
 
 :: Activate the data_env virtual environment
-CALL "C:\miniforge3\Scripts\activate.bat" data_env
+CALL "C:\miniforge3\Scripts\activate.bat" analysis
 
 
 python -c "import sys; print('Python executable:', sys.executable); print('sys.path:', sys.path)"
@@ -20,6 +20,6 @@ cd "%src_dir%\plotting"
 
 
 :: Run the plotting script 
-python -m plotting_constants
+python output_plots.py
 
 :: keep terminal open 
