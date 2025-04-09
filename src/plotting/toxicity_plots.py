@@ -137,3 +137,67 @@ def plot_comparisons(data_path, parameter, comparison_dict, plot_type = None):
                     save_path = data_path
                     )
             
+df = pd.read_csv(os.path.join(r'D:\users\JC\pipeline\001-Cysteine_Toxicity\002-HCO3\pH76_replicates\new_experiment_summary.csv'))
+params = ['Active_Neuron_Count', 'Total_Estimated_Spikes','SC_Avg_Instantaneous_Firing_Rate(Hz)','Active_Neuron_F0','Inactive_Neuron_F0']
+
+def normalize_parameters(df, params):
+
+    normalized_df = df.copy()
+    normalized_df['Well_ID'] = normalized_df['Prediction_File'].apply(lambda x: x.split('\\')[-1].split('.')[0])
+    normalized_df['Group_Clean'] = normalized_df['Group'].apply(lambda x: '_'.join(x.split('_')[1:]))
+    for param in params:
+        normalized_col = f'{param}_normalized'
+        pivoted = normalized_df.pivot_table(index = ["Group_Clean", "Well_ID"], columns = "Time_Point", values = param)
+
+        pivoted[normalized_col] = (pivoted['t60'] / pivoted['pre']) * 100
+
+        result = pivoted[[normalized_col]].reset_index()
+
+        normalized_df = normalized_df.merge(result, on=["Group_Clean", "Well_ID"], how = "left")
+
+    return normalized_df
+normal_df = normalize_parameters(df, params)
+normal_df
+
+def plot_normalized_bar(df, param, group_dict, title = "", save_path = None):
+    plt.figure(figsize=(10,6))
+    bar_width = 0.6
+    all_data = []
+
+    for i, (label, group_clean) in enumerate(group_dict.items()):
+        group_data = df[(df["Group_Clean"]==group_clean) & (df["Time_Point"] == 't60')]
+        values = group_data[param].dropna()
+        all_data.append(values)
+
+    positions = np.arange(len(all_data))
+    bar_containers = plt.bar(positions, [data.mean() for data in all_data], 
+                             yerr = [data.sem() for data in all_data],
+                             tick_label=list(group_dict.keys()),
+                             capsize = 8,
+                             alpha = 0.8,
+                             color = 'skyblue')
+    
+    plt.axhline(100, color='gray', linestyle='--', linewidth=1)
+
+    # Labels & formatting
+    ylabel = param.replace('_', ' ')
+    plt.ylabel(f'{ylabel} (% of baseline)')
+    plt.title(title or f'{ylabel} Normalized to Baseline')
+    plt.xticks(rotation=20)
+    plt.grid(axis='y', linestyle=':', alpha=0.7)
+    plt.tight_layout()
+
+    # Save if needed
+    if save_path:
+        filename = title.replace(" ", "_").replace("/", "_") + '.png'
+        plt.savefig(os.path.join(save_path, filename), dpi=300)
+
+    plt.show()
+
+parameters = []
+for param in params:
+    parameters.append(param +"_normalized")
+print(parameters)
+    
+for param in parameters:
+    plot_normalized_bar(normal_df, param,  comparison_dict)
