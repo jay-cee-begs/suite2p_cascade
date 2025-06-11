@@ -131,10 +131,11 @@ you can create the environment for plotting (conda create -n <your_env_name>)
 
 - for statannotations it is advised to install getzzes frk instead: pip3 install git+https://github.com/getzze/statannotations.git@compat-seaborn-13
 
+#NOTE
 - filepaths in the following files will have to be adjusted before first usage: run_default_ops.bat, run_plots.bat, run_s2p_gui.bat, run_sequence.bat (need to find a way to streamline)
 
 
-The gui can be found in jd_gui_extended.py
+The gui can be found in soma_gui.py
 it can be launched with $python -m jd_gui_extended$
 - the GUI needs an already existing gui_configurations file*
 - call the GUI by executing jd_gui_test.py (plan to adjust so it can be launched by doubleclick)
