@@ -73,12 +73,9 @@ def get_sample_dict(main_folder):
     date_list= []
     sample_dict = {}
     for well in well_folders:
-        date_list.append(os.path.basename(well)[0:6]) ## append dates; should change if the date is not in the beginning of the file name usually [:6]
-    distinct_dates = [i for i in set(date_list)]
-    distinct_dates.sort(key=lambda x: int(x))
+        date_list.append(os.path.basename(well)[0:4]) ## append dates; should change if the date is not in the beginning of the file name usually [:6]
  
     for i1 in range(len(well_folders)):
-        for i2, date in enumerate(distinct_dates):
             if date in well_folders[i1]: # if date in list
                 sample_dict[well_folders[i1]]=f"sample_{i2+1}"
     return sample_dict
