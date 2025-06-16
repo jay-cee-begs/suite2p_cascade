@@ -56,7 +56,7 @@ def visualize_culture_activity(suite2p_dict, save_path):
     
     xmin = 0
     xmax = len(suite2p_dict['F'].T)
-    frame_rate = 10
+    frame_rate = int(config.general_settings.frame_rate)
 
     # make figure with grid for easy plotting
     fig = plt.figure(figsize=(16,8), dpi=200)
