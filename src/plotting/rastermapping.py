@@ -99,6 +99,7 @@ def visualize_culture_activity(suite2p_dict, save_path):
     scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.create_df(suite2p_dict), use_iscell = config.cascade_settings.use_suite2p_ROI_classifier)
     functions_plots.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
     plt.savefig(os.path.join(save_path, "raster_summary.png"))
+    plt.close()
 
 
 def visualize_glia_activity(suite2p_dict, save_path):
@@ -188,6 +189,7 @@ def visualize_glia_activity(suite2p_dict, save_path):
     scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.create_df(suite2p_dict), use_iscell = config.cascade_settings.use_suite2p_ROI_classifier)
     functions_plots.dispGlia(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
     plt.savefig(os.path.join(save_path, "glia_raster_summary.png"))
+    plt.close()
 
 
 def culture_PCA_clusters(suite2p_dict, n_clusters):
