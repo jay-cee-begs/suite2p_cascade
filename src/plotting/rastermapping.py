@@ -100,6 +100,96 @@ def visualize_culture_activity(suite2p_dict, save_path):
     functions_plots.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
     plt.savefig(os.path.join(save_path, "raster_summary.png"))
 
+
+def visualize_glia_activity(suite2p_dict, save_path):
+    iscell_mask = suite2p_dict['iscell'][:,0] == 0
+    active_neurons = {}
+    for key in suite2p_dict.keys():
+        try:
+            active_neurons[key] = suite2p_dict[key][iscell_mask]
+        except TypeError as e:
+            print("Skipping string-like keys")
+
+    active_neurons['cascade_predictions'] = np.nan_to_num(active_neurons['cascade_predictions'])
+    ops = suite2p_dict['ops']
+    total_activity = []
+    for frame in active_neurons['cascade_predictions'].T:
+        total_activity.append(np.sum(frame))
+    total_activity = np.array(total_activity)
+    spks = active_neurons['cascade_predictions']
+
+    n_neurons, n_time = spks.shape
+    print(f"{n_neurons} neurons by {n_time} timepoints")
+    # zscore activity (each neuron activity trace is then mean 0 and standard-deviation 1)
+    spks = zscore(spks, axis=1)
+    
+    try:
+        model = Rastermap(n_clusters=None, # None turns off clustering and sorts single neurons 
+                    n_PCs=32, # use fewer PCs than neurons
+                    locality=0.1, # some locality in sorting (this is a value from 0-1)
+                    time_lag_window=15, # use future timepoints to compute correlation
+                    grid_upsample=0, # 0 turns off upsampling since we're using single neurons
+                    ).fit(spks)
+        y = model.embedding # neurons x 1
+        isort = model.isort
+    except ValueError as e:
+        print("Too many neurons, setting nclusters to 100")
+        model = Rastermap(n_clusters=100, # None turns off clustering and sorts single neurons 
+                    n_PCs=128, # use fewer PCs than neurons
+                    locality=0.1, # some locality in sorting (this is a value from 0-1)
+                    time_lag_window=15, # use future timepoints to compute correlation
+                    grid_upsample=10, # 10 is default value and good for 'large recordings' turn on for visualization                    ).fit(spks)
+                    ).fit(spks)
+        y = model.embedding # neurons x 1
+        isort = model.isort
+    
+    xmin = 0
+    xmax = len(suite2p_dict['F'].T)
+    frame_rate = int(config.general_settings.frame_rate)
+
+    # make figure with grid for easy plotting
+    fig = plt.figure(figsize=(16,8), dpi=200)
+    grid = plt.GridSpec(10, 40, figure=fig, wspace = 0.1, hspace = 0.4)
+    
+
+    # plot total estimated spikes
+    ax1 = plt.subplot(grid[1, :20])
+    ax1.plot(total_activity[xmin:xmax], color=0.5*np.ones(3))
+    ax1.xaxis.set_visible(False)
+    ax1.spines['top'].set_visible(False)
+    ax1.spines['right'].set_visible(False)
+    ax1.spines['bottom'].set_visible(False)
+    ax1.set_title("Total Estimated Spikes per Frame")
+
+    # plot sorted neural activity
+    ax2 = plt.subplot(grid[2:, :20])
+    raster = ax2.imshow(spks[isort, xmin:xmax], cmap="gray_r", vmin=0, vmax=2, aspect="auto")
+    num_ticks = 8
+    tick_positions = np.linspace(xmin, xmax, num_ticks, dtype=int)
+    tick_labels = (tick_positions / frame_rate).astype(int)
+    ax2.set_xticks(tick_positions)
+    ax2.set_xticklabels(tick_labels)
+    ax2.set_xlabel("Time (seconds)")
+    ax2.set_ylabel("GliaID")
+
+    # Add colorbar for z-score scale
+    # cbar = plt.colorbar(raster, ax=ax2, orientation='vertical', pad=0.02)
+    # cbar.set_label('Z-score', rotation=270, labelpad=15)
+    # cbar.set_ticks([0, 1, 2])  # Adjust ticks as necessary
+    # cbar.ax.set_yticklabels(['0', '1', '2'])  # Adjust labels as necessary
+
+
+    ax1.set_xlim(ax2.get_xlim())  # Sync x-limits
+    plt.subplots_adjust(hspace=0.1)
+
+    ax3 = plt.subplot(grid[2:, 20:])
+    ops = suite2p_dict["ops"]
+    Img = functions_plots.getImg(ops)
+    scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.create_df(suite2p_dict), use_iscell = config.cascade_settings.use_suite2p_ROI_classifier)
+    functions_plots.dispGlia(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
+    plt.savefig(os.path.join(save_path, "glia_raster_summary.png"))
+
+
 def culture_PCA_clusters(suite2p_dict, n_clusters):
     iscell_mask = suite2p_dict['iscell'][:,0] == 1
     active_neurons = {}
@@ -144,6 +234,7 @@ def main():
                                           config.general_settings.groups, 
                                           config.general_settings.main_folder, use_iscell = config.cascade_settings.use_suite2p_ROI_classifier) 
         visualize_culture_activity(suite2p_dict, folder)
+        visualize_glia_activity(suite2p_dict, folder)
 
 if __name__ == '__main__':
     main()
