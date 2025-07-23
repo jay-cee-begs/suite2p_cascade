@@ -26,7 +26,7 @@ def main():
     functions_data_transformation.csv_to_pickle(config.general_settings.main_folder, overwrite = True)
     #TODO add an output for final_df for within python stuff
     # create_final_df(config.general_settings.main_folder)
-    functions_data_transformation.create_experiment_overview(config.general_settings.main_folder, config.general_settings.groups)
+    functions_data_transformation.create_experiment_overview(config.general_settings.main_folder, config.general_settings.groups, config.cascade_settings.use_suite2p_ROI_classifier)
 
 if __name__=="__main__":
     main()
