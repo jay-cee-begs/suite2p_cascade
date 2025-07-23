@@ -53,6 +53,9 @@ def histogram_total_estimated_spikes(prediction_deltaF_file, output_directory):
     plt.title(f'Total number of predicted spikes') # \n {prediction_deltaF_file[len(config.general_settings.main_folder)+1:-38]}
     plt.text(0.65, 0.9, f"Total Spikes \nPredicted: {int(sum(estimated_spikes))}", transform=plt.gca().transAxes)
     figure_output_path = os.path.join(output_directory, 'spks_histogram.svg')
+    png_path = os.path.join(config.general_settings.main_folder, 'spks_histogram.png')
+    plt.savefig(png_path, bbox_inches = 'tight')
+
     plt.savefig(figure_output_path, bbox_inches = 'tight')
     print(f'Well Histograms for estimated spikes saved under {figure_output_path}')
     #plt.show()
@@ -78,8 +81,9 @@ def plot_group_histogram(group, predictions_deltaF_files): ## plots histograms o
     plt.xlabel("Number of estimated spikes")
     group_name = group[len(config.general_settings.main_folder) + 1]
     save_path = os.path.join(config.general_settings.main_folder, f'histogram_{group_name}.svg')
+
     plt.savefig(save_path)
-    plt.show()
+    # plt.show()
 
     ## add titles axes labeling etc.
 
@@ -136,7 +140,9 @@ def plot_total_spikes_per_frame(prediction_deltaF_file, max_spikes_all_samples, 
     plt.ylabel("Number of Predicted Spikes")
     plt.xlabel(f'Frame Number (10 frame = 1s)')
     save_path = os.path.join(output_directory, 'total_spikes_per_frame.svg')
+    png_path =  os.path.join(output_directory, 'total_spikes_per_frame.png')
     plt.savefig(save_path)
+    plt.savefig(png_path)
     print(f'Total Spikes per frame saved under {save_path}')
     #plt.show()
 
@@ -154,6 +160,8 @@ def plot_average_spike_probability_per_frame(predictions_deltaF_file, output_dir
     plt.text(0.315, -0.115, f"{predictions_deltaF_file[len(config.general_settings.main_folder)+1:-38]}", horizontalalignment='center', verticalalignment = "center", transform=plt.gca().transAxes)
     plt.ylim(0,1)
     save_path = os.path.join(output_directory, 'avg_spike_probability_per_frame.svg')
+    png_path =  os.path.join(output_directory, 'avg_spike_probability_per_frame.png')
+    plt.savefig(png_path)
     plt.savefig(save_path)
     print(f'Average spike probability per frame saved under {save_path}')
     #plt.show()
