@@ -41,10 +41,14 @@ def deltaF_histogram_across_cells(deltaF_file):
 
 def histogram_total_estimated_spikes(prediction_deltaF_file, output_directory):
     array = np.load(rf"{prediction_deltaF_file}")
-    print(f"\n{prediction_deltaF_file}\nNumber of neurons in dataset: {len(array)}")
+    iscell_file = prediction_deltaF_file.replace("predictions_deltaF.npy", 'iscell.npy')
+    iscell = np.load(rf"{iscell_file}", allow_pickle = True)
+    iscell_mask = iscell[:,0] == 1
+    filtered_array = array[iscell_mask]
+    print(f"\n{prediction_deltaF_file}\nNumber of neurons in dataset: {len(filtered_array)}")
     estimated_spikes = []
-    for i in range(len(array)):
-        estimated_spikes.append(np.nansum(array[i]))
+    for i in range(len(filtered_array)):
+        estimated_spikes.append(np.nansum(filtered_array[i]))
     print(f"For {prediction_deltaF_file[len(config.general_settings.main_folder)+1:-38]} {int(sum(estimated_spikes))} spikes were predicted in total")
     plt.figure(figsize=(5,5))
     plt.hist(estimated_spikes, bins=50, color = 'm')
@@ -58,7 +62,7 @@ def histogram_total_estimated_spikes(prediction_deltaF_file, output_directory):
 
     plt.savefig(figure_output_path, bbox_inches = 'tight')
     print(f'Well Histograms for estimated spikes saved under {figure_output_path}')
-    #plt.show()
+    plt.close()
 
 def plot_group_histogram(group, predictions_deltaF_files): ## plots histograms of total spikes per neuron for each group, possible to add a third group
     group_arrays = []
@@ -83,7 +87,7 @@ def plot_group_histogram(group, predictions_deltaF_files): ## plots histograms o
     save_path = os.path.join(config.general_settings.main_folder, f'histogram_{group_name}.svg')
 
     plt.savefig(save_path)
-    # plt.show()
+    plt.close()
 
     ## add titles axes labeling etc.
 
@@ -129,8 +133,12 @@ def get_max_spike_across_frames(predictions_deltaF_file_list):
 def plot_total_spikes_per_frame(prediction_deltaF_file, max_spikes_all_samples, output_directory):
     '''calculates the total spikes across whole culture at certain time point \n the first input is a prediction_deltaF_file, the second input determines the scaling of the y axis and can be calculated by get_max_spikes_across_data()'''
     prediction_array = np.load(rf"{prediction_deltaF_file}", allow_pickle=True)
-    sum_rows = np.nansum(prediction_array, axis=0)
-    avg_rows = np.nanmean(prediction_array, axis = 0)
+    iscell_file = prediction_deltaF_file.replace('predictions_deltaF.npy', 'iscell.npy')
+    iscell = np.load(rf"{iscell_file}", allow_pickle = True)
+    iscell_mask = iscell[:,0] == 1
+    filtered_predictions = prediction_array[iscell_mask]
+    sum_rows = np.nansum(filtered_predictions, axis=0)
+    avg_rows = np.nanmean(filtered_predictions, axis = 0)
     plt.figure(figsize=(10,5))
     plt.plot(sum_rows, color = "green")
     plt.plot(np.full_like(sum_rows, np.mean(avg_rows)), "--", color = "k")
@@ -144,13 +152,20 @@ def plot_total_spikes_per_frame(prediction_deltaF_file, max_spikes_all_samples, 
     plt.savefig(save_path)
     plt.savefig(png_path)
     print(f'Total Spikes per frame saved under {save_path}')
-    #plt.show()
+    plt.close()
 
 def plot_average_spike_probability_per_frame(predictions_deltaF_file, output_directory):
     ''' plots average spike probability across all cells divided by total number of cells in dataset (regardless of active or not), standardizes output of plot_total_spikes_per_frame()'''
     prediction_array = np.load(rf"{predictions_deltaF_file}", allow_pickle=True)
-    sum_rows = np.nansum(prediction_array, axis=0)
-    average = sum_rows/(len(prediction_array))
+    iscell_file = predictions_deltaF_file.replace('predictions_deltaF.npy', 'iscell.npy')
+    iscell = np.load(rf"{iscell_file}", allow_pickle = True)
+    
+    iscell_mask = iscell[:,0] == 1
+    filtered_predictions = prediction_array[iscell_mask]
+    
+    sum_rows = np.nansum(filtered_predictions, axis=0)
+    average = sum_rows/(len(filtered_predictions))
+
     plt.figure(figsize=(10,5))
     plt.plot(average, color = "green", label="average spike probability")
     ## actief_aandeel = (get_active_proportion_list(file)) ##used to also plot "proportion" line, not used anymore cause interpretation difficult
@@ -164,7 +179,7 @@ def plot_average_spike_probability_per_frame(predictions_deltaF_file, output_dir
     plt.savefig(png_path)
     plt.savefig(save_path)
     print(f'Average spike probability per frame saved under {save_path}')
-    #plt.show()
+    plt.close()
 
 ## ROI image
 def getImg(ops):
