@@ -292,6 +292,41 @@ def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
              else:
                  return ax1
 
+def dispGlia(MaxImg, scatters, nid2idx, nid2idx_rejected,
+             pixel2neuron, F, Fneu, save_path=None, axs=None):
+             if axs is None:
+                fig = plt.figure(constrained_layout=True)
+                NUM_GRIDS=12
+                gs = fig.add_gridspec(NUM_GRIDS, 1)
+                ax1 = fig.add_subplot(gs[:NUM_GRIDS-2])
+                fig.set_size_inches(12,14)
+             else:
+                 ax1 = axs
+                 ax1.set_xlim(0, MaxImg.shape[0])
+                 ax1.set_ylim(MaxImg.shape[1], 0)
+             ax1.imshow(MaxImg, cmap='gist_gray')
+             ax1.tick_params(axis='both', which='both', bottom=False, top=False, 
+                             labelbottom=False, left=False, right=False, labelleft=False)
+             print("Neurons count:", len(nid2idx))
+             norm = Normalize(vmin=0, vmax=1, clip=True) 
+             mapper = cm.ScalarMappable(norm=norm, cmap=cm.gist_rainbow) 
+
+             def plotDict(n2d2idx_dict, override_color = None):
+                 for neuron_id, idx in n2d2idx_dict.items():
+                     color = override_color if override_color else mapper.to_rgba(scatters['color'][idx])
+                            # print(f"{idx}: {scatters['x']} - {scatters['y'][idx]}")
+                            
+                     sc = ax1.scatter(scatters["x"][idx], scatters['y'][idx], color = color, 
+                                      marker='.', s=1)
+             plotDict(nid2idx_rejected, 'yellow')
+             #TODO make this editable by the user
+            #  plotDict(nid2idx_rejected, 'm')
+             ax1.set_title(f"{len(nid2idx_rejected)} Glia detected (yellow)") 
+             if save_path:
+                 plt.savefig(save_path)
+                 plt.close(fig)
+             else:
+                 return ax1
 
 
 def create_suite2p_ROI_masks(stat, frame_shape, nid2idx, output_path):
