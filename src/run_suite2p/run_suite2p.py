@@ -160,6 +160,7 @@ def main():
     ops = np.load(ops_path, allow_pickle=True).item()
     ops['frame_rate'] = config.general_settings.frame_rate
     ops['input_format'] = data_extension
+    ops['do_registration'] = 0
     export_image_files_to_suite2p_format(main_folder, file_ending = '.' + data_extension)
     image_folders = get_all_image_folders_in_path(main_folder)
     suite2p_samples = functions_data_transformation.get_file_name_list(config.general_settings.main_folder, file_ending="samples", supress_printing=True)
