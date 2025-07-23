@@ -113,7 +113,7 @@ def create_df(suite2p_dict, use_iscell = False): ## creates df structure for sin
     df.index.set_names("NeuronID", inplace=True)
 
     if not use_iscell:
-        df["IsUsed"] = df["EstimatedSpikes"] > 0.01
+        df["IsUsed"] = df["EstimatedSpikes"] > 0.1
     else:
         df["IsUsed"] = suite2p_dict["IsUsed"]
 
@@ -296,35 +296,47 @@ def calculate_iqr_and_outliers(data):
 def get_unique_prefixes(group_names, prefix_length=3):
     return {name[:prefix_length] for name in group_names}
 
-def create_experiment_overview(main_folder, groups):
+def create_experiment_overview(main_folder, groups, use_iscell):
     dictionary_list = []
     
     for group in groups:
         groups_predictions_deltaF_files = get_file_name_list(folder_path=group, file_ending="predictions_deltaF.npy", supress_printing=True)
         
         for file in groups_predictions_deltaF_files:
-            array = np.load(rf"{file}", allow_pickle=True)
-            avg_cell_instantaneous_spike_rate, cell_sds, cell_cvs, time_stamp_means, time_stamp_sds, time_stamp_cvs = g_func.basic_stats_per_cell(array)
             
-            active_neurons = sum(np.nansum(row) > 0 for row in array)
-            neuron_count = len(array)
-            estimated_spikes = [np.nansum(row) for row in array]
-
             # Load F, Fneu arrays
             F_file = file.replace('predictions_deltaF.npy', 'F.npy')
+            iscell_file = file.replace('predictions_deltaF.npy', 'iscell.npy')
             Fneu_file = file.replace('predictions_deltaF.npy', 'Fneu.npy')
             F = np.load(rf"{F_file}", allow_pickle=True)
             Fneu = np.load(rf"{Fneu_file}", allow_pickle=True)
             baseline_F = g_func.return_baseline_F(F, Fneu)
+            iscell = np.load(rf"{iscell_file}", allow_pickle=True)
+            iscell_mask = iscell[:,0] == 1
 
+            array = np.load(rf"{file}", allow_pickle=True)
+            avg_cell_instantaneous_spike_rate, cell_sds, cell_cvs, time_stamp_means, time_stamp_sds, time_stamp_cvs = g_func.basic_stats_per_cell(array)
+            neuron_count = len(array)
+        
+
+            if not use_iscell:
+                active_neurons = sum(np.nansum(row) > 0.1 for row in array)
             # Separate and average the baseline fluorescence
-            inactive_baseline = [cell for row, cell in zip(array, baseline_F) if np.nansum(row) == 0]
-            active_baseline = [cell for row, cell in zip(array, baseline_F) if np.nansum(row) > 0]
+                inactive_baseline = [cell for row, cell in zip(array, baseline_F) if np.nansum(row) < 0.1]
+                active_baseline = [cell for row, cell in zip(array, baseline_F) if np.nansum(row) >= 0.1]
+                estimated_spikes = [np.nansum(row) for row in array]
+
+
+            else:
+                active_neurons = sum(iscell[:,0] == 1)
+                inactive_baseline = [cell for i, cell in enumerate(baseline_F) if iscell[i, 0] == 0]
+                active_baseline = [cell for i, cell in enumerate(baseline_F) if iscell[i, 0] == 1]
+                estimated_spikes = [np.nansum(row) for row, true_mask in zip(array, iscell_mask) if true_mask]
 
             avg_inactive_cell = np.nanmean(inactive_baseline)
             avg_active_cell = np.nanmean(active_baseline)
             total_estimated_spikes = round(sum(estimated_spikes), 2)
-
+                    
             dictionary_list.append({
                 'Prediction_File': file[len(main_folder)+1:], 
                 'Neuron_Count': neuron_count,
@@ -376,9 +388,9 @@ def create_experiment_overview(main_folder, groups):
     })
 
     # Save both raw data and summary statistics to CSV
-    df.to_csv(main_folder + r'\new_experiment_summary.csv', index=False)
-    summary_stats.to_pickle(main_folder + r'\summary_stats.pkl')
-    summary_stats.to_csv(main_folder + r'\summary_stats.csv', index = True)
+    df.to_csv(os.path.join(main_folder, 'new_experiment_summary.csv'), index=False)
+    summary_stats.to_pickle(os.path.join(main_folder, 'summary_stats.pkl'))
+    summary_stats.to_csv(os.path.join(main_folder, 'summary_stats.csv'), index = True)
 
     return df, summary_stats
 
