@@ -75,6 +75,9 @@ def visualize_culture_activity(suite2p_dict, save_path):
     # plot sorted neural activity
     ax2 = plt.subplot(grid[2:, :20])
     raster = ax2.imshow(spks[isort, xmin:xmax], cmap="gray_r", vmin=0, vmax=2, aspect="auto")
+    xmax = 119 * frame_rate  
+    ax1.set_xlim([0, xmax])
+    ax2.set_xlim([0, xmax])
     num_ticks = 8
     tick_positions = np.linspace(xmin, xmax, num_ticks, dtype=int)
     tick_labels = (tick_positions / frame_rate).astype(int)
@@ -99,6 +102,7 @@ def visualize_culture_activity(suite2p_dict, save_path):
     scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.create_df(suite2p_dict), use_iscell = config.cascade_settings.use_suite2p_ROI_classifier)
     functions_plots.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
     plt.savefig(os.path.join(save_path, "raster_summary.png"))
+    plt.savefig(os.path.join(save_path, "raster_summary.svg"))
     plt.close()
 
 
@@ -165,6 +169,9 @@ def visualize_glia_activity(suite2p_dict, save_path):
     # plot sorted neural activity
     ax2 = plt.subplot(grid[2:, :20])
     raster = ax2.imshow(spks[isort, xmin:xmax], cmap="gray_r", vmin=0, vmax=2, aspect="auto")
+    xmax = 119 * frame_rate  
+    ax1.set_xlim([0, xmax])
+    ax2.set_xlim([0, xmax])
     num_ticks = 8
     tick_positions = np.linspace(xmin, xmax, num_ticks, dtype=int)
     tick_labels = (tick_positions / frame_rate).astype(int)
@@ -189,6 +196,8 @@ def visualize_glia_activity(suite2p_dict, save_path):
     scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.create_df(suite2p_dict), use_iscell = config.cascade_settings.use_suite2p_ROI_classifier)
     functions_plots.dispGlia(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
     plt.savefig(os.path.join(save_path, "glia_raster_summary.png"))
+    plt.savefig(os.path.join(save_path, "glia_raster_summary.svg"))
+
     plt.close()
 
 
@@ -240,3 +249,16 @@ def main():
 
 if __name__ == '__main__':
     main()
+    from batch_process.config_loader import load_json_dict
+    config_dict = load_json_dict()
+    import json
+    with open(os.path.join(config.general_settings.main_folder, 'analysis_config.json'), 'w') as f:
+        json.dump(config_dict, f, indent = 4)
+    print(f"Analysis parameters saved in {config.general_settings.main_folder} as analysis_config.json")
+    from datetime import datetime
+
+    now = datetime.now()
+
+    current_time = now.strftime("%H:%M:%S")
+    print("Current Time =", current_time)
+    

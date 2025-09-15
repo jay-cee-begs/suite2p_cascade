@@ -14,6 +14,7 @@ from plotting import functions_plots as fun_plot
 from batch_process.config_loader import load_json_config_file, load_json_dict
 
 config = load_json_config_file()
+config_dict = load_json_dict()
 
 
 def main():
@@ -45,6 +46,17 @@ def main():
         print("Done Generating Prediction Files")
     else:
         print("Cascade prediction files already exist")
+    
+    import json
+    with open(os.path.join(config.general_settings.main_folder, 'analysis_config.json'), 'w') as f:
+        json.dump(config_dict, f, indent = 4)
+    print(f"Analysis parameters saved in {config.general_settings.main_folder} as analysis_config.json")
+    from datetime import datetime
+
+    now = datetime.now()
+
+    current_time = now.strftime("%H:%M:%S")
+    print("Current Time =", current_time)
     
 if __name__ == "__main__":
     main()
