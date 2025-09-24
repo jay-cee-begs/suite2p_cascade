@@ -154,7 +154,7 @@ def calculate_deltaF(F_file):
         middle = 0.5*len(corrected_trace)
         F_sample = (np.concatenate((corrected_trace[0:amount], corrected_trace[int(middle-amount/2):int(middle+amount/2)], 
                     corrected_trace[len(corrected_trace)-amount:len(corrected_trace)])))  #dynamically chooses beginning, middle, end 12.5%, changeable
-        F_baseline = np.mean(F_sample)
+        F_baseline = np.percentile(F_sample, 10)
         deltaF.append((corrected_trace-F_baseline)/F_baseline)
     deltaF = np.array(deltaF)
 
