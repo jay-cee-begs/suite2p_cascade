@@ -223,6 +223,7 @@ def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
     iscell = suite2p_dict['iscell']
     MIN_PROB = 0.1
     min_radius = 3
+    min_skew = 1
     pixel2neuron = np.full(frame_shape, fill_value=np.nan, dtype=float)
     scatters = dict(x=[], y=[], color=[], text=[])
     nid2idx = {}
@@ -234,6 +235,7 @@ def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
         for n in range(stat.shape[0]):
             estimated_spikes = output_df.iloc[n]["EstimatedSpikes"]
             radius = stat.iloc[n]['radius']
+            skew = stat.iloc[n]['skew']
 
             if estimated_spikes > MIN_PROB and radius >= min_radius:
                 nid2idx[n] = len(scatters["x"]) # Assign new idx
