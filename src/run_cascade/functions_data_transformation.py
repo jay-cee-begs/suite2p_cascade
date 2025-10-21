@@ -73,7 +73,7 @@ def get_sample_dict(main_folder):
     date_list= []
     sample_dict = {}
     for well in well_folders:
-        date_list.append(os.path.basename(well)[0:4]) ## append dates; should change if the date is not in the beginning of the file name usually [:6]
+        date_list.append(os.path.basename(well)[0:6]) ## append dates; should change if the date is not in the beginning of the file name usually [:6]
     distinct_dates = [i for i in set(date_list)]
     distinct_dates.sort(key=lambda x: int(x))
  
