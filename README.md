@@ -7,12 +7,12 @@ A semi-automated calcium imaging detection (using suite2p) and deconvolution (us
 
 There are several things that should be done before we install the actual repository itself. 
 
---First: You will need to use a python interpretter (either Anaconda, miniforge, python.exe version 3.8, etc)
+--First: You will need to use a python interpretter (either Anaconda, miniforge, python.exe version 3.8)
 
 ## Setup and Installation 
 
 To start you will need to create a fork of this repository to your current machine. This will allow you to copy all the files found in the project and also 
-will allow you to stay up-to-date on any future changes that come with this project. NOTE: likely would be _easier_ to just make a package with the src code on PyPi
+will allow you to stay up-to-date on any future changes that come with this project. NOTE: likely would be for someone _easier_ to just make a package with the src code on PyPi
 
 Alternatively you should download a zip file of the code and save it somewhere you can access easily
 
@@ -20,38 +20,49 @@ Alternatively you should download a zip file of the code and save it somewhere y
 
 1. Navigate to the local copy you have of the suite2p_cascade repository in a terminal window using the `cd` command and the path to the copied repository
 
-2. Next move into the folder requirements_txt_files using the command `cd requirements_txt_files`
+2. Create a virtual environment in anaconda / miniforge / PyPy for suite2p using python 3.8 by running the command `conda create -n suite2p python=3.8`
 
-3. Create a virtual environment in anaconda / miniforge for suite2p using python 3.8 by running the command `conda create -n suite2p python=3.8`
+3. Run the command `python -m pip install suite2p[gui]` to install all necessary packages for analysis
 
-4. Run the command `pip install -r suite2p-env-req.txt` to install all necessary packages for analysis
+4. You will also need to install other packages for analysis such as `pip install nd2 seaborn` etc. 
 
-5. To confirm suite2p installed correctly, you can also run the command `python -m pip install suite2p[gui]` to make sure you have access to the suite2p user interface
+5. To confirm suite2p installed correctly, `python -m suite2p` If the GUI does not launch for some reason read the error and install the missing package
 
-6. Lastly, please run `pip install -e ..` from the requirements_txt_files folder to install the setup.py file (or run `pip install -e .` from the main project folder of suite2p_cascade)
+6. Lastly, please run `pip install -e .` from the forked GitHub suite2p_cascade repo on your machine to install the setup.py file 
 
-Note: Some packages for different image file type imports to suite2p might need to be installed manually (e.g. for Nikon ND2 files, `pip install nd2`)
 
 ### INSTALLING CASCADE
 
-1. Navigate to the local copy you have of the suite2p_cascade repository in a terminal window using the `cd` command and the path to the copied repository
+1. Create a virtual environment in anaconda / miniforge for cascade using python 3.8 by running the command `conda create -n cascade python=3.8`
 
-2. Next move into the folder requirements_txt_files using the command `cd requirements_txt_files`
-
-3. Create a virtual environment in anaconda / miniforge for cascade using python 3.8 by running the command `conda create -n cascade python=3.8`
-
-4. Run the command `pip install -r cascade-env-req.txt` to install all necessary packages for cascade-deconvolution
-
-5. Install cascade2p for deconvolution on your local PC using the command `pip3 install git+https://github.com/jay-cee-begs/Cascade.git@cascade_local`
-
-**NOTE**: in order for this to work properly, you will have to install the language Rust (using all of the default options) if it is not installed already (https://rustup.rs/). During installation, please also install Windows C++ Developer tools
-
-6. One will also need to run `pip install -e ..` from the requirements_txt_files folder to install the setup.py file (or run `pip install -e .` from the main project folder of suite2p_cascade)
-
-7. Lastly you will need to download the source code or fork the repository cascade_local from https://github.com/jay-cee-begs/Cascade/tree/cascade_local 
+2. Lastly you will need to fork the repository cascade_local from https://github.com/jay-cee-begs/Cascade/tree/cascade_local 
 which will allow you to install models for deconvolution based on experimental setups
 
-**NOTE**: some additional packages will need to be installed (e.g.`pip install networkx leidenalg`)
+3. Install cascade2p for deconvolution on your local PC using the command `pip3 install git+https://github.com/jay-cee-begs/Cascade.git@cascade_local`
+
+
+**NOTE**: in order for this to work properly, you might have to install the language Rust (using all of the default options) if it is not installed already (https://rustup.rs/). During installation, please also install Windows C++ Developer tools
+
+
+### INSTALLING DATA_ENV for plotting
+We utilize a separate python environment for plotting to get out of python 3.8
+
+1. Create the environment for analysis / plotting (conda create -n <your_env_name>)
+
+**NOTE** The environment name should be reflected in the bat files so that the pipeline works correctly
+
+2. A Nice Package for automatic plotting in python with statistical significance is statannotations.
+
+- It is best to install the getzzes frk of statannotations instead of the main version: 
+`pip3 install git+https://github.com/getzze/statannotations.git@compat-seaborn-13`
+
+3. Update the filepaths in the following files before first using the pipeline: run_default_ops.bat, run_plots.bat, run_s2p_gui.bat, run_sequence.bat (need to find a way to streamline this)
+
+
+-- The gui can be found in soma_gui.py
+-- navigate to the batch_process folder from the suite2p_cascade folder by calling the command `cd src\batch_process`
+-- it can be launched with `python -m soma_gui`
+
 
 # Workflow
 
@@ -123,21 +134,3 @@ Summary statistics are exported in csv file format in the file `Experiment Summa
 ### ***----------------------------------------------------------------------------------------------------------------***
 
 
-
-### INSTALLING DATA_ENV for plotting
-- for statannotations it is advised to install getzzes frk instead: pip3 install git+https://github.com/getzze/statannotations.git@compat-seaborn-13
-
-you can create the environment for plotting (conda create -n <your_env_name>)
-
-- for statannotations it is advised to install getzzes frk instead: pip3 install git+https://github.com/getzze/statannotations.git@compat-seaborn-13
-
-#NOTE
-- filepaths in the following files will have to be adjusted before first usage: run_default_ops.bat, run_plots.bat, run_s2p_gui.bat, run_sequence.bat (need to find a way to streamline)
-
-
-The gui can be found in soma_gui.py
-it can be launched with $python -m jd_gui_extended$
-- the GUI needs an already existing gui_configurations file*
-- call the GUI by executing jd_gui_test.py (plan to adjust so it can be launched by doubleclick)
-
-*minimal necessary structure: 
