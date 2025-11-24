@@ -522,10 +522,7 @@ class ConfigEditor:
         for text, value in bat_files:
             tk.Radiobutton(parent_frame, text=text, variable=self.selected_bat_file, value=value).pack(anchor='w')
     
-    def create_iscell_button(self, parent_frame):
-        self.iscell_var = tk.BooleanVar()
-        tk.Checkbutton(parent_frame, text="use iscell.npy", variable=self.iscell_var).pack(pady=5)
-        return self.iscell_var
+    
 
     def create_process_button(self, parent_frame):
         tk.Button(parent_frame, text="Process", command=self.proceed).pack(pady=5)
@@ -544,7 +541,6 @@ class ConfigEditor:
         tk.Label(process_frame, text="Select Process:").pack(anchor='w')
 
         self.create_bat_file_radiobuttons(process_frame)
-        self.create_iscell_button(process_frame)
         self.create_process_button(process_frame)
 
     
