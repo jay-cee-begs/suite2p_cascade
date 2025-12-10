@@ -105,9 +105,17 @@ def process_files_with_suite2p(image_list, ops):
             except (ValueError, AssertionError, IndexError, Exception) as e:
                  print(f"Error processing {image_path}: {e}")
 
-def main():
-    
-    config = load_json_config_file()
+def main(config_file = None):
+    global config  # <- important
+    global config_dict
+    if config_file is not None:
+        config = load_json_config_file(config_file)
+        config_dict = load_json_dict(config_file)
+
+    else:
+        config = load_json_config_file()
+        config_dict = load_json_dict()
+
     main_folder = config.general_settings.main_folder
     data_extension = config.general_settings.data_extension
     ops_path = config.general_settings.ops_path

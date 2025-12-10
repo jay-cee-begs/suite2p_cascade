@@ -17,8 +17,18 @@ from batch_process.config_loader import load_json_config_file, load_json_dict
 _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG
 
-def main():
-    # ## Needs to be cleaned fully
+
+def main(config_file = None):
+    global config  # <- important
+    global config_dict
+    if config_file is not None:
+        config = load_json_config_file(config_file)
+        config_dict = load_json_dict(config_file)
+
+    else:
+        config = load_json_config_file()
+        config_dict = load_json_dict()
+        
     CASCADE_functions.check_for_cascade_model()
     
     if config.cascade_settings.overwrite_existing_cascade_output:
