@@ -141,31 +141,52 @@ def summed_spike_probs_per_cell(prediction_deltaF_file):
     return summed_spike_probs_cell
 
 
-def calculate_deltaF(F_file):
+def calculate_deltaF(F_file, event_threshold = 2):
+    """
+    Convert raw fluorescence (F.npy) into change in fluorescence compared to baseline (dF / F0).
+
+    Args:
+    -----------
+    F_file : str
+        Path to NumPy array containing raw flourescence (F.npy) trace from suite2p.
+    
+    event_threshold: float
+        Threshold (in MAD units) to mask obvious events by multiplying threshold by standard deviation. 
+        The Default value is 3; smaller values will limit the number of baseline points used for correction.
+
+    Returns:
+    --------
+    deltaF : 1D numpy array
+        dF/F0 normalized fluorescence
+        MAD baseline estimated
+        ZhangFit / airPLS automated baseline correction
+        deltaF is saved into the suite2p output folder generated from suite2p ROI detection.
+    """
 
     savepath = rf"{F_file}".replace("\\F.npy","") ## make savepath original folder, indicates where deltaF.npy is saved
     F = np.load(rf"{F_file}", allow_pickle=True)
     Fneu = np.load(rf"{F_file[:-4]}"+"neu.npy", allow_pickle=True)
     deltaF= []
-
     for f, fneu in zip(F, Fneu):
         corrected_trace = f - (0.7*fneu) ## neuropil correction
-        amount = int(0.125*len(corrected_trace))
-        middle = 0.5*len(corrected_trace)
-        F_sample = (np.concatenate((corrected_trace[0:amount], corrected_trace[int(middle-amount/2):int(middle+amount/2)], 
-                    corrected_trace[len(corrected_trace)-amount:len(corrected_trace)])))  #dynamically chooses beginning, middle, end 12.5%, changeable
-        F_baseline = np.percentile(F_sample, 10)
-        deltaF.append((corrected_trace-F_baseline)/F_baseline)
-    deltaF = np.array(deltaF)
+        trace_median = np.median(corrected_trace)
+        trace_mad = np.median(np.abs(corrected_trace - trace_median))
+        norm_sigma = 1.4826*trace_mad
+        baseline_mask = np.abs(corrected_trace - trace_median) < event_threshold * norm_sigma
 
-    np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
-    print(f"delta F calculated for {F_file[len(config.general_settings.main_folder)+1:-21]}")
-    csv_filename = f"{F_file[len(config.general_settings.main_folder)+1:-21]}".replace("\\", "-") ## prevents backslahes being replaced in rest of code
-    if not os.path.exists(config.general_settings.main_folder + r'\csv_files_deltaF'): ## creates directory if it doesn't exist
-        os.mkdir(config.general_settings.main_folder + r'\csv_files_deltaF')
-    np.savetxt(f"{config.general_settings.main_folder}/csv_files_deltaF/{csv_filename}.csv", deltaF, delimiter=";") ### can be commented out if you don't want to save deltaF as .csv files (additionally to .npy)
-    #TODO make sure that savetxt computes the same as deltaF in .npy format
-    
-    print(f"delta F traces saved as deltaF.npy under {savepath}\n")
+        F0 = np.median(corrected_trace[baseline_mask])
+        normalized_F = (corrected_trace-F0)/F0
+        deltaF.append(normalized_F)
+        
+    deltaF = np.array(deltaF)
+    deltaF = np.squeeze(deltaF)
+    if not os.path.exists(f"{savepath}/deltaF.npy"):
+        np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
+        print(f"delta F traces saved as deltaF.npy under {savepath}\n")
+    else:
+        print(f"deltaF files already exist for {F_file[len(config.general_settings.main_folder)+1:-21]}")
+
+    return deltaF
+
 
 
