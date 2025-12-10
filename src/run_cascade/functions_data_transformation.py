@@ -127,11 +127,7 @@ def load_suite2p_paths(data_folder, groups, main_folder, use_iscell = False):  #
         "Fneu": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["Fneu"])),
         "stat": load_npy_df(os.path.join(data_folder, *SUITE2P_STRUCTURE["stat"]))[0].apply(pd.Series),
         "ops": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["ops"])).item(),
-<<<<<<< Updated upstream
         "deltaF": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['deltaF'])),
-=======
-        "deltaF": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["deltaF"])),
->>>>>>> Stashed changes
         "cascade_predictions": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["cascade_predictions"])),
         "iscell": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['iscell'])),
 
@@ -393,7 +389,8 @@ def create_experiment_overview(main_folder, groups, use_iscell):
     })
 
     # Save both raw data and summary statistics to CSV
-    df.to_csv(os.path.join(main_folder, 'new_experiment_summary.csv'), index=False)
+    experiment_folder = str(config.general_settings.main_folder).split('\\')[-1]
+    df.to_csv(os.path.join(main_folder, f'{experiment_folder}_experiment_summary.csv'), index=False)
     summary_stats.to_pickle(os.path.join(main_folder, 'summary_stats.pkl'))
     summary_stats.to_csv(os.path.join(main_folder, 'summary_stats.csv'), index = True)
 
