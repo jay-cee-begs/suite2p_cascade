@@ -14,7 +14,8 @@ import seaborn as sns #needed for aggregated feature plots
 # import pynapple as nap #TODO if you need Pynapple plots, you cannot use alongside cascade as it will break the code
 from batch_process.config_loader import load_json_config_file, load_json_dict
 
-config = load_json_config_file()
+_DEFAULT_CONFIG = load_json_config_file()
+config = _DEFAULT_CONFIG
 
 def random_individual_cell_histograms(deltaF_file, plot_number):
     ## for individual cells, random sample of plot_number, (can also be set to randoms sample of size plot_number, i this case use code below to calculate plot number and then pass it to function) ##

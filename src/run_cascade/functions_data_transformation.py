@@ -5,7 +5,9 @@ import numpy as np
 from run_cascade import functions_general as g_func
 from batch_process.config_loader import load_json_config_file, load_json_dict
 from plotting import functions_plots as fun_plot 
-config = load_json_config_file()
+
+_DEFAULT_CONFIG = load_json_config_file()
+config = _DEFAULT_CONFIG
 
 SUITE2P_STRUCTURE = {
     "F": ["suite2p", "plane0", "F.npy"],

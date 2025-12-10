@@ -11,7 +11,10 @@ from run_cascade import functions_data_transformation as transform
 from plotting import functions_plots
 from batch_process.config_loader import load_json_config_file, load_json_dict
 
-config = load_json_config_file()
+
+_DEFAULT_CONFIG = load_json_config_file()
+config = _DEFAULT_CONFIG
+
 from networkx.algorithms.community import greedy_modularity_communities, louvain_communities
 
 def load_for_networkx(data_folder):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for well_x)

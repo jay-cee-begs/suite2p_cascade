@@ -8,7 +8,9 @@ import ruamel.yaml as yaml
 yaml = yaml.YAML(typ='rt')
 from batch_process.config_loader import load_json_config_file, load_json_dict
 import matplotlib.pyplot as plt
-config = load_json_config_file()
+
+_DEFAULT_CONFIG = load_json_config_file()
+config = _DEFAULT_CONFIG
 
 # sys.path.insert(0,config.general_settings.cascade_file_path) # likely optional if running pip install -e from Cascade repo
 from cascade2p import cascade # local folder

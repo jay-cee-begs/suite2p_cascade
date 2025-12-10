@@ -11,7 +11,10 @@ from scipy.stats import zscore
 from run_cascade import functions_data_transformation as fdt, functions_general
 from plotting import functions_plots
 from batch_process.config_loader import load_json_config_file
-config = load_json_config_file()
+
+_DEFAULT_CONFIG = load_json_config_file()
+config = _DEFAULT_CONFIG
+
 def visualize_culture_activity(suite2p_dict, save_path):
     iscell_mask = suite2p_dict['iscell'][:,0] == 1
     active_neurons = {}

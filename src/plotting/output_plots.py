@@ -2,9 +2,11 @@ from run_cascade import functions_data_transformation
 from plotting import functions_plots as fun_plot
 from plotting import rastermapping, networkx_functions
 from batch_process.config_loader import load_json_config_file, load_json_dict
-config = load_json_config_file()
 
 def main():
+_DEFAULT_CONFIG = load_json_config_file()
+config = _DEFAULT_CONFIG
+
     predictions_deltaF_files = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "predictions_deltaF.npy") ## get the names of the predicted spike files
     output_directories = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "samples")
     if config.graph_settings.total_estimated_spike_histogram:

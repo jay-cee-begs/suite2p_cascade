@@ -3,7 +3,6 @@ import numpy as np
 import tqdm
 from pathlib import Path
 from PIL import Image
-from nd2reader import ND2Reader #only if converting to tiff
 import shutil
 import sys
 # sys.path.insert(0, 'D:/users/JC/suite2p-0.14.0')
@@ -11,8 +10,9 @@ from suite2p import run_s2p
 
 from batch_process. config_loader import load_json_config_file, load_json_dict
 from run_cascade import functions_data_transformation
-config = load_json_config_file()
 
+_DEFAULT_CONFIG = load_json_config_file()
+config = _DEFAULT_CONFIG
 
 def export_image_files_to_suite2p_format(parent_directory, file_ending= config.general_settings.data_extension):
     """Export each image file (with variable file extension) into its own folder for suite2p processing, for all directories within a given parent directory."""

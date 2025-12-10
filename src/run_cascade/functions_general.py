@@ -3,7 +3,9 @@ import os, warnings
 import numpy as np
 import matplotlib.pyplot as plt
 from batch_process.config_loader import load_json_config_file, load_json_dict
-config = load_json_config_file()
+
+_DEFAULT_CONFIG = load_json_config_file()
+config = _DEFAULT_CONFIG
 # from scipy.signal import find_peaks, peak_prominences
 
 
