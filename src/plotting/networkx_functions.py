@@ -142,7 +142,8 @@ def build_spike_communities(data_folder, neuron_data, deltaF, threshold = 0.5):
             "betweenness_centrality": betweenness_centrality_dict[node],
             "eigenvector_centrality": eigenvector_centrality_dict[node],
             "total_predicted_spikes": np.nansum(neuron_data[neuron]['predicted_spikes']),
-            "avg_predicted_spikes": np.nanmean(neuron_data[neuron]['predicted_spikes'])
+            "avg_predicted_spikes": np.nanmean(neuron_data[neuron]['predicted_spikes']),
+            "raw_deltaF_activity": neuron_data[neuron]['deltaF']
         })
     df_nodes = pd.DataFrame(raw_data)
     # df_nodes["community_spikes"]
@@ -242,8 +243,8 @@ def calculate_synchrony(neuron_data, node_graph):
     synchrony_scores = {}
 
     for u, v in node_graph.edges():
-            spikes_u = neuron_data[u]['predicted_spikes']
-            spikes_v = neuron_data[v]['predicted_spikes']
+            spikes_u = neuron_data[u]['deltaF']
+            spikes_v = neuron_data[v]['deltaF']
             
             # Create a mask to filter out NaN values
             mask = ~np.isnan(spikes_u) & ~np.isnan(spikes_v)
