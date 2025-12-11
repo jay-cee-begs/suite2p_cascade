@@ -7,7 +7,6 @@ import shutil
 import sys
 # sys.path.insert(0, 'D:/users/JC/suite2p-0.14.0')
 from suite2p import run_s2p
-
 from batch_process. config_loader import load_json_config_file, load_json_dict
 from run_cascade import functions_data_transformation
 
@@ -124,7 +123,12 @@ def main(config_file = None):
     ops['input_format'] = data_extension
     ops['do_registration'] = 0
     ops['delete_bin'] = 1
-    export_image_files_to_suite2p_format(main_folder, file_ending = '.' + data_extension)
+    copy_files = False
+    if copy_files and convert_to_tiff is False:
+        export_image_files_to_suite2p_format(main_folder, file_ending = '.' + data_extension)
+    if convert_to_tiff is True:
+        iterConvert()
+        ops['input_format'] = 'tif'
     image_folders = get_all_image_folders_in_path(main_folder)
     suite2p_samples = functions_data_transformation.get_file_name_list(config.general_settings.main_folder, file_ending="samples", supress_printing=True)
     unprocessed_samples = []
@@ -133,6 +137,10 @@ def main(config_file = None):
             unprocessed_samples.append(image)
     
     process_files_with_suite2p(unprocessed_samples, ops)
+    import json
+    with open(os.path.join(main_folder, 'analysis_config.json'), 'w') as f:
+        json.dump(config_dict, f, indent = 4)
+    print(f"Analysis parameters saved in {main_folder} as analysis_config.json")
 
 
 if __name__ == "__main__":
