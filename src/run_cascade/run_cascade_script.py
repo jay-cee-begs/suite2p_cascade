@@ -51,8 +51,8 @@ def main(config_file = None):
     #TODO find a way to go through the directories and search for predictions deltaF; if for sample; != prediction file; calculate prediction file
     if config.cascade_settings.overwrite_existing_cascade_output or len(predictions_deltaF_files)==0 or len(predictions_deltaF_files) != len(deltaF_files):
         for file in deltaF_files:
-            CASCADE_functions.plots_and_basic_info(file)
-            CASCADE_functions.cascade_this(file, int(config.cascade_settings.nb_neurons))
+            CASCADE_functions.plots_and_basic_info(file, config)
+            CASCADE_functions.cascade_this(file, config)
         print("Done Generating Prediction Files")
     else:
         print("Cascade prediction files already exist")
