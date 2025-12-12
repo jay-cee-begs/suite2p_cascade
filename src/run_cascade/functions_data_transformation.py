@@ -122,7 +122,7 @@ def create_df(suite2p_dict, use_iscell = False): ## creates df structure for sin
     df.index.set_names("NeuronID", inplace=True)
     return df
 
-def load_suite2p_paths(data_folder, groups, main_folder, use_iscell = False):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for well_x)
+def load_suite2p_paths(data_folder, config):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for well_x)
     """here we define our suite2p dictionary from the SUITE2P_STRUCTURE...see above"""
     suite2p_dict = {
         "F": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["F"])),
@@ -134,7 +134,7 @@ def load_suite2p_paths(data_folder, groups, main_folder, use_iscell = False):  #
         "iscell": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['iscell'])),
 
     }
-    if not use_iscell:
+    if config.cascade_settings.use_suite2p_ROI_classifier is False:
         suite2p_dict["IsUsed"] = [(suite2p_dict["stat"]["skew"] >= 1)] 
 
     else:
@@ -142,8 +142,41 @@ def load_suite2p_paths(data_folder, groups, main_folder, use_iscell = False):  #
         suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["iscell"])
         suite2p_dict['IsUsed'] = suite2p_dict['iscell'][:,0].astype(bool)
  #TODO make sure that changing "path" to "data_folder" for using IsCell natively will still work
+    suite2p_dict['data_folder'] = data_folder
+
+    main_folder = str(config.general_settings.main_folder)
+    groups = config.general_settings.groups
+
     if not groups:
         raise ValueError("The 'groups' list is empty. Please provide valid group names.")
+    print(f"Data folder: {data_folder}")
+    print(f"Groups: {groups}")
+    print(f"Main folder: {main_folder}")
+    found_group = False
+    if groups is not None:
+        for group in groups: ## creates the group column based on groups list from configurations file
+            if (str(group)) in data_folder:
+                group_name = group.split(main_folder)[-1].strip("\\/")
+                suite2p_dict["Group"] = group_name
+                found_group = True
+                print(f"Assigned Group: {suite2p_dict['Group']}")
+        
+    # debugging
+    if "iscell" not in suite2p_dict:
+        raise KeyError ("'IsUsed' was not defined correctly either")
+    # if "Group" not in suite2p_dict:
+    #     raise KeyError("'Group' key not found in suite2p_dict.")
+    #     #TODO find a way to ignore files not in the group list if manually removed
+    # if not found_group:
+    #     raise KeyError(f"No group found in the data_folder path: {data_folder}")
+
+    sample_dict = get_sample_dict(main_folder) ## creates the sample number dict
+   
+    suite2p_dict["sample"] = sample_dict[data_folder]  ## gets the sample number for the corresponding well folder from the sample dict
+ 
+    suite2p_dict["file_name"] = str(os.path.join(data_folder.split('\\')[-1], *SUITE2P_STRUCTURE["cascade_predictions"]))
+ 
+    return suite2p_dict
 
     print(f"Data folder: {data_folder}")
     print(f"Groups: {groups}")
