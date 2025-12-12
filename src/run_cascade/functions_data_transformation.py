@@ -461,8 +461,3 @@ def create_experiment_overview(main_folder, groups, use_iscell):
     summary_stats.to_csv(os.path.join(main_folder, 'summary_stats.csv'), index = True)
 
     return df, summary_stats
-
-
-if __name__ == "__main__":
-    create_output_csv(config.general_settings.main_folder, overwrite=True, iscell_check=False, update_iscell=True)
-    csv_to_pickle(config.general_settings.main_folder, overwrite = True)
