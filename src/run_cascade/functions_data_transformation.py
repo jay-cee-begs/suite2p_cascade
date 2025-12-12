@@ -178,6 +178,38 @@ def load_suite2p_paths(data_folder, config):  ## creates a dictionary for the su
  
     return suite2p_dict
 
+def load_local_suite2p_output(data_folder, groups = None, main_folder = None, load_local_suite2p = False, use_iscell = False):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for well_x)
+    """here we define our suite2p dictionary from the SUITE2P_STRUCTURE...see above"""
+    suite2p_dict = {
+        "F": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["F"])),
+        "Fneu": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["Fneu"])),
+        "stat": load_npy_df(os.path.join(data_folder, *SUITE2P_STRUCTURE["stat"]))[0].apply(pd.Series),
+        "ops": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["ops"])).item(),
+        "deltaF": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['deltaF'])),
+        "cascade_predictions": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["cascade_predictions"])),
+        "iscell": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['iscell'])),
+
+    }
+    if not use_iscell:
+        suite2p_dict["IsUsed"] = [(suite2p_dict["stat"]["skew"] >= 1)] 
+
+    else:
+        suite2p_dict["IsUsed"] = pd.DataFrame(suite2p_dict["iscell"]).iloc[:,0].values.T
+        suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["iscell"])
+        suite2p_dict['IsUsed'] = suite2p_dict['iscell'][:,0].astype(bool)
+ #TODO make sure that changing "path" to "data_folder" for using IsCell natively will still work
+    suite2p_dict['data_folder'] = data_folder
+
+
+    if load_local_suite2p:
+        main_folder = suite2p_dict['data_folder'].split('\\')[:-2]
+        main_folder = "\\".join(main_folder)
+
+        print(main_folder)
+        groups = suite2p_dict['data_folder'].split("\\")[0:-1]
+        groups = ["\\".join(groups)]
+    if not groups:
+        raise ValueError("The 'groups' list is empty. Please provide valid group names.")
     print(f"Data folder: {data_folder}")
     print(f"Groups: {groups}")
     print(f"Main folder: {main_folder}")
