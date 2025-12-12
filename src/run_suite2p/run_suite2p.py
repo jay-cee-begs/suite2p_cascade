@@ -13,9 +13,11 @@ from run_cascade import functions_data_transformation
 _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG
 
-def export_image_files_to_suite2p_format(parent_directory, file_ending= config.general_settings.data_extension):
+def export_image_files_to_suite2p_format(parent_directory, config):
     """Export each image file (with variable file extension) into its own folder for suite2p processing, for all directories within a given parent directory."""
     
+    image_file_ending = '.' + config.general_settings.data_extension
+
     if not os.path.exists(parent_directory):
         print(f"Provided path does not exist: {parent_directory}")
         return
@@ -29,7 +31,7 @@ def export_image_files_to_suite2p_format(parent_directory, file_ending= config.g
 
         # Processing each file within the directory
         for file in os.listdir(dir_path):
-            if file.endswith(file_ending):
+            if file.endswith(image_file_ending):
                 name, _ = os.path.splitext(file)
                 folder_path = os.path.join(dir_path, name)
                 os.makedirs(folder_path, exist_ok=True)
@@ -44,7 +46,7 @@ def export_image_files_to_suite2p_format(parent_directory, file_ending= config.g
                 except Exception as e:
                     print(f"Failed to process {file} due to {e}")
             else:
-                print(f"Skipping non-{file_ending} file: {file}")
+                print(f"Skipping non-{image_file_ending} file: {file}")
 #Loading in suite2p settings to begin processing
 
 
@@ -125,7 +127,7 @@ def main(config_file = None):
     ops['delete_bin'] = 1
     copy_files = False
     if copy_files and convert_to_tiff is False:
-        export_image_files_to_suite2p_format(main_folder, file_ending = '.' + data_extension)
+        export_image_files_to_suite2p_format(main_folder, config)
     if convert_to_tiff is True:
         iterConvert()
         ops['input_format'] = 'tif'
