@@ -1,5 +1,3 @@
-## CASCADE functions ##
-
 import os, warnings
 from pathlib import Path
 import sys
@@ -8,13 +6,11 @@ import ruamel.yaml as yaml
 yaml = yaml.YAML(typ='rt')
 from batch_process.config_loader import load_json_config_file, load_json_dict
 import matplotlib.pyplot as plt
+from cascade2p import cascade # local folder
+from cascade2p.utils import plot_dFF_traces, plot_noise_level_distribution, plot_noise_matched_ground_truth, calculate_noise_levels
 
 _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG
-
-# sys.path.insert(0,config.general_settings.cascade_file_path) # likely optional if running pip install -e from Cascade repo
-from cascade2p import cascade # local folder
-from cascade2p.utils import plot_dFF_traces, plot_noise_level_distribution, plot_noise_matched_ground_truth, calculate_noise_levels
 
 def check_for_cascade_model():
     """A full list of available models can be found in cascade_available_models.txt"""
