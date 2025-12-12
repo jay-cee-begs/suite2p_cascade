@@ -239,7 +239,7 @@ def load_local_suite2p_output(data_folder, groups = None, main_folder = None, lo
     return suite2p_dict
 
 
-def create_output_csv(input_path, overwrite=False, iscell_check=True, update_iscell = True): ## creates output csv for all wells and saves them in .csv folder
+def translate_suite2p_outputs_to_csv(main_folder, config, overwrite=False, check_for_iscell=True, update_iscell = True): ## creates output csv for all wells and saves them in .csv folder
     """This will create .csv files for each video loaded from out data fram function below.
         The structure will consist of columns that list: "Amplitudes": spike_amplitudes})
         
@@ -247,23 +247,23 @@ def create_output_csv(input_path, overwrite=False, iscell_check=True, update_isc
         stat >> compactness, col3: spike frames (relative to input frames), col4: amplitude of each spike detected measured 
         from the baseline (the median of each trace)"""
     
-    well_folders = get_file_name_list(input_path, "samples", supress_printing = True)
+    well_folders = get_file_name_list(main_folder, "samples", supress_printing = True)
 
-    output_path = input_path+r"\csv_files"
+    output_path = os.path.join(main_folder, "csv_files")
 
     if not os.path.exists(output_path):
         os.mkdir(output_path)
     
     for folder in well_folders:
-        output_directory = (os.path.relpath(folder, input_path)).replace("\\", "-")
+        output_directory = (os.path.relpath(folder, main_folder)).replace("\\", "-")
         translated_path = os.path.join(output_path, f"{output_directory}.csv")
         if os.path.exists(translated_path) and not overwrite:
             print(f"CSV file {translated_path} already exists!")
             continue
 
-        suite2p_dict = load_suite2p_paths(folder, config.general_settings.groups, input_path)
+        suite2p_dict = load_suite2p_paths(folder, config, main_folder)
 
-        output_df = create_df(suite2p_dict)
+        output_df = create_df(suite2p_dict, use_iscell=check_for_iscell)
     
 
         output_df.to_csv(translated_path)
@@ -271,9 +271,8 @@ def create_output_csv(input_path, overwrite=False, iscell_check=True, update_isc
 
         ops = suite2p_dict["ops"]
         Img = fun_plot.getImg(ops)
-        scatters, nid2idx, nid2idx_rejected, pixel2neuron = fun_plot.getStats(suite2p_dict, Img.shape, output_df, use_iscell=config.cascade_settings.use_suite2p_ROI_classifier)
+        scatters, nid2idx, nid2idx_rejected, pixel2neuron = fun_plot.getStats(suite2p_dict, Img.shape, output_df, use_iscell=check_for_iscell)
         iscell_path = os.path.join(folder, *SUITE2P_STRUCTURE['iscell'])
-        new_path = os.path.join(folder + r'\suite2p\plane0\new_iscell.npy')
         parent_iscell = load_npy_array(iscell_path)
         print("parent_iscell type:", type(parent_iscell))
         print("parent_iscell shape:", np.shape(parent_iscell))
@@ -293,7 +292,7 @@ def create_output_csv(input_path, overwrite=False, iscell_check=True, update_isc
             print("Using iscell from suite2p to classify ROIs")
 
         
-        image_save_path = os.path.join(input_path, f"{folder}_plot.png") #TODO explore changing "input path" to "folder" to save the processing in the same 
+        image_save_path = os.path.join(main_folder, f"{folder}_plot.png") #TODO explore changing "input path" to "folder" to save the processing in the same 
         fun_plot.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
 
     print(f"{len(well_folders)} .csv files were saved under {config.general_settings.main_folder+r'/csv_files'}")
