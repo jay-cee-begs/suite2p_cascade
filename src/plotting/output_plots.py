@@ -31,9 +31,9 @@ def main(config_file = None):
         for file, output in zip(predictions_deltaF_files, output_directories):
             fun_plot.plot_total_spikes_per_frame(file, spike_maximum, output)
             fun_plot.plot_average_spike_probability_per_frame(file, output)
-
-    functions_data_transformation.create_output_csv(config.general_settings.main_folder, overwrite = True, 
-                                                    iscell_check=bool(config.cascade_settings.use_suite2p_ROI_classifier), 
+#translate_suite2p_outputs_to_csv(main_folder, config, overwrite=False, check_for_iscell=True, update_iscell = True):
+    functions_data_transformation.translate_suite2p_outputs_to_csv(main_folder = config.general_settings.main_folder, config = config, overwrite = True, 
+                                                    check_for_iscell=bool(config.cascade_settings.use_suite2p_ROI_classifier), 
                                                     update_iscell=bool(config.cascade_settings.update_suite2p_iscell))#overwrite = config.general_settings.overwrite, iscell_check = config.general_settings.iscell_check, update_iscell=config.general_settings.update_iscell)
     functions_data_transformation.csv_to_pickle(config.general_settings.main_folder, overwrite = True)
     #TODO add an output for final_df for within python stuff
