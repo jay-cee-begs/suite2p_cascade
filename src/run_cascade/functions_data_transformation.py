@@ -261,7 +261,7 @@ def translate_suite2p_outputs_to_csv(main_folder, config, overwrite=False, check
             print(f"CSV file {translated_path} already exists!")
             continue
 
-        suite2p_dict = load_suite2p_paths(folder, config, main_folder)
+        suite2p_dict = load_suite2p_paths(folder, config)
 
         output_df = create_df(suite2p_dict, use_iscell=check_for_iscell)
     
