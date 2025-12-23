@@ -29,7 +29,7 @@ def main(config_file = None):
         config = load_json_config_file()
         config_dict = load_json_dict()
         
-    CASCADE_functions.check_for_cascade_model()
+    CASCADE_functions.check_for_cascade_model(config)
     
     if config.cascade_settings.overwrite_existing_cascade_output:
         F_traces = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending ="F.npy", supress_printing = True)
