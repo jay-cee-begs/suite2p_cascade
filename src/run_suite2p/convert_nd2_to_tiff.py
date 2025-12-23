@@ -11,10 +11,10 @@ from suite2p import run_s2p
 
 from batch_process. config_loader import load_json_config_file, load_json_dict
 from run_cascade import functions_data_transformation
-config = load_json_config_file()
 
+_DEFAULT_CONFIG = load_json_config_file()
+config = _DEFAULT_CONFIG
 
-BASE_DIR = config.general_settings.main_folder
 
 def getFilesWithExt(top_dir, files_ext):
     matches = []
@@ -45,7 +45,9 @@ def convertND2toTiff(fp_pathlib):
 def tiffPathFromND2(_file):
     return Path(f"{_file.parent}/{_file.stem}/{_file.stem}.tif")
 
-def iterConvert():
+def iterConvert(config):
+    BASE_DIR = config.general_settings.main_folder
+
     tiff_files = getFilesWithExt(BASE_DIR, ".tif")
     files_to_convert = [_file for _file in getFilesWithExt(BASE_DIR, ".nd2")
                        if tiffPathFromND2(_file) not in tiff_files]
@@ -54,7 +56,4 @@ def iterConvert():
     for fp in tqdm.tqdm(files_to_convert):
         print(f"Processing {fp.name}.tif")
         convertND2toTiff(fp)
-try:
-    iterConvert()
-except Exception as e:
-    print(e)
+
