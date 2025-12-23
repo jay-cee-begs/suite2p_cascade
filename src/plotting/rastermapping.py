@@ -17,23 +17,17 @@ config = _DEFAULT_CONFIG
 
 def visualize_culture_activity(suite2p_dict, save_path):
     iscell_mask = suite2p_dict['iscell'][:,0] == 1
-    active_neurons = {}
-    for key in suite2p_dict.keys():
-        try:
-            active_neurons[key] = suite2p_dict[key][iscell_mask]
-        except TypeError as e:
-            print("Skipping string-like keys")
+    cascade_activity = suite2p_dict['cascade_predictions']
+    active_neuron_activity = cascade_activity[iscell_mask]
 
-    active_neurons['cascade_predictions'] = np.nan_to_num(active_neurons['cascade_predictions'])
+    spks = np.nan_to_num(active_neuron_activity)
     ops = suite2p_dict['ops']
     total_activity = []
-    for frame in active_neurons['cascade_predictions'].T:
+    for frame in active_neuron_activity.T:
         total_activity.append(np.sum(frame))
     total_activity = np.array(total_activity)
-    spks = active_neurons['cascade_predictions']
+    # deltaF = active_neuron_activity['deltaF']
 
-    n_neurons, n_time = spks.shape
-    print(f"{n_neurons} neurons by {n_time} timepoints")
     # zscore activity (each neuron activity trace is then mean 0 and standard-deviation 1)
     spks = zscore(spks, axis=1)
     
@@ -55,10 +49,11 @@ def visualize_culture_activity(suite2p_dict, save_path):
                     grid_upsample=10, # 10 is default value and good for 'large recordings' turn on for visualization                    ).fit(spks)
                     ).fit(spks)
         y = model.embedding # neurons x 1
-        isort = model.isort
-    
+        isort = model.isort    
+        
     xmin = 0
     xmax = len(suite2p_dict['F'].T)
+
     frame_rate = int(config.general_settings.frame_rate)
 
     # make figure with grid for easy plotting
@@ -78,9 +73,10 @@ def visualize_culture_activity(suite2p_dict, save_path):
     # plot sorted neural activity
     ax2 = plt.subplot(grid[2:, :20])
     raster = ax2.imshow(spks[isort, xmin:xmax], cmap="gray_r", vmin=0, vmax=2, aspect="auto")
-    xmax = 119 * frame_rate  
-    ax1.set_xlim([0, xmax])
-    ax2.set_xlim([0, xmax])
+    #LIMIT plot time
+    # xmax = 119 * frame_rate  
+    # ax1.set_xlim([0, xmax])
+    # ax2.set_xlim([0, xmax])
     num_ticks = 8
     tick_positions = np.linspace(xmin, xmax, num_ticks, dtype=int)
     tick_labels = (tick_positions / frame_rate).astype(int)
@@ -104,28 +100,28 @@ def visualize_culture_activity(suite2p_dict, save_path):
     Img = functions_plots.getImg(ops)
     scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.create_df(suite2p_dict), use_iscell = config.cascade_settings.use_suite2p_ROI_classifier)
     functions_plots.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
-    plt.savefig(os.path.join(save_path, "raster_summary.png"))
-    plt.savefig(os.path.join(save_path, "raster_summary.svg"))
+    plt.savefig(os.path.join(save_path, "dF_F_raster_summary.png"))
+    plt.savefig(os.path.join(save_path, "dF_F_raster_summary.svg"))
     plt.close()
 
 
 def visualize_glia_activity(suite2p_dict, save_path):
     iscell_mask = suite2p_dict['iscell'][:,0] == 0
-    active_neurons = {}
+    active_neuron_activity = {}
     for key in suite2p_dict.keys():
         try:
-            active_neurons[key] = suite2p_dict[key][iscell_mask]
+            active_neuron_activity[key] = suite2p_dict[key][iscell_mask]
         except TypeError as e:
             print("Skipping string-like keys")
 
-    active_neurons['cascade_predictions'] = np.nan_to_num(active_neurons['cascade_predictions'])
+    active_neuron_activity['cascade_predictions'] = np.nan_to_num(active_neuron_activity['cascade_predictions'])
     ops = suite2p_dict['ops']
     total_activity = []
-    for frame in active_neurons['cascade_predictions'].T:
+    for frame in active_neuron_activity['cascade_predictions'].T:
         total_activity.append(np.sum(frame))
     total_activity = np.array(total_activity)
-    spks = active_neurons['cascade_predictions']
-
+    spks = active_neuron_activity['cascade_predictions']
+    spks = active_neuron_activity['deltaF']
     n_neurons, n_time = spks.shape
     print(f"{n_neurons} neurons by {n_time} timepoints")
     # zscore activity (each neuron activity trace is then mean 0 and standard-deviation 1)
@@ -147,7 +143,7 @@ def visualize_glia_activity(suite2p_dict, save_path):
                     locality=0.1, # some locality in sorting (this is a value from 0-1)
                     time_lag_window=15, # use future timepoints to compute correlation
                     grid_upsample=10, # 10 is default value and good for 'large recordings' turn on for visualization                    ).fit(spks)
-                    ).fit(spks)
+                    ).fit(spks)d
         y = model.embedding # neurons x 1
         isort = model.isort
     
@@ -172,9 +168,10 @@ def visualize_glia_activity(suite2p_dict, save_path):
     # plot sorted neural activity
     ax2 = plt.subplot(grid[2:, :20])
     raster = ax2.imshow(spks[isort, xmin:xmax], cmap="gray_r", vmin=0, vmax=2, aspect="auto")
-    xmax = 119 * frame_rate  
-    ax1.set_xlim([0, xmax])
-    ax2.set_xlim([0, xmax])
+    #LIMIT glia plot time
+    # xmax = 119 * frame_rate  
+    # ax1.set_xlim([0, xmax])
+    # ax2.set_xlim([0, xmax])
     num_ticks = 8
     tick_positions = np.linspace(xmin, xmax, num_ticks, dtype=int)
     tick_labels = (tick_positions / frame_rate).astype(int)
@@ -198,28 +195,28 @@ def visualize_glia_activity(suite2p_dict, save_path):
     Img = functions_plots.getImg(ops)
     scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.create_df(suite2p_dict), use_iscell = config.cascade_settings.use_suite2p_ROI_classifier)
     functions_plots.dispGlia(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
-    plt.savefig(os.path.join(save_path, "glia_raster_summary.png"))
-    plt.savefig(os.path.join(save_path, "glia_raster_summary.svg"))
+    plt.savefig(os.path.join(save_path, "glia_dF_F_raster_summary.png"))
+    plt.savefig(os.path.join(save_path, "glia_dF_F_raster_summary.svg"))
 
     plt.close()
 
 
 def culture_PCA_clusters(suite2p_dict, n_clusters):
     iscell_mask = suite2p_dict['iscell'][:,0] == 1
-    active_neurons = {}
+    active_neuron_activity = {}
     for key in suite2p_dict.keys():
         try:
-            active_neurons[key] = suite2p_dict[key][iscell_mask]
+            active_neuron_activity[key] = suite2p_dict[key][iscell_mask]
         except TypeError as e:
             print("Skipping string-like keys")
 
-    active_neurons['cascade_predictions'] = np.nan_to_num(active_neurons['cascade_predictions'])
+    active_neuron_activity['cascade_predictions'] = np.nan_to_num(active_neuron_activity['cascade_predictions'])
     ops = suite2p_dict['ops']
     total_activity = []
-    for frame in active_neurons['cascade_predictions'].T:
+    for frame in active_neuron_activity['cascade_predictions'].T:
         total_activity.append(np.sum(frame))
     total_activity = np.array(total_activity)
-    spks = active_neurons['cascade_predictions']
+    spks = active_neuron_activity['cascade_predictions']
 # this function returns the left singular vectors scaled by the singular values
     Vsv = TruncatedSVD(n_components = 16).fit_transform(spks.T)
 
@@ -238,15 +235,17 @@ def culture_PCA_clusters(suite2p_dict, n_clusters):
         ax.axis("off")
         ax.set_title(f"PC {j+1}", color=pc_colors[j])
 
-def main():
+def main(config_file_path = None):
     print("Executing rastermap")
-    config = load_json_config_file()
+    if config_file_path is None:
+        config = load_json_config_file()
+    else:
+        from pathlib import Path
+        config = load_json_config_file(Path(config_file_path))
     from run_cascade.functions_data_transformation import load_suite2p_paths, get_file_name_list
     suite2p_folders = get_file_name_list(config.general_settings.main_folder, "samples", supress_printing=False)
     for folder in suite2p_folders:
-        suite2p_dict = load_suite2p_paths(folder, 
-                                          config.general_settings.groups, 
-                                          config.general_settings.main_folder, use_iscell = config.cascade_settings.use_suite2p_ROI_classifier) 
+        suite2p_dict = load_suite2p_paths(folder, config) 
         visualize_culture_activity(suite2p_dict, folder)
         visualize_glia_activity(suite2p_dict, folder)
 
