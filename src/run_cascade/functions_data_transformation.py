@@ -122,7 +122,7 @@ def create_df(suite2p_dict, use_iscell = False): ## creates df structure for sin
     df.index.set_names("NeuronID", inplace=True)
     return df
 
-def load_suite2p_paths(data_folder, config):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for well_x)
+def load_suite2p_paths(data_folder, config, use_iscell = False):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for well_x)
     """here we define our suite2p dictionary from the SUITE2P_STRUCTURE...see above"""
     suite2p_dict = {
         "F": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["F"])),
@@ -134,7 +134,7 @@ def load_suite2p_paths(data_folder, config):  ## creates a dictionary for the su
         "iscell": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['iscell'])),
 
     }
-    if config.cascade_settings.use_suite2p_ROI_classifier is False:
+    if config.cascade_settings.use_suite2p_ROI_classifier is False or use_iscell is False:
         suite2p_dict["IsUsed"] = [(suite2p_dict["stat"]["skew"] >= 1)] 
 
     else:
