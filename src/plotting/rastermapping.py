@@ -143,7 +143,7 @@ def visualize_glia_activity(suite2p_dict, save_path):
                     locality=0.1, # some locality in sorting (this is a value from 0-1)
                     time_lag_window=15, # use future timepoints to compute correlation
                     grid_upsample=10, # 10 is default value and good for 'large recordings' turn on for visualization                    ).fit(spks)
-                    ).fit(spks)d
+                    ).fit(spks)
         y = model.embedding # neurons x 1
         isort = model.isort
     
@@ -201,39 +201,80 @@ def visualize_glia_activity(suite2p_dict, save_path):
     plt.close()
 
 
-def culture_PCA_clusters(suite2p_dict, n_clusters):
+def simple_raster_plot(suite2p_dict, save_path, frame_rate = None, z_score_activity = False):
     iscell_mask = suite2p_dict['iscell'][:,0] == 1
-    active_neuron_activity = {}
-    for key in suite2p_dict.keys():
-        try:
-            active_neuron_activity[key] = suite2p_dict[key][iscell_mask]
-        except TypeError as e:
-            print("Skipping string-like keys")
+    cascade_activity = suite2p_dict['cascade_predictions']
+    #get only active neurons cascade predictions
+    active_neuron_activity = cascade_activity[iscell_mask]
 
-    active_neuron_activity['cascade_predictions'] = np.nan_to_num(active_neuron_activity['cascade_predictions'])
+    spks = np.nan_to_num(active_neuron_activity)
+    if z_score_activity:
+        spks = zscore(spks, axis=1)
     ops = suite2p_dict['ops']
+
+    #calculate total estimated spikes for ax1
     total_activity = []
-    for frame in active_neuron_activity['cascade_predictions'].T:
+    for frame in active_neuron_activity.T:
         total_activity.append(np.sum(frame))
     total_activity = np.array(total_activity)
-    spks = active_neuron_activity['cascade_predictions']
-# this function returns the left singular vectors scaled by the singular values
-    Vsv = TruncatedSVD(n_components = 16).fit_transform(spks.T)
+    
 
-    # compute the other singular vectors
-    U = spks @ (Vsv / (Vsv**2).sum(axis=0)**0.5)
-    U /= (U**2).sum(axis=0)**0.5
-    fig = plt.figure(figsize=(12,6), dpi=200)
-    grid = plt.GridSpec(9, 1, figure=fig, hspace = 0.4)
+    xmin = 0
+    xmax = len(suite2p_dict['F'].T)
+    if frame_rate is None:
+        frame_rate = int(config.general_settings.frame_rate)
+
+    # make figure with grid for easy plotting
+    fig = plt.figure(figsize=(16,8), dpi=200)
+    grid = plt.GridSpec(10, 40, figure=fig, wspace = 0.1, hspace = 0.4)
+    
+
+    # plot total estimated spikes from total_activity
+    ax1 = plt.subplot(grid[1, :20])
+    ax1.plot(total_activity[xmin:xmax], color=0.5*np.ones(3))
+    ax1.set_ylim(0,140)
+    ax1.xaxis.set_visible(False)
+    ax1.spines['top'].set_visible(False)
+    ax1.spines['right'].set_visible(False)
+    ax1.spines['bottom'].set_visible(False)
+    ax1.set_title("Total Estimated Spikes per Frame")
+
+    # plot individual neural activity
+    ax2 = plt.subplot(grid[2:, :20])
+    raster = ax2.imshow(spks[xmin:xmax], cmap="binary", vmin=0, vmax=1, aspect="auto")
+                        #, interpolation="nearest")
+    #LIMIT plot time
+    # xmax = 119 * frame_rate  
+    # ax1.set_xlim([0, xmax])
+    # ax2.set_xlim([0, xmax])
+    num_ticks = 8
+    tick_positions = np.linspace(xmin, xmax, num_ticks, dtype=int)
+    tick_labels = (tick_positions / frame_rate).astype(int)
+    ax2.set_xticks(tick_positions)
+    ax2.set_xticklabels(tick_labels)
+    ax2.set_xlabel("Time (seconds)")
+    ax2.set_ylabel("NeuronID")
+    ax2.set_ylim(0,370)
+
+    # Add colorbar for z-score scale
+    # cbar = plt.colorbar(raster, ax=ax2, orientation='vertical', pad=0.02)
+    # cbar.set_label('Z-score', rotation=270, labelpad=15)
+    # cbar.set_ticks([0, 1, 2])  # Adjust ticks as necessary
+    # cbar.ax.set_yticklabels(['0', '1', '2'])  # Adjust labels as necessary
 
 
-    pc_colors = plt.get_cmap("viridis")(np.linspace(0,0.9,8))
-    for j in range(n_clusters):
-        ax = plt.subplot(grid[j+1])
-        ax.plot(Vsv[0:599, j], color=pc_colors[j])
-        ax.set_xlim([0, 599-0])
-        ax.axis("off")
-        ax.set_title(f"PC {j+1}", color=pc_colors[j])
+    ax1.set_xlim(ax2.get_xlim())  # Sync x-limits
+    plt.subplots_adjust(hspace=0.1)
+
+    ax3 = plt.subplot(grid[2:, 20:])
+    ops = suite2p_dict["ops"]
+    Img = functions_plots.getImg(ops)
+    scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.create_df(suite2p_dict), use_iscell = config.cascade_settings.use_suite2p_ROI_classifier)
+    functions_plots.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
+    plt.savefig(os.path.join(save_path, f"{suite2p_dict["Group"]}_simple_z_raster_summary.png"))
+    plt.savefig(os.path.join(save_path, f"{suite2p_dict["Group"]}_simple_z_raster_summary.svg"))
+    plt.close()
+
 
 def main(config_file_path = None):
     print("Executing rastermap")
