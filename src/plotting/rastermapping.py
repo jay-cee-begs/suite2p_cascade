@@ -201,7 +201,7 @@ def visualize_glia_activity(suite2p_dict, save_path):
     plt.close()
 
 
-def simple_raster_plot(suite2p_dict, save_path, frame_rate = None, z_score_activity = False):
+def simple_raster_plot(suite2p_dict, save_path, color_map, frame_rate = None, z_score_activity = False):
     iscell_mask = suite2p_dict['iscell'][:,0] == 1
     cascade_activity = suite2p_dict['cascade_predictions']
     #get only active neurons cascade predictions
@@ -232,7 +232,7 @@ def simple_raster_plot(suite2p_dict, save_path, frame_rate = None, z_score_activ
     # plot total estimated spikes from total_activity
     ax1 = plt.subplot(grid[1, :20])
     ax1.plot(total_activity[xmin:xmax], color=0.5*np.ones(3))
-    ax1.set_ylim(0,140)
+    # ax1.set_ylim(0,140)
     ax1.xaxis.set_visible(False)
     ax1.spines['top'].set_visible(False)
     ax1.spines['right'].set_visible(False)
@@ -241,7 +241,7 @@ def simple_raster_plot(suite2p_dict, save_path, frame_rate = None, z_score_activ
 
     # plot individual neural activity
     ax2 = plt.subplot(grid[2:, :20])
-    raster = ax2.imshow(spks[xmin:xmax], cmap="binary", vmin=0, vmax=1, aspect="auto")
+    raster = ax2.imshow(spks[xmin:xmax], cmap=color_map, vmin=0, vmax=1, aspect="auto")
                         #, interpolation="nearest")
     #LIMIT plot time
     # xmax = 119 * frame_rate  
@@ -254,7 +254,7 @@ def simple_raster_plot(suite2p_dict, save_path, frame_rate = None, z_score_activ
     ax2.set_xticklabels(tick_labels)
     ax2.set_xlabel("Time (seconds)")
     ax2.set_ylabel("NeuronID")
-    ax2.set_ylim(0,370)
+    # ax2.set_ylim(0,370)
 
     # Add colorbar for z-score scale
     # cbar = plt.colorbar(raster, ax=ax2, orientation='vertical', pad=0.02)
@@ -273,6 +273,7 @@ def simple_raster_plot(suite2p_dict, save_path, frame_rate = None, z_score_activ
     functions_plots.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
     plt.savefig(os.path.join(save_path, f"{suite2p_dict["Group"]}_simple_z_raster_summary.png"))
     plt.savefig(os.path.join(save_path, f"{suite2p_dict["Group"]}_simple_z_raster_summary.svg"))
+    plt.show()
     plt.close()
 
 
