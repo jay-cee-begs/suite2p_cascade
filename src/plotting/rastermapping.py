@@ -201,7 +201,7 @@ def visualize_glia_activity(suite2p_dict, save_path):
     plt.close()
 
 
-def simple_raster_plot(suite2p_dict, save_path, color_map, frame_rate = None, z_score_activity = False):
+def simple_raster_plot(suite2p_dict, save_path, color_map, frame_rate = None, z_score_activity = False, show_plot = False):
     iscell_mask = suite2p_dict['iscell'][:,0] == 1
     cascade_activity = suite2p_dict['cascade_predictions']
     #get only active neurons cascade predictions
@@ -247,6 +247,7 @@ def simple_raster_plot(suite2p_dict, save_path, color_map, frame_rate = None, z_
     # xmax = 119 * frame_rate  
     # ax1.set_xlim([0, xmax])
     # ax2.set_xlim([0, xmax])
+    ax2.set_ylim([0,165])
     num_ticks = 8
     tick_positions = np.linspace(xmin, xmax, num_ticks, dtype=int)
     tick_labels = (tick_positions / frame_rate).astype(int)
@@ -270,10 +271,12 @@ def simple_raster_plot(suite2p_dict, save_path, color_map, frame_rate = None, z_
     ops = suite2p_dict["ops"]
     Img = functions_plots.getImg(ops)
     scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.create_df(suite2p_dict), use_iscell = config.cascade_settings.use_suite2p_ROI_classifier)
+    file = suite2p_dict['file_name'].split('\\')[0]
     functions_plots.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
-    plt.savefig(os.path.join(save_path, f"{suite2p_dict["Group"]}_simple_z_raster_summary.png"))
-    plt.savefig(os.path.join(save_path, f"{suite2p_dict["Group"]}_simple_z_raster_summary.svg"))
-    plt.show()
+    plt.savefig(os.path.join(save_path, f"{file}_simple_z_raster_summary.png"))
+    plt.savefig(os.path.join(save_path, f"{file}_simple_z_raster_summary.svg"))
+    if show_plot:
+        plt.show()
     plt.close()
 
 
@@ -288,8 +291,7 @@ def main(config_file_path = None):
     suite2p_folders = get_file_name_list(config.general_settings.main_folder, "samples", supress_printing=False)
     for folder in suite2p_folders:
         suite2p_dict = load_suite2p_paths(folder, config) 
-        visualize_culture_activity(suite2p_dict, folder)
-        visualize_glia_activity(suite2p_dict, folder)
+        simple_raster_plot(suite2p_dict, save_path = folder, color_map='binary',frame_rate = config.general_settings.frame_rate, z_score_activity=False, show_plot=False)
 
 if __name__ == '__main__':
     main()
