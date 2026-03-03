@@ -7,9 +7,9 @@ import shutil
 import sys
 # sys.path.insert(0, 'D:/users/JC/suite2p-0.14.0')
 from suite2p import run_s2p
-from batch_process. config_loader import load_json_config_file, load_json_dict
+from batch_process.config_loader import load_json_config_file, load_json_dict
 from run_cascade import functions_data_transformation
-import convert_nd2_to_tiff
+# import convert_nd2_to_tiff
 
 _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG
@@ -127,12 +127,13 @@ def main(config_file = None):
     ops['do_registration'] = 0
     ops['delete_bin'] = 1
     copy_files = False
-    convert_to_tiff = False
+    convert_to_tiff = True
     if copy_files and convert_to_tiff is False:
         export_image_files_to_suite2p_format(main_folder, config)
-    if convert_to_tiff is True:
-        convert_nd2_to_tiff.iterConvert(config)
-        ops['input_format'] = 'tif'
+    # if convert_to_tiff is True:
+        # convert_nd2_to_tiff.iterConvert(config)
+        # ops['input_format'] = 'tif'
+    # export_image_files_to_suite2p_format(main_folder, config)
     image_folders = get_all_image_folders_in_path(main_folder)
     suite2p_samples = functions_data_transformation.get_file_name_list(config.general_settings.main_folder, file_ending="samples", supress_printing=True)
     unprocessed_samples = []
