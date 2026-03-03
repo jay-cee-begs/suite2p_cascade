@@ -3,7 +3,7 @@ import os, warnings
 import numpy as np
 import matplotlib.pyplot as plt
 from batch_process.config_loader import load_json_config_file, load_json_dict
-
+from BaselineRemoval import BaselineRemoval
 _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG
 # from scipy.signal import find_peaks, peak_prominences
@@ -36,17 +36,13 @@ def return_baseline_F(F, Fneu):
     baseline_F = []
     for f, fneu in zip(F, Fneu):
         corrected_trace = f - (0.7*fneu) ## neuropil correction
+        trace_median = np.median(corrected_trace)
+        trace_mad = np.median(np.abs(corrected_trace - trace_median))
+        norm_sigma = 1.4826*trace_mad
+        baseline_mask = np.abs(corrected_trace - trace_median) < 2 * norm_sigma
 
-        amount = int(0.125*len(corrected_trace))
-        middle = 0.5*len(corrected_trace)
-        F_sample = (np.concatenate((corrected_trace[0:amount], corrected_trace[int(middle-amount/2):int(middle+amount/2)], 
-                    corrected_trace[len(corrected_trace)-amount:len(corrected_trace)])))  #dynamically chooses beginning, middle, end 12.5%, changeable
-        F_baseline = np.median(F_sample)
-        baseline_F.append(F_baseline)
-    baseline_F = np.array(baseline_F)
-    # baseline_F = np.mean(baseline_F)
-    # np.save(f"{savepath}/F_baseline.npy", baseline_F, allow_pickle=True)
-
+        F0 = np.median(corrected_trace[baseline_mask])
+        baseline_F.append(F0)
     return baseline_F
 
 def filter_cascade_predictions(predictions_file):
@@ -171,13 +167,21 @@ def calculate_deltaF(F_file, event_threshold = 2):
     deltaF= []
     for f, fneu in zip(F, Fneu):
         corrected_trace = f - (0.7*fneu) ## neuropil correction
+
+        #Remove bleaching to generate change in Fluorescence
+        baseline_corrected = BaselineRemoval(corrected_trace)
+        airPLS_corrected = baseline_corrected.ZhangFit(lambda_= 10)
+
+        #Determine baseline F0 value
         trace_median = np.median(corrected_trace)
         trace_mad = np.median(np.abs(corrected_trace - trace_median))
         norm_sigma = 1.4826*trace_mad
         baseline_mask = np.abs(corrected_trace - trace_median) < event_threshold * norm_sigma
-
         F0 = np.median(corrected_trace[baseline_mask])
-        normalized_F = (corrected_trace-F0)/F0
+
+        #calculate dF / F0
+        normalized_F = (airPLS_corrected - F0)/F0
+        
         deltaF.append(normalized_F)
         
     deltaF = np.array(deltaF)
