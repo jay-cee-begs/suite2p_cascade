@@ -188,8 +188,7 @@ def load_local_suite2p_output(data_folder, groups = None, main_folder = None, lo
         "deltaF": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['deltaF'])),
         "cascade_predictions": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["cascade_predictions"])),
         "iscell": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['iscell'])),
-
-    }
+}
     if not use_iscell:
         suite2p_dict["IsUsed"] = [(suite2p_dict["stat"]["skew"] >= 1)] 
 
