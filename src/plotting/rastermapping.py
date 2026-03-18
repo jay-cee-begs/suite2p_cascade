@@ -201,7 +201,7 @@ def visualize_glia_activity(suite2p_dict, save_path):
     plt.close()
 
 
-def simple_raster_plot(suite2p_dict, save_path, color_map, frame_rate = None, z_score_activity = False, max_neuron_count = None, show_plot = False):
+def simple_raster_plot(suite2p_dict, color_map, save_path = None,frame_rate = None, z_score_activity = False, max_neuron_count = None, show_plot = False):
     iscell_mask = suite2p_dict['iscell'][:,0] == 1
     cascade_activity = suite2p_dict['cascade_predictions']
     #get only active neurons cascade predictions
@@ -218,6 +218,9 @@ def simple_raster_plot(suite2p_dict, save_path, color_map, frame_rate = None, z_
         total_activity.append(np.sum(frame))
     total_activity = np.array(total_activity)
     
+    plt.rcParams['svg.fonttype'] = 'none'
+    plt.rcParams['font.family'] = 'sans-serif'
+    plt.rcParams['font.sans-serif'] = 'Arial'
     plt.rcParams['svg.fonttype'] = 'none'
     plt.rcParams['font.family'] = 'sans-serif'
     plt.rcParams['font.sans-serif'] = 'Arial'
