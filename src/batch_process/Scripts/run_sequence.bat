@@ -2,7 +2,7 @@
 
 :: Activate the first virtual environment, evt. use Activate.ps1
 
-CALL "C:\Users\jcbegs\miniforge3\Scripts\activate.bat" suite2p
+CALL "C:\miniforge3\Scripts\activate.bat" suite2p
 :: Run the first script
 
 set script_dir=%~dp0
@@ -16,7 +16,7 @@ python run_suite2p.py
 CALL conda deactivate
 
 :: Activate the second virtual environment
-CALL "C:\Users\jcbegs\miniforge3\Scripts\activate.bat" cascade
+CALL "C:\miniforge3\Scripts\activate.bat" cascade
 
 cd "%src_dir%\run_cascade"
 python run_cascade_script.py
@@ -28,7 +28,7 @@ cd "%src_dir%\plotting"
 CALL conda deactivate
 
 :: Activate the second virtual environment
-CALL "C:\Users\jcbegs\miniforge3\Scripts\activate.bat" analysis
+CALL "C:\miniforge3\Scripts\activate.bat" analysis
 python output_plots.py
 :: Deactivate the second environment
 CALL conda deactivate

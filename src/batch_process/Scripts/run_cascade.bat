@@ -15,6 +15,7 @@ python run_cascade_script.py
 python run_cascade_script.py
 
 :: Deactivate the second environment
+CALL "C:\miniforge3\Scripts\activate.bat" analysis
 
 cd "%src_dir%\plotting"
 
