@@ -201,7 +201,7 @@ def visualize_glia_activity(suite2p_dict, save_path):
     plt.close()
 
 
-def simple_raster_plot(suite2p_dict, save_path, color_map, frame_rate = None, z_score_activity = False, show_plot = False):
+def simple_raster_plot(suite2p_dict, save_path, color_map, frame_rate = None, z_score_activity = False, max_neuron_count = None, show_plot = False):
     iscell_mask = suite2p_dict['iscell'][:,0] == 1
     cascade_activity = suite2p_dict['cascade_predictions']
     #get only active neurons cascade predictions
@@ -218,7 +218,9 @@ def simple_raster_plot(suite2p_dict, save_path, color_map, frame_rate = None, z_
         total_activity.append(np.sum(frame))
     total_activity = np.array(total_activity)
     
-
+    plt.rcParams['svg.fonttype'] = 'none'
+    plt.rcParams['font.family'] = 'sans-serif'
+    plt.rcParams['font.sans-serif'] = 'Arial'
     xmin = 0
     xmax = len(suite2p_dict['F'].T)
     if frame_rate is None:
@@ -232,7 +234,8 @@ def simple_raster_plot(suite2p_dict, save_path, color_map, frame_rate = None, z_
     # plot total estimated spikes from total_activity
     ax1 = plt.subplot(grid[1, :20])
     ax1.plot(total_activity[xmin:xmax], color=0.5*np.ones(3))
-    # ax1.set_ylim(0,140)
+    if max_neuron_count is not None:
+        ax1.set_ylim(0,max_neuron_count)
     ax1.xaxis.set_visible(False)
     ax1.spines['top'].set_visible(False)
     ax1.spines['right'].set_visible(False)
@@ -247,7 +250,7 @@ def simple_raster_plot(suite2p_dict, save_path, color_map, frame_rate = None, z_
     # xmax = 119 * frame_rate  
     # ax1.set_xlim([0, xmax])
     # ax2.set_xlim([0, xmax])
-    ax2.set_ylim([0,165])
+    # ax2.set_ylim([0,165])
     num_ticks = 8
     tick_positions = np.linspace(xmin, xmax, num_ticks, dtype=int)
     tick_labels = (tick_positions / frame_rate).astype(int)
@@ -273,8 +276,14 @@ def simple_raster_plot(suite2p_dict, save_path, color_map, frame_rate = None, z_
     scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.create_df(suite2p_dict), use_iscell = config.cascade_settings.use_suite2p_ROI_classifier)
     file = suite2p_dict['file_name'].split('\\')[0]
     functions_plots.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
-    plt.savefig(os.path.join(save_path, f"{file}_simple_z_raster_summary.png"))
-    plt.savefig(os.path.join(save_path, f"{file}_simple_z_raster_summary.svg"))
+    group = suite2p_dict['Group']
+    file = suite2p_dict['data_folder'].split('\\')[-1]
+    if save_path is not None:
+        
+        plt.savefig(os.path.join(save_path, f"{group}_{file}_raster_summary.png"))
+        plt.savefig(os.path.join(save_path, f"{group}_{file}_raster_summary.svg"))
+    # plt.show()
+
     if show_plot:
         plt.show()
     plt.close()
@@ -291,7 +300,13 @@ def main(config_file_path = None):
     suite2p_folders = get_file_name_list(config.general_settings.main_folder, "samples", supress_printing=False)
     for folder in suite2p_folders:
         suite2p_dict = load_suite2p_paths(folder, config) 
-        simple_raster_plot(suite2p_dict, save_path = folder, color_map='binary',frame_rate = config.general_settings.frame_rate, z_score_activity=False, show_plot=False)
+        
+        simple_raster_plot(suite2p_dict, color_map = 'binary', save_path = folder,
+                           frame_rate = int(config.general_settings.frame_rate),
+                           z_score_activity=False, show_plot=False)
+
+        # visualize_culture_activity(suite2p_dict, folder)
+        # visualize_glia_activity(suite2p_dict, folder)
 
 if __name__ == '__main__':
     main()
