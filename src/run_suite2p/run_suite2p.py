@@ -127,9 +127,9 @@ def main(config_file = None):
     ops['do_registration'] = 0
     ops['delete_bin'] = 1
     copy_files = False
-    convert_to_tiff = True
-    if copy_files and convert_to_tiff is False:
-        export_image_files_to_suite2p_format(main_folder, config)
+    convert_to_tiff = False
+    # if copy_files and convert_to_tiff is False:
+    export_image_files_to_suite2p_format(main_folder, config)
     # if convert_to_tiff is True:
         # convert_nd2_to_tiff.iterConvert(config)
         # ops['input_format'] = 'tif'
