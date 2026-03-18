@@ -117,7 +117,7 @@ def create_df(suite2p_dict, use_iscell = False): ## creates df structure for sin
     if not use_iscell:
         df["IsUsed"] = df["EstimatedSpikes"] > 0.1
     else:
-        df["IsUsed"] = suite2p_dict["IsUsed"]
+        df["IsUsed"] = suite2p_dict["iscell"][:,0]
 
     df.index.set_names("NeuronID", inplace=True)
     return df
