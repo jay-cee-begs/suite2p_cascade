@@ -1,8 +1,7 @@
 import tkinter as tk
-import tkinter as tk
 from tkinter import ttk
-from batch_gui_core.analysis_model import AnalysisParams
-from batch_gui_core.multivid_reg_model import MultiVid_Reg_Params
+from batch_core.analysis_model import AnalysisParams
+from batch_core.multivid_reg_model import MultiVid_Reg_Params
 
 class OpsEditor:
     def __init__(self, master, config):
@@ -14,12 +13,22 @@ class OpsEditor:
         self.create_widgets()
 
     def create_widgets(self):
+        self.param_rows = {}
         for idx, (param, value) in enumerate(self.params.to_dict().items()):
+
+            if param in ['correction_method','normalization_method']:
+                continue  
             tk.Label(self.master, text=param).grid(row=idx, column=0)
+            self.param_rows[param] = idx
 
             if isinstance(value, bool):
                 var = tk.BooleanVar(value=value)
                 tk.Checkbutton(self.master, variable=var).grid(row=idx, column=1)
+                if param == 'baseline_correction':
+                    var.trace_add("write", self.add_baseline_correction)
+                
+                if param == "normalize_peaks":
+                    var.trace_add("write", self.add_normalization)
 
             elif param == "Img_Overlay":
                 var = tk.StringVar(value=value)
@@ -30,32 +39,99 @@ class OpsEditor:
                     state="readonly"
                 ).grid(row=idx, column=1)
                         
-            elif param == "correction_method":
-                var = tk.StringVar(value=value)
-                ttk.Combobox(
-                    self.master,
-                    textvariable=var,
-                    values=["airPLS", "rolling_median"],
-                    state="readonly"
-                ).grid(row=idx, column=1)
-
-            elif param == "normalization_method":
-                var = tk.StringVar(value=value)
-                ttk.Combobox(
-                    self.master,
-                    textvariable=var,
-                    values=["Cell", "Population"],
-                    state="readonly"
-                ).grid(row=idx, column=1)
-                        
-
             else:
                 var = tk.StringVar(value=str(value))
                 tk.Entry(self.master, textvariable=var).grid(row=idx, column=1)
 
             self.vars[param] = var
+        
+        baseline_row = self.param_rows['baseline_correction'] + 1
+        normalization_row = self.param_rows['normalize_peaks'] + 1
 
-        tk.Button(self.master, text="Save", command=self.save).grid(row=len(self.vars), column=0)
+        self.baseline_frame = tk.Frame(self.master)
+        self.baseline_frame.grid(
+            row=baseline_row,
+            column=0,
+            columnspan=2,
+            sticky="w",
+            padx=20,
+            pady=2
+        )
+
+        self.normalization_frame = tk.Frame(self.master)
+        self.normalization_frame.grid(
+            row=normalization_row,
+            column=0,
+            columnspan=2,
+            sticky="w",
+            padx=20,
+            pady=2
+        )
+        # self.baseline_frame = tk.Frame(self.master)
+        # self.baseline_frame.grid(row = 10, column = 0, columnspan=2, pady = 10)
+        # self.normalization_frame = tk.Frame(self.master)
+        # self.normalization_frame.grid(row = 10, column = 0, columnspan=2, pady = 10)
+        if self.vars['baseline_correction'].get():
+            self.add_baseline_correction()
+        if self.vars['normalize_peaks'].get():
+            self.add_normalization()
+        
+        tk.Button(self.master, text = "Save", command = self.save).grid(row = 30, column = 0)
+
+    def add_baseline_correction(self, *args):
+
+        if not self.vars['baseline_correction'].get():
+            self.baseline_frame.grid_remove()
+            return
+
+        self.baseline_frame.grid()
+            
+        for widget in self.baseline_frame.winfo_children():
+            widget.destroy()
+        
+        tk.Label(self.baseline_frame,
+                    text = "correction_method"
+                    ).grid(row=0, column=0)
+        
+        self.correction_method_var = tk.StringVar(
+            value = self.params.correction_method
+        )
+        
+        ttk.Combobox(
+            self.baseline_frame,
+            textvariable=self.correction_method_var,
+            values=["airPLS", "rolling median"],
+            state="readonly",
+            width = 15
+        ).grid(row=0, column=1)
+
+
+    def add_normalization(self, *args):
+
+        if not self.vars['normalize_peaks'].get():
+            self.normalization_frame.grid_remove()
+            return
+        
+        self.normalization_frame.grid()
+            
+        for widget in self.normalization_frame.winfo_children():
+            widget.destroy()
+        
+        tk.Label(self.normalization_frame,
+                    text = "F Normalization"
+                    ).grid(row=0, column=0)
+        
+        self.normalization_method_var = tk.StringVar(
+            value = self.params.normalization_method
+        )
+        
+        ttk.Combobox(
+            self.normalization_frame,
+            textvariable=self.normalization_method_var,
+            values=["Cell", "Population"],
+            state="readonly",
+            width = 15
+        ).grid(row=0, column=1)
 
     def save(self):
         updated = {}
@@ -70,6 +146,9 @@ class OpsEditor:
                     updated[key] = float(val) if "." in val else int(val)
                 except:
                     updated[key] = val
+        
+        updated['correction_method'] = self.correction_method_var.get()
+        updated['normalization_method'] = self.normalization_method_var.get()
 
         self.config.analysis_params = AnalysisParams.from_dict(updated)
         self.master.destroy()

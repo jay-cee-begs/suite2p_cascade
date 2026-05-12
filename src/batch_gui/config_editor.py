@@ -7,11 +7,11 @@ import subprocess
 import threading 
 import json
 
-from batch_gui_core.io import load_config, save_config
-from gui_core import folder_logic
+from batch_core.io import load_config, save_config
+from batch_core import folder_logic
 from batch_gui.ops_editor import OpsEditor, MultiVidEditor
-from batch_gui_core.general_settings_model import GenSettings
-from batch_gui_core.analysis_model import AnalysisParams
+from batch_core.general_settings_model import GenSettings
+from batch_core.analysis_model import AnalysisParams
 
 import logging
 from pathlib import Path
@@ -42,8 +42,10 @@ class ConfigEditor:
 
         self.main_folder_var = tk.StringVar(value=self.gen_settings.main_folder)
         self.data_extension_var = tk.StringVar(value=self.gen_settings.data_extension)
-        self.cascade_path_var =  tk.StringVar(value = self.gen_settings.settings.cascade_file_path)
+        self.cascade_path_var =  tk.StringVar(value = self.gen_settings.cascade_path)
+        self.ops_path_var = tk.StringVar(value = self.gen_settings.ops_path)
         self.frame_rate_var = tk.IntVar(value=self.gen_settings.frame_rate)
+        self.exp_dur_var = tk.IntVar(value = self.gen_settings.experiment_duration)
         self.bin_width_var = tk.IntVar(value=self.gen_settings.bin_width)
 
         self.groups = self.gen_settings.groups
@@ -73,11 +75,6 @@ class ConfigEditor:
         tk.Label(self.main_frame, text="Data Extension (e.g., 'nd2', 'tiff', 'tif'):").pack(anchor='w', padx=10, pady=5)
         tk.Entry(self.main_frame, textvariable=self.data_extension_var).pack(padx=10)
 
-        #CASCADE path input
-        tk.Label(self.main_frame, text="Cascade Folder Path:").pack(anchor='w', padx=10, pady=5)
-        tk.Entry(self.main_frame, textvariable=self.cascade_path_var).pack(padx=10)
-
-
         # Groups
         self.group_frame = tk.Frame(self.main_frame)
         self.group_frame.pack(padx=10, pady=5)
@@ -89,7 +86,7 @@ class ConfigEditor:
         tk.Label(self.main_frame, text="Cascade Folder File Path:").pack(anchor='w', padx=10, pady=5)
         ops_frame = tk.Frame(self.main_frame)
         ops_frame.pack(padx=10, pady=5)
-        tk.Entry(ops_frame, textvariable=self.ops_path_var, width=40).pack(side=tk.LEFT)
+        tk.Entry(ops_frame, textvariable=self.cascade_path_var, width=40).pack(side=tk.LEFT)
         tk.Button(ops_frame, text="Browse", command=self.browse_ops_file).pack(side=tk.LEFT)
         # Ops path
         tk.Label(self.main_frame, text="Suite2p settings (ops.npy):").pack(anchor='w', padx=10, pady=5)

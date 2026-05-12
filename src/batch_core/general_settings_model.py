@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
-from batch_gui_core.analysis_model import AnalysisParams
-from batch_gui_core.multivid_reg_model import MultiVid_Reg_Params
+from batch_core.analysis_model import AnalysisParams
+from batch_core.multivid_reg_model import MultiVid_Reg_Params
 @dataclass
 class GenSettings:
     main_folder: str = ""

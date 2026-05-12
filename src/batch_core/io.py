@@ -2,8 +2,8 @@ import json
 from pathlib import Path
 from tkinter import messagebox
 
-from batch_gui_core.general_settings_model import GenSettings
-from batch_gui_core.analysis_model import AnalysisParams
+from batch_core.general_settings_model import GenSettings
+from batch_core.analysis_model import AnalysisParams
 
 def load_config():
         try:    
