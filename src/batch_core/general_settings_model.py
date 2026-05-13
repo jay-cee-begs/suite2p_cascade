@@ -16,7 +16,7 @@ class GenSettings:
     experiment_duration: int = 180
     analysis_params: AnalysisParams = field(default_factory=AnalysisParams)
     multivid_params: MultiVid_Reg_Params = field(default_factory = MultiVid_Reg_Params)
-    graph_params = GraphParams = field(default_factory = GraphParams)
+    graph_params: GraphParams = field(default_factory = GraphParams)
 
     def to_dict(self):
         return {
