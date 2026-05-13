@@ -7,27 +7,6 @@ from batch_process.config_loader import load_json_config_file, load_json_dict
 from BaselineRemoval import BaselineRemoval
 _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG
-# from scipy.signal import find_peaks, peak_prominences
-
-
-# def find_predicted_peaks(cascade_predictions, return_peaks = True):
-#     """User overview to find"""
-#     peaks_list = []
-#     amplitudes_list = []
-
-#     for cell in cascade_predictions:
-    
-#         peaks, _ = find_peaks(cell, distance = 5)  ## adjust !!!
-#         amplitudes = cell[peaks]
-
-#         peaks_list.append(peaks)
-#         amplitudes_list.append(amplitudes)
-
-
-#     if return_peaks:
-#         return peaks_list
-#     else:
-#         return amplitudes_list
 
 def return_baseline_F(F, Fneu):
     """Returns the calculated baseline fluorescence for each cell and appends to the final dictionary"""
@@ -53,7 +32,6 @@ def filter_cascade_predictions(predictions_file):
     mask = np.sum(cascade_prediction, axis=1) <  float(config.cascade_settings.predicted_spike_threshold)
     cascade_prediction[mask] = 0
     return cascade_prediction
-
 
 
 def basic_stats_per_cell(predictions_file):
@@ -139,7 +117,7 @@ def summed_spike_probs_per_cell(prediction_deltaF_file):
         summed_spike_probs_cell.append(np.nansum(cell))
     return summed_spike_probs_cell
 
-def calculate_deltaF(F_file, event_threshold = 2):
+def calculate_deltaF(F_file, config, event_threshold = None):
     """
     Convert raw fluorescence (F.npy) into change in fluorescence compared to baseline (dF / F0).
 
@@ -194,7 +172,7 @@ def calculate_deltaF(F_file, event_threshold = 2):
     return deltaF
 
 
-def calculate_deltaF_airPLS(F_file, event_threshold = 2):
+def calculate_deltaF_airPLS(F_file, config, event_threshold = None, lambda_window = None):
     """
     Convert raw fluorescence (F.npy) into change in fluorescence compared to baseline (dF / F0).
 
@@ -225,7 +203,7 @@ def calculate_deltaF_airPLS(F_file, event_threshold = 2):
 
         #Remove bleaching to generate change in Fluorescence
         baseline_corrected = BaselineRemoval(corrected_trace)
-        airPLS_corrected = baseline_corrected.ZhangFit(lambda_= 10)
+        airPLS_corrected = baseline_corrected.ZhangFit(lambda_= lambda_window)
 
         #Determine baseline F0 value
         trace_median = np.median(corrected_trace)
@@ -290,7 +268,7 @@ def remove_bleaching(input_trace, baseline_correction, window = None):
             poly1d fits a 1 dimensional polynomial to the adjusted trace which is subtraced from the raw trace (input_Trace)
 
     """
-    possible_corrections = ['rolling_min', 'rolling_med']
+    possible_corrections = ['rolling_med']
     if baseline_correction not in possible_corrections:
         print(f"Please enter a valid correction method: {possible_corrections}")
         return
