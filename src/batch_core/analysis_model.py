@@ -10,7 +10,7 @@ class AnalysisParams:
     update_suite2p_iscell: bool = False
     Img_Overlay: str = "meanImg"
 
-    predicted_spike_threshold: float = 0.1
+    cascade_activity_threshold: float = 0.1
     nb_neurons: int = 16
     model_name: str = "Global_EXC_10Hz_smoothing_200ms"
 
