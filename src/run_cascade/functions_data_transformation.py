@@ -26,13 +26,25 @@ def load_npy_array(npy_path):
 def load_npy_df(npy_path):
     return pd.DataFrame(np.load(npy_path, allow_pickle=True)) #load suite2p outputs as pandas dataframe
 
+
 def check_deltaF(folder_name_list):
     for folder in folder_name_list:
         location = os.path.join(folder, *SUITE2P_STRUCTURE["deltaF"])
         if os.path.exists(location):
             continue
-        else:
+        elif not config.analysis_params.baseline_correction:
             g_func.calculate_deltaF(location.replace("deltaF.npy","F.npy"))
+            if os.path.exists(location):
+                continue
+        elif config.analysis_params.baseline_correction and config.analysis_params.correction_method == 'airPLS':
+            g_func.calculate_deltaF_airPLS(location.replace("deltaF.npy","F.npy"), 
+                                           event_threshold=config.analysis_params.MAD_baseline_filter_threshold)
+            if os.path.exists(location):
+                continue
+        elif config.analysis_params.baseline_correction and config.analysis_params.correction_method == 'rolling median':
+            g_func.rolling_correction_deltaF(location.replace("deltaF.npy","F.npy"), config = config,
+                                             event_threshold= config.analysis_params.MAD_baseline_filter_threshold,
+                                             lambda_window=config.analysis_params.lambda_window)
             if os.path.exists(location):
                 continue
             else:
@@ -41,6 +53,12 @@ def check_deltaF(folder_name_list):
 def get_file_name_list(folder_path, file_ending, supress_printing = False): ## accounts for possible errors if deltaF files have been created before
     file_names = []
     other_files = []
+    try:
+        config = load_json_config_file(folder_path)
+    except FileNotFoundError as e:
+        print("No Analysis configurations file exists for this folder")
+        return
+    
     for root, dirs, files in os.walk(folder_path):
         for file in files:
             if file_ending=="F.npy" and file.endswith(file_ending) and not file.endswith("deltaF.npy"):
@@ -50,8 +68,8 @@ def get_file_name_list(folder_path, file_ending, supress_printing = False): ## a
             elif file_ending=="predictions_deltaF.npy" and file.endswith(file_ending):
                  file_names.append(os.path.join(root, file))
             elif file_ending=="samples":
-                if file.endswith("F.npy") and not file.endswith("deltaF.npy"):
-                    file_names.append(os.path.join(root, file)[:-21])
+                if file.endswith("F.npy") and not file.endswith("stat.npy"):
+                    file_names.append(os.path.join(root, file)[:-19])
             else:
                  if file.endswith(file_ending): other_files.append(os.path.join(root, file))
     if file_ending=="F.npy" or file_ending=="deltaF.npy" or file_ending=="predictions_deltaF.npy":
