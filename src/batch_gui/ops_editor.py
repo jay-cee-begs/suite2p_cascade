@@ -16,17 +16,18 @@ class OpsEditor:
         self.param_rows = {}
         for idx, (param, value) in enumerate(self.params.to_dict().items()):
 
-            if param in ['correction_method','normalization_method']:
+            self.param_rows[param] = idx
+
+            if param in ['correction_method','normalization_method', 'lambda_window']:
                 continue  
             tk.Label(self.master, text=param).grid(row=idx, column=0)
-            self.param_rows[param] = idx
 
             if isinstance(value, bool):
                 var = tk.BooleanVar(value=value)
                 tk.Checkbutton(self.master, variable=var).grid(row=idx, column=1)
                 if param == 'baseline_correction':
                     var.trace_add("write", self.add_baseline_correction)
-                
+                    var.trace_add("write", self.add_lambda_window)
                 if param == "normalize_peaks":
                     var.trace_add("write", self.add_normalization)
 
@@ -46,7 +47,9 @@ class OpsEditor:
             self.vars[param] = var
         
         baseline_row = self.param_rows['baseline_correction'] + 1
-        normalization_row = self.param_rows['normalize_peaks'] + 1
+        window_row = baseline_row + 1
+
+        normalization_row = self.param_rows['normalize_peaks'] + 3
 
         self.baseline_frame = tk.Frame(self.master)
         self.baseline_frame.grid(
@@ -54,6 +57,15 @@ class OpsEditor:
             column=0,
             columnspan=2,
             sticky="w",
+            padx=20,
+            pady=2
+        )
+        self.window_frame = tk.Frame(self.master)
+        self.window_frame.grid(
+            row = window_row, 
+            column=0,
+            columnspan=2,
+            sticky = "w",
             padx=20,
             pady=2
         )
@@ -67,6 +79,8 @@ class OpsEditor:
             padx=20,
             pady=2
         )
+
+
         # self.baseline_frame = tk.Frame(self.master)
         # self.baseline_frame.grid(row = 10, column = 0, columnspan=2, pady = 10)
         # self.normalization_frame = tk.Frame(self.master)
@@ -76,7 +90,28 @@ class OpsEditor:
         if self.vars['normalize_peaks'].get():
             self.add_normalization()
         
+        
         tk.Button(self.master, text = "Save", command = self.save).grid(row = 30, column = 0)
+
+    def add_lambda_window(self, *args):
+        if not self.vars['baseline_correction'].get():
+            self.window_frame.grid_remove()
+            return
+        
+        self.window_frame.grid()
+        for widget in self.window_frame.winfo_children():
+            widget.destroy()
+        
+        tk.Label(self.window_frame,
+                 text = 'lambda_window'
+                 ).grid(row = 0, column = 0)
+        
+        self.lambda_window_var = tk.StringVar(
+            value = self.params.lambda_window
+        )
+        tk.Entry(self.window_frame,
+                 textvariable=self.lambda_window_var
+                 ).grid(row=0, column=1)
 
     def add_baseline_correction(self, *args):
 
@@ -104,6 +139,8 @@ class OpsEditor:
             state="readonly",
             width = 15
         ).grid(row=0, column=1)
+
+        self.add_lambda_window()
 
 
     def add_normalization(self, *args):
@@ -146,9 +183,17 @@ class OpsEditor:
                     updated[key] = float(val) if "." in val else int(val)
                 except:
                     updated[key] = val
-        
-        updated['correction_method'] = self.correction_method_var.get()
-        updated['normalization_method'] = self.normalization_method_var.get()
+        try:
+            updated['correction_method'] = self.correction_method_var.get()
+            updated['lambda_window'] = self.lambda_window_var.get()
+        except AttributeError as e:
+            updated['correction_method'] = ''
+            updated['lambda_window'] = 100
+
+        try:
+            updated['normalization_method'] = self.normalization_method_var.get()
+        except AttributeError as e:
+            updated['normalization_method'] = ''
 
         self.config.analysis_params = AnalysisParams.from_dict(updated)
         self.master.destroy()
