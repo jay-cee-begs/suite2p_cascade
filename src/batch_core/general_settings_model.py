@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from batch_core.analysis_model import AnalysisParams
 from batch_core.multivid_reg_model import MultiVid_Reg_Params
+from batch_core.graph_output_model import GraphParams
 @dataclass
 class GenSettings:
     main_folder: str = ""
@@ -15,6 +16,7 @@ class GenSettings:
     experiment_duration: int = 180
     analysis_params: AnalysisParams = field(default_factory=AnalysisParams)
     multivid_params: MultiVid_Reg_Params = field(default_factory = MultiVid_Reg_Params)
+    graph_params = GraphParams = field(default_factory = GraphParams)
 
     def to_dict(self):
         return {
@@ -30,7 +32,8 @@ class GenSettings:
                 "EXPERIMENT_DURATION": self.experiment_duration,
             },
             "analysis_params": self.analysis_params.to_dict(),
-            "multivid_params": self.multivid_params.to_dict()
+            "multivid_params": self.multivid_params.to_dict(),
+            "graph_params": self.graph_params.to_dict(),
         }
 
     @staticmethod
@@ -38,6 +41,7 @@ class GenSettings:
         gs = data.get("general_settings", {})
         ap = data.get("analysis_params", {})
         vp = data.get("multivid_params", {})
+        gp = data.get("graph_params", {})
         return GenSettings(
             main_folder=gs.get("main_folder", ""),
             data_extension=gs.get("data_extension", ""),
@@ -48,5 +52,6 @@ class GenSettings:
             bin_width=gs.get("BIN_WIDTH", 5),
             experiment_duration=gs.get("EXPERIMENT_DURATION", 180),
             analysis_params=AnalysisParams.from_dict(ap),
-            multivid_params = MultiVid_Reg_Params.from_dict(vp)
+            multivid_params = MultiVid_Reg_Params.from_dict(vp),
+            graph_params = GraphParams.from_dict(gp)
         )
