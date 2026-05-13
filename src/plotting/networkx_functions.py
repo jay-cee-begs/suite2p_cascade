@@ -7,7 +7,7 @@ import leidenalg as la
 import seaborn as sns
 import igraph as ig
 import networkx as nx
-from run_cascade import functions_data_transformation as transform
+from run_cascade import functions_data_transformation as fdt
 from plotting import functions_plots
 from batch_process.config_loader import load_json_config_file, load_json_dict
 
@@ -21,10 +21,10 @@ def load_for_networkx(data_folder):  ## creates a dictionary for the suite2p pat
     """
     Creates a dictionary for networkx analysis from the SUITE2P_STRUCTURE in the data folder.
     """    
-    stat = transform.load_npy_array(os.path.join(data_folder, *transform.SUITE2P_STRUCTURE["stat"]))
-    cascade_predictions = transform.load_npy_array(os.path.join(data_folder, *transform.SUITE2P_STRUCTURE["cascade_predictions"]))
-    deltaF = transform.load_npy_array(os.path.join(data_folder, *transform.SUITE2P_STRUCTURE['deltaF']))
-    iscell = transform.load_npy_array(os.path.join(data_folder, *transform.SUITE2P_STRUCTURE['iscell']))[:,0].astype(bool)
+    stat = fdt.load_npy_array(os.path.join(data_folder, *fdt.SUITE2P_STRUCTURE["stat"]))
+    cascade_predictions = fdt.load_npy_array(os.path.join(data_folder, *fdt.SUITE2P_STRUCTURE["cascade_predictions"]))
+    deltaF = fdt.load_npy_array(os.path.join(data_folder, *fdt.SUITE2P_STRUCTURE['deltaF']))
+    iscell = fdt.load_npy_array(os.path.join(data_folder, *fdt.SUITE2P_STRUCTURE['iscell']))[:,0].astype(bool)
     filtered_spike_predictions = np.nan_to_num(cascade_predictions[iscell])
     filtered_dF = deltaF[iscell]
 
@@ -293,12 +293,12 @@ def plot_neuron_connections(data_folder):
     neuron_data, spike_data, deltaF = load_for_networkx(data_folder)
     print("creating networkx node graph")
     node_graph, neuron_communities, neuron_data, community_spikes = build_spike_communities(data_folder, neuron_data, deltaF, threshold = 0.3)
-    ops = transform.load_npy_array(os.path.join(data_folder, *transform.SUITE2P_STRUCTURE["ops"])).item()
+    ops = fdt.load_npy_array(os.path.join(data_folder, *fdt.SUITE2P_STRUCTURE["ops"])).item()
     extract_and_plot_neuron_connections(node_graph, neuron_data, neuron_communities, community_spikes, data_folder, ops)
     synchrony = calculate_synchrony(neuron_data, node_graph)
     plot_synchrony_heatmap(synchrony)
 def main():
-    for sample in transform.get_file_name_list(config.general_settings.main_folder, file_ending = 'samples', supress_printing=False):
+    for sample in fdt.get_file_name_list(config.general_settings.main_folder, file_ending = 'samples', supress_printing=False):
         print(f"Processing {sample}")
         plot_neuron_connections(sample)
         print('Finished processing')
