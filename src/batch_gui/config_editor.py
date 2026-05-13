@@ -83,12 +83,11 @@ class ConfigEditor:
 
 
         #CASCADE file path
-        tk.Label(self.main_frame, text="Cascade Folder File Path:").pack(anchor='w', padx=10, pady=5)
-        ops_frame = tk.Frame(self.main_frame)
-        ops_frame.pack(padx=10, pady=5)
-        tk.Entry(ops_frame, textvariable=self.cascade_path_var, width=40).pack(side=tk.LEFT)
-        tk.Button(ops_frame, text="Browse", command=self.browse_ops_file).pack(side=tk.LEFT)
+        tk.Label(self.main_frame, text="Cascade Folder Path:").pack(anchor='w', padx=10, pady=5)
+        tk.Entry(self.main_frame, textvariable=self.cascade_path_var, width=50).pack(padx=10)
+        tk.Button(self.main_frame, text="Browse", command=self.browse_cascade_folder).pack(padx=60)
         # Ops path
+        
         tk.Label(self.main_frame, text="Suite2p settings (ops.npy):").pack(anchor='w', padx=10, pady=5)
         ops_frame = tk.Frame(self.main_frame)
         ops_frame.pack(padx=10, pady=5)
@@ -174,6 +173,11 @@ class ConfigEditor:
         folder_selected = filedialog.askdirectory()
         if folder_selected:
             self.main_folder_var.set(folder_selected)
+
+    def browse_cascade_folder(self):
+        folder_selected = filedialog.askdirectory()
+        if folder_selected:
+            self.cascade_path_var.set(folder_selected)
 
     def edit_analysis_params(self):
         """Call the function to edit default ops"""
