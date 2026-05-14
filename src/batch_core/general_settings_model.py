@@ -25,6 +25,7 @@ class GenSettings:
                 "data_extension": self.data_extension,
                 "frame_rate": self.frame_rate,
                 "ops_path": self.ops_path,
+                "cascade_path": self.cascade_path,
                 "groups": self.groups,
                 "group_number": self.group_number,
                 "exp_condition": self.exp_condition,
