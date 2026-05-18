@@ -19,55 +19,74 @@ config = _DEFAULT_CONFIG
 
 
 def main(config_file = None):
-    global config  # <- important
-    global config_dict
-    if config_file is not None:
-        config = load_json_config_file(config_file)
-        config_dict = load_json_dict(config_file)
-
-    else:
-        config = load_json_config_file()
-        config_dict = load_json_dict()
-        
-    CASCADE_functions.check_for_cascade_model(config)
-    
-    if config.cascade_settings.overwrite_existing_cascade_output:
-        F_traces = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending ="F.npy", supress_printing = True)
-        for f in F_traces:
-            functions_general.calculate_deltaF(f)
-    functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending ="samples", supress_printing = True)
-    deltaF = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "deltaF.npy")
-    if len(deltaF) == 0:
-        deltaF_files = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "deltaF.npy")
-    deltaF_files = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "deltaF.npy")
     try:
+            
+        global config  # <- important
+        global config_dict
+        if config_file is not None:
+            config = load_json_config_file(config_file)
+            config_dict = load_json_dict(config_file)
 
-        predictions_deltaF_files = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "predictions_deltaF.npy") ## get the names of the predicted spike files
-        if len(predictions_deltaF_files) == 0:
-            predictions_deltaF_files = []
-    except FileNotFoundError as e:
-        print("Cascade Predictions do not exist yet")
-        predictions_deltaF_files = []
-    #TODO find a way to go through the directories and search for predictions deltaF; if for sample; != prediction file; calculate prediction file
-    if config.cascade_settings.overwrite_existing_cascade_output or len(predictions_deltaF_files)==0 or len(predictions_deltaF_files) != len(deltaF_files):
-        for file in deltaF_files:
-            CASCADE_functions.plots_and_basic_info(file, config)
-            CASCADE_functions.cascade_this(file, config)
-        print("Done Generating Prediction Files")
-    else:
-        print("Cascade prediction files already exist")
-    
-    import json
-    with open(os.path.join(config.general_settings.main_folder, 'analysis_config.json'), 'w') as f:
-        json.dump(config_dict, f, indent = 4)
-    print(f"Analysis parameters saved in {config.general_settings.main_folder} as analysis_config.json")
-    from datetime import datetime
+        else:
+            config = load_json_config_file()
+            config_dict = load_json_dict()
+            
+        CASCADE_functions.check_for_cascade_model(config)
+        
+        if config.analysis_params.overwrite_cascade:
+            F_traces = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending ="F.npy", supress_printing = True)
+            for f in F_traces:
+                functions_general.calculate_deltaF(f)
+            suite2p_folders = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending ="samples", supress_printing = True)
+            deltaF = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "deltaF.npy", supress_printing = True)
 
-    now = datetime.now()
+            for file in deltaF:
+                CASCADE_functions.plots_and_basic_info(file, config)
+                CASCADE_functions.cascade_this(file, config)
 
-    current_time = now.strftime("%H:%M:%S")
-    print("Current Time =", current_time)
-    
+        if not config.analysis_params_overwrite_cascade:
+            predictions_deltaF_files = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "predictions_deltaF.npy") ## get the names of the predicted spike files
+            F_traces = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending ="F.npy", supress_printing = True)
+            for f in F_traces:
+                functions_general.calculate_deltaF(f)
+            suite2p_folders = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending ="samples", supress_printing = True)
+            deltaF = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "deltaF.npy", supress_printing = True)
+            unprocessed_folders = []
+            cascade_suffix = 'suite2p\plane0\predictions_deltaF.npy'
+            for folder in suite2p_folders:
+                
+                try:
+                    cascade_data = np.load(os.path.join(folder, 'suite2p','plane0','predictions_deltaF.npy'), allow_pickle=True)
+                except (FileNotFoundError) as e:
+                    unprocessed_folders.append(folder)
+
+            for folder in unprocessed_folders:
+                CASCADE_functions.plots_and_basic_info(file, config)
+                CASCADE_functions.cascade_this(file, config)
+            
+        import json
+        with open(os.path.join(config.general_settings.main_folder, 'analysis_config.json'), 'w') as f:
+            json.dump(config_dict, f, indent = 4)
+        print(f"Analysis parameters saved in {config.general_settings.main_folder} as analysis_config.json")
+        from datetime import datetime
+
+        now = datetime.now()
+
+        current_time = now.strftime("%H:%M:%S")
+        print("Current Time =", current_time)
+    except KeyboardInterrupt as e:
+        print("Cascade Processing interrupted by user", '\n')
+    finally:
+        import json
+        with open(os.path.join(config.general_settings.main_folder, 'analysis_config.json'), 'w') as f:
+            json.dump(config_dict, f, indent = 4)
+        print(f"Analysis parameters saved in {config.general_settings.main_folder} as analysis_config.json")
+        from datetime import datetime
+
+        now = datetime.now()
+
+        current_time = now.strftime("%H:%M:%S")
+        print("Current Time =", current_time)
 if __name__ == "__main__":
     main()
 
