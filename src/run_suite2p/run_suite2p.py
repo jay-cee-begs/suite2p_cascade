@@ -14,11 +14,9 @@ from run_cascade import functions_data_transformation
 _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG
 
-def export_image_files_to_suite2p_format(parent_directory, config):
+def export_image_files_to_suite2p_format(parent_directory, file_ending =  config.general_settings.file_ending):
     """Export each image file (with variable file extension) into its own folder for suite2p processing, for all directories within a given parent directory."""
     
-    image_file_ending = '.' + config.general_settings.data_extension
-
     if not os.path.exists(parent_directory):
         print(f"Provided path does not exist: {parent_directory}")
         return
@@ -31,8 +29,16 @@ def export_image_files_to_suite2p_format(parent_directory, config):
             continue
 
         # Processing each file within the directory
+        files = []
         for file in os.listdir(dir_path):
-            if file.endswith(image_file_ending):
+            if os.path.isfile(os.path.join(dir_path, file) and file.endswith(file_ending)):
+                files.append(file)
+            
+            if len(files) == 0:
+                print(f"No {file_ending} files in {dir_path}")
+                continue
+
+        for file in files:
                 name, _ = os.path.splitext(file)
                 folder_path = os.path.join(dir_path, name)
                 os.makedirs(folder_path, exist_ok=True)
@@ -46,39 +52,51 @@ def export_image_files_to_suite2p_format(parent_directory, config):
                     print(f"Processed and moved {file} to {folder_path}")
                 except Exception as e:
                     print(f"Failed to process {file} due to {e}")
-            else:
-                print(f"Skipping non-{image_file_ending} file: {file}")
-#Loading in suite2p settings to begin processing
+            
+def count_image_files_in_folder(current_path, file_ending):
+    count = 0
+    for file in os.listdir(current_path):
+        if file.endswith(file_ending):
+            count += 1
+    return count
 
-
-
-def get_all_image_folders_in_path(path):
+def get_all_image_folders_in_path(path, file_ending = config.general_settings.data_extension):
     """
-    Find all folders within a given path that contain exactly one .nd2 file in their deepest subfolder.
-    
-    Nested Function:
-    - check_for_single_image_file_in_folder: Checks if a given directory contains exactly one .nd2 file.
-    """
+    Find all folders within a given path that contain exactly one `.nd2` file in their deepest subfolder.
 
-    def check_for_single_image_file_in_folder(current_path, file_ending = config.general_settings.data_extension):
-        """
-        Check if the specified path contains exactly one .nd2 file.
-        """
-        tiff_files = [file for file in os.listdir(current_path) if file.endswith(file_ending)]
-        return len(tiff_files) == 1
+    This function traverses the directory tree from the specified `path`, identifies all the folders that
+    contain exactly one `.nd2` file in the deepest subfolder, and returns a list of those folders.
+
+    Args:
+    ----------
+        path (str): The root directory path to begin the search from. The function will walk through all
+                    subdirectories starting from this path.
+
+    Returns:
+    ----------
+        list: A list of absolute paths to directories that contain exactly one `.nd2` file in their deepest
+              subfolder. If no such directories are found, the list will be empty.
+
+    Example:
+        >>> get_all_image_folders_in_path("/home/user/images")
+        ['/home/user/images/folder1', '/home/user/images/folder2']
+    """
+    image_types = {
+        'single': [],
+        'concat': []
+    }
 
     found_image_folders = []
     for current_path, directories, files in os.walk(path):
-        # Check if current directory is a "deepest" directory (no subdirectories)
-        if check_for_single_image_file_in_folder(current_path):
-            #current_path = current_path.split("\\")[-2]
-            found_image_folders.append(current_path)
+        image_count = count_image_files_in_folder(current_path, file_ending)
 
-    return found_image_folders
+        if image_count == 1:
+            image_types['single'].append(current_path)
+        elif image_count > 1:
+            image_types['concat'].append(current_path)
+    
+    return image_types
 
-# Example Usage:
-# image_folders = get_all_image_folders_in_path('/path/to/search')
-# print(image_folders)
 
 def process_files_with_suite2p(image_list, ops):
         """
@@ -108,45 +126,113 @@ def process_files_with_suite2p(image_list, ops):
                  print(f"Error processing {image_path}: {e}")
 
 def main(config_file = None):
-    global config  # <- important
-    global config_dict
-    if config_file is not None:
-        config = load_json_config_file(config_file)
-        config_dict = load_json_dict(config_file)
+    """
+    Run a full Suite2p preprocessing and analysis pipeline based on a configuration file.
 
-    else:
-        config = load_json_config_file()
-        config_dict = load_json_dict()
+    This function loads a JSON configuration, prepares Suite2p-compatible image
+    folders, processes unprocessed recordings with Suite2p, translates Suite2p
+    outputs to CSV, converts spike CSVs to pickles, and generates summary
+    statistics for the experiment. A copy of the analysis configuration is saved
+    as ``analysis_config.json`` inside the main experiment folder.
 
-    main_folder = config.general_settings.main_folder
-    data_extension = config.general_settings.data_extension
-    ops_path = config.general_settings.ops_path
-    ops = np.load(ops_path, allow_pickle=True).item()
-    ops['frame_rate'] = config.general_settings.frame_rate
-    ops['input_format'] = data_extension
-    ops['do_registration'] = 0
-    ops['delete_bin'] = 1
-    copy_files = False
-    convert_to_tiff = False
-    # if copy_files and convert_to_tiff is False:
-    export_image_files_to_suite2p_format(main_folder, config)
-    # if convert_to_tiff is True:
-        # convert_nd2_to_tiff.iterConvert(config)
-        # ops['input_format'] = 'tif'
-    # export_image_files_to_suite2p_format(main_folder, config)
-    image_folders = get_all_image_folders_in_path(main_folder)
-    suite2p_samples = functions_data_transformation.get_file_name_list(config.general_settings.main_folder, file_ending="samples", supress_printing=True)
-    unprocessed_samples = []
-    for image in image_folders:
-        if image not in suite2p_samples:
-            unprocessed_samples.append(image)
-    
-    process_files_with_suite2p(unprocessed_samples, ops)
-    import json
-    with open(os.path.join(main_folder, 'analysis_config.json'), 'w') as f:
-        json.dump(config_dict, f, indent = 4)
-    print(f"Analysis parameters saved in {main_folder} as analysis_config.json")
+    Args:
+    ----------
+        config_file : str or Path, optional
+            Path to a JSON configuration file. If omitted, the default configuration
+            from ``config_loader`` is used.
 
+    Returns:
+    ----------
+        None
+            The function performs processing and file I/O but does not return a value.
+
+
+    Workflow:
+    ----------
+        1. Load configuration and ``ops.npy`` Suite2p settings.
+        2. Export raw images into Suite2p format.
+        3. Identify all image folders and detect existing Suite2p outputs.
+        4. Run Suite2p on unprocessed folders (or all folders if overwrite is enabled).
+        5. Convert Suite2p outputs to CSV and pickle formats.
+        6. Generate experiment summary tables and statistical outputs.
+        7. Save the analysis configuration used for reproducibility.
+
+    """
+    try:    
+        global config  # <- important
+        global config_dict
+        if config_file is not None:
+            config = load_json_config_file(config_file)
+            config_dict = load_json_dict(config_file)
+
+        else:
+            config = load_json_config_file()
+            config_dict = load_json_dict()
+
+        main_folder = config.general_settings.main_folder
+        data_extension = config.general_settings.data_extension
+        ops_path = config.general_settings.ops_path
+        ops = np.load(ops_path, allow_pickle=True).item()
+        ops['frame_rate'] = config.general_settings.frame_rate
+        ops['input_format'] = data_extension
+        ops['delete_bin'] = 1
+        print("Attempting to run Suite2p")
+        if not config.analysis_params.multivid_processing:
+            export_image_files_to_suite2p_format(main_folder, config)
+        # if convert_to_tiff is True:
+            # convert_nd2_to_tiff.iterConvert(config)
+            # ops['input_format'] = 'tif'
+        # export_image_files_to_suite2p_format(main_folder, config)
+        image_folder_dict = get_all_image_folders_in_path(main_folder, file_ending= data_extension)
+        suite2p_samples = functions_data_transformation.get_file_name_list(config.general_settings.main_folder, file_ending="samples", supress_printing=True)
+        unprocessed_samples = []
+
+        if not config.analysis_params.overwrite_suite2p:
+            if config.analysis_params.multivid_processing == True:
+
+                for image in image_folder_dict['concat']:
+                    if image not in suite2p_samples:
+                        unprocessed_samples.append(image)
+                ops['do_registration'] = 1
+                process_files_with_suite2p(unprocessed_samples, ops)
+            else:
+                for image in image_folder_dict['single']:
+                    if image not in suite2p_samples:
+                        unprocessed_samples.append(image)
+                process_files_with_suite2p(unprocessed_samples, ops)
+        else:
+            if config.analysis_params.multivid_processing == False:
+                ops['do_registration'] = 0
+                process_files_with_suite2p(image_folder_dict['single'], ops)
+            else:
+                ops['do_registration'] = 1
+                process_files_with_suite2p(image_folder_dict['concat'], ops)
+
+        import json
+        with open(os.path.join(main_folder, 'analysis_config.json'), 'w') as f:
+            json.dump(config_dict, f, indent = 4)
+        print(f"Analysis parameters saved in {main_folder} as analysis_config.json")
+        from datetime import datetime
+
+        now = datetime.now()
+
+        current_time = now.strftime("%H:%M:%S")
+        print("Current Time =", current_time)
+
+    except KeyboardInterrupt as e:
+        print(e, '\n')
+        print("Analysis was interrupted by user")
+    finally:
+        import json
+        with open(os.path.join(main_folder, 'analysis_config.json'), 'w') as f:
+            json.dump(config_dict, f, indent = 4)
+        print(f"Analysis parameters saved in {main_folder} as analysis_config.json")
+        from datetime import datetime
+
+        now = datetime.now()
+
+        current_time = now.strftime("%H:%M:%S")
+        print("Current Time =", current_time)
 
 if __name__ == "__main__":
     main()
