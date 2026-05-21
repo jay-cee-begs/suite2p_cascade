@@ -349,3 +349,52 @@ def rolling_correction_deltaF(F_file, config, event_threshold = None, lambda_win
         print(f"deltaF files already exist for {F_file[len(config.general_settings.main_folder)+1:-21]}")
 
     return deltaF
+
+
+def calculate_normalized_deltaF(F_file, config, baseline_correction = None, lambda_window = None, by_type = "Cell"):
+    
+    savepath = rf"{F_file}".replace("\\F.npy","") ## make savepath original folder, indicates where deltaF.npy is saved
+    F = np.load(rf"{F_file}", allow_pickle=True)
+    Fneu = np.load(rf"{F_file[:-4]}"+"neu.npy", allow_pickle=True)
+    deltaF= []
+
+    if by_type != config.analysis_params.normalization_method:
+        by_type = config.analysis_params.normalization_method
+    if event_threshold == None:
+        event_threshold = config.analysis_params.MAD_baseline_filter_threshold
+    if lambda_window == None:
+        lambda_window = config.analysis_params.lambda_window
+
+    if config.analysis_params.baseline_correction:
+        if config.analysis_params.correction_method == 'airPLS':
+           print()
+        if config.analysis_params.correction_method == 'rolling_median':
+           print()
+    
+    if config.analysis_params.normalization_method == "Cell":
+        for f, fneu in zip(F, Fneu):
+            corrected_trace = f - (0.7*fneu) ## neuropil correction
+
+            deltaF.append((corrected_trace-corrected_trace.min())/ (corrected_trace.max() - corrected_trace.min()))
+    else:
+        corrected_traces = F - 0.7*Fneu
+        pop_max = corrected_trace.max()
+        pop_min = corrected_traces.min()
+
+        for f, fneu in zip(F, Fneu):
+            corrected_trace = f - (0.7*fneu) ## neuropil correction
+
+            deltaF.append((corrected_trace-pop_min)/ (pop_max - pop_min))
+
+    deltaF = np.array(deltaF)
+    deltaF = np.squeeze(deltaF)
+    if not os.path.exists(f"{savepath}/deltaF.npy") and not config.analysis_params.overwrite_suite2p:
+        np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
+        print(f"delta F traces saved as deltaF.npy under {savepath}\n")
+    elif os.path.exists(f"{savepath}/deltaF.npy") and config.analysis_params.overwrite_suite2p:
+        np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
+        print(f"delta F traces saved as deltaF.npy under {savepath}\n")
+    else:
+        print(f"deltaF files already exist for {F_file[len(config.general_settings.main_folder)+1:-21]}")
+
+    return deltaF
