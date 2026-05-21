@@ -35,6 +35,30 @@ def check_deltaF(folder_name_list):
         if os.path.exists(location):
             continue
         elif not config.analysis_params.baseline_correction:
+            g_func.calculate_deltaF(location.replace("deltaF.npy","F.npy"), config=config)
+            if os.path.exists(location):
+                continue
+        elif config.analysis_params.baseline_correction and config.analysis_params.correction_method == 'airPLS':
+            g_func.calculate_deltaF_airPLS(location.replace("deltaF.npy","F.npy"), config=config, 
+                                           event_threshold=config.analysis_params.MAD_baseline_filter_threshold,
+                                           lambda_window=config.analysis_params.lambda_window)
+            if os.path.exists(location):
+                continue
+        elif config.analysis_params.baseline_correction and config.analysis_params.correction_method == 'rolling median':
+            g_func.rolling_correction_deltaF(location.replace("deltaF.npy","F.npy"), config = config,
+                                             event_threshold= config.analysis_params.MAD_baseline_filter_threshold,
+                                             lambda_window=config.analysis_params.lambda_window)
+            if os.path.exists(location):
+                continue
+            else:
+                print("something went wrong, please calculate delta F manually by inserting the following code above: \n F_files = get_file_name_list(folder_path = main_folder, file_ending = 'F.npy') \n for file in F_files: calculate_deltaF(file)")
+
+def check_network_deltaF(folder_name_list):
+    for folder in folder_name_list:
+        location = os.path.join(folder, *SUITE2P_STRUCTURE["network_deltaF"])
+        if os.path.exists(location):
+            continue
+        elif not config.analysis_params.baseline_correction:
             g_func.calculate_deltaF(location.replace("deltaF.npy","F.npy"))
             if os.path.exists(location):
                 continue
@@ -51,6 +75,7 @@ def check_deltaF(folder_name_list):
                 continue
             else:
                 print("something went wrong, please calculate delta F manually by inserting the following code above: \n F_files = get_file_name_list(folder_path = main_folder, file_ending = 'F.npy') \n for file in F_files: calculate_deltaF(file)")
+
 
 def get_file_name_list(folder_path, file_ending, supress_printing = False): ## accounts for possible errors if deltaF files have been created before
     file_names = []
@@ -70,8 +95,8 @@ def get_file_name_list(folder_path, file_ending, supress_printing = False): ## a
             elif file_ending=="predictions_deltaF.npy" and file.endswith(file_ending):
                  file_names.append(os.path.join(root, file))
             elif file_ending=="samples":
-                if file.endswith("F.npy") and not file.endswith("stat.npy"):
-                    file_names.append(os.path.join(root, file)[:-19])
+                if file.endswith("stat.npy"):
+                    file_names.append(os.path.join(root, file)[:-24])
             else:
                  if file.endswith(file_ending): other_files.append(os.path.join(root, file))
     if file_ending=="F.npy" or file_ending=="deltaF.npy" or file_ending=="predictions_deltaF.npy":
@@ -95,7 +120,7 @@ def get_sample_dict(main_folder):
     date_list= []
     sample_dict = {}
     for well in well_folders:
-        date_list.append(os.path.basename(well).split("_")[0]) ## append dates; should change if the date is not in the beginning of the file name usually [:6]
+        date_list.append(os.path.basename(well)[0:6]) #date_list.append(os.path.basename(well).split("_")[0]) ## append dates; should change if the date is not in the beginning of the file name usually [:6]
     distinct_dates = [i for i in set(date_list)]
     distinct_dates.sort(key=lambda x: int(x))
  
