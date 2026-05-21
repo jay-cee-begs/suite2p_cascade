@@ -17,13 +17,13 @@ def check_for_cascade_model(config):
     cascade_file_path = config.general_settings.cascade_path
     cascade_path = Path(cascade_file_path).resolve()
     model_folder = cascade_path / "Pretrained_models"
-    model_name = config.cascade_settings.model_name
+    model_name = config.analysis_params.model_name
     available_model_path = model_folder / model_name
     if not available_model_path.exists():
-       cascade.download_model(config.cascade_settings.model_name, model_folder=model_folder, verbose = 1)
+       cascade.download_model(config.analysis_params.model_name, model_folder=model_folder, verbose = 1)
        print(f"Successfully downloaded {cascade}")
     else:
-       print(f"{config.cascade_settings.model_name} already exists in Cascade\Pretrained_models")
+       print(f"{config.analysis_params.model_name} already exists in Cascade\Pretrained_models")
 
 def load_neurons_x_time(file_path):
     """Custom method to load data as 2d array with shape (neurons, nr_timepoints)"""
@@ -80,9 +80,9 @@ def cascade_this(deltaF_file, config):
 
   # try:
     frame_rate = config.general_settings.frame_rate
-    cascade_model_name = config.cascade_settings.model_name
+    cascade_model_name = config.analysis_params.model_name
     cascade_model_file_path = os.path.join(config.general_settings.cascade_path, "Pretrained_models")
-    nb_neurons = int(config.cascade_settings.nb_neurons)
+    nb_neurons = int(config.analysis_params.nb_neurons)
 
     print(f"{deltaF_file}")
     traces = load_neurons_x_time(rf'{deltaF_file}')
@@ -129,7 +129,7 @@ def cascade_this(deltaF_file, config):
     median_noise = np.round(np.maximum(2,np.median(noise_levels)))
     nb_traces = 16
     duration = max(time_axis) - 64/config.general_settings.frame_rate # seconds
-    plot_noise_matched_ground_truth(config.cascade_settings.model_name, median_noise, config.general_settings.frame_rate, nb_traces, duration, config.general_settings.cascade_path)
+    plot_noise_matched_ground_truth(config.analysis_params.model_name, median_noise, config.general_settings.frame_rate, nb_traces, duration, config.general_settings.cascade_path)
     # plt.show()
 
     #@markdown By default saves as variable **`spike_prob`** both to a *.mat-file and a *.npy-file. You can uncomment the file format that you do not need or leave it as it is.

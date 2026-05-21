@@ -33,12 +33,12 @@ def main(config_file = None):
             fun_plot.plot_average_spike_probability_per_frame(file, output)
 #translate_suite2p_outputs_to_csv(main_folder, config, overwrite=False, check_for_iscell=True, update_iscell = True):
     functions_data_transformation.translate_suite2p_outputs_to_csv(main_folder = config.general_settings.main_folder, config = config, overwrite = True, 
-                                                    check_for_iscell=bool(config.cascade_settings.use_suite2p_ROI_classifier), 
-                                                    update_iscell=bool(config.cascade_settings.update_suite2p_iscell))#overwrite = config.general_settings.overwrite, iscell_check = config.general_settings.iscell_check, update_iscell=config.general_settings.update_iscell)
+                                                    check_for_iscell=bool(config.analysis_params.use_suite2p_ROI_classifier), 
+                                                    update_iscell=bool(config.analysis_params.update_suite2p_iscell))#overwrite = config.general_settings.overwrite, iscell_check = config.general_settings.iscell_check, update_iscell=config.general_settings.update_iscell)
     functions_data_transformation.csv_to_pickle(config.general_settings.main_folder, overwrite = True)
     #TODO add an output for final_df for within python stuff
     # create_final_df(config.general_settings.main_folder)
-    functions_data_transformation.create_experiment_overview(config.general_settings.main_folder, config.general_settings.groups, config.cascade_settings.use_suite2p_ROI_classifier)
+    functions_data_transformation.create_experiment_overview(config.general_settings.main_folder, config.general_settings.groups, config.analysis_params.use_suite2p_ROI_classifier)
 
 if __name__=="__main__":
     main()

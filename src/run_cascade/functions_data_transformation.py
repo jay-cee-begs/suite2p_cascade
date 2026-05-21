@@ -152,7 +152,7 @@ def load_suite2p_paths(data_folder, config, use_iscell = False):  ## creates a d
         "iscell": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['iscell'])),
 
     }
-    if config.cascade_settings.use_suite2p_ROI_classifier is False or use_iscell is False:
+    if config.analysis_params.use_suite2p_ROI_classifier is False or use_iscell is False:
         suite2p_dict["IsUsed"] = [(suite2p_dict["stat"]["skew"] >= 1)] 
 
     else:

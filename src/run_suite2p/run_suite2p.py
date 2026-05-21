@@ -14,7 +14,7 @@ from run_cascade import functions_data_transformation
 _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG
 
-def export_image_files_to_suite2p_format(parent_directory, file_ending =  config.general_settings.file_ending):
+def export_image_files_to_suite2p_format(parent_directory, file_ending =  config.general_settings.data_extension:
     """Export each image file (with variable file extension) into its own folder for suite2p processing, for all directories within a given parent directory."""
     
     if not os.path.exists(parent_directory):
