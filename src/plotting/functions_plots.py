@@ -12,7 +12,7 @@ import scipy.stats as stats
 from PIL import Image
 import seaborn as sns #needed for aggregated feature plots
 # import pynapple as nap #TODO if you need Pynapple plots, you cannot use alongside cascade as it will break the code
-from batch_process.config_loader import load_json_config_file, load_json_dict
+from batch_gui.config_loader import load_json_config_file, load_json_dict
 
 _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG

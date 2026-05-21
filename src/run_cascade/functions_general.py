@@ -3,7 +3,7 @@ import os, warnings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from batch_process.config_loader import load_json_config_file, load_json_dict
+from batch_gui.config_loader import load_json_config_file, load_json_dict
 from BaselineRemoval import BaselineRemoval
 _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG

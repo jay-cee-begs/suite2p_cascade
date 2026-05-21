@@ -9,7 +9,7 @@ import igraph as ig
 import networkx as nx
 from run_cascade import functions_data_transformation as fdt
 from plotting import functions_plots
-from batch_process.config_loader import load_json_config_file, load_json_dict
+from batch_gui.config_loader import load_json_config_file, load_json_dict
 
 
 _DEFAULT_CONFIG = load_json_config_file()

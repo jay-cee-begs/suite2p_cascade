@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import numpy as np
 from run_cascade import functions_general as g_func
-from batch_process.config_loader import load_json_config_file, load_json_dict
+from batch_gui.config_loader import load_json_config_file, load_json_dict
 from plotting import functions_plots as fun_plot 
 
 _DEFAULT_CONFIG = load_json_config_file()

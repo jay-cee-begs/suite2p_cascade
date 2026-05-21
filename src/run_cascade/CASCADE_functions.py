@@ -4,7 +4,7 @@ import sys
 import numpy as np
 import ruamel.yaml as yaml
 yaml = yaml.YAML(typ='rt')
-from batch_process.config_loader import load_json_config_file, load_json_dict
+from batch_gui.config_loader import load_json_config_file, load_json_dict
 import matplotlib.pyplot as plt
 from cascade2p import cascade # local folder
 from cascade2p.utils import plot_dFF_traces, plot_noise_level_distribution, plot_noise_matched_ground_truth, calculate_noise_levels
