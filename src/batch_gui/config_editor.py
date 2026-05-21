@@ -322,28 +322,6 @@ class ConfigEditor:
                 print("Error terminating analysis: ", e)
             self.on_process_finished()
     
-    def show_ops_options(self):
-        ops_window = tk.Toplevel(self.master)
-        ops_window.title("Select Ops File Option")
-
-        tk.Label(ops_window, text="Choose how to obtain the .ops file:").pack(padx=10, pady=10)
-
-        # Option a: Insert file path
-        tk.Label(ops_window, text="Insert Ops File Path:").pack(padx=10, pady=5)
-        ops_path_entry = tk.Entry(ops_window, width=50)
-        ops_path_entry.pack(padx=10, pady=5)
-        
-        def set_ops_path():
-            self.ops_path_var.set(ops_path_entry.get())
-            ops_window.destroy()
-
-        tk.Button(ops_window, text="Set Ops Path", command=set_ops_path).pack(pady=5)
-
-        # Option b: Edit default ops
-        tk.Button(ops_window, text="Edit Default Ops", command=self.default_ops_suite2p).pack(pady=5)
-
-        # Option c: Run Suite2P GUI
-        tk.Button(ops_window, text="Run Suite2P", command=self.run_suite2p).pack(pady=5)
 
     def run_pipeline(self):  #Option to skip suite2p, will execute a different .bat then
         self.save()
@@ -354,7 +332,7 @@ class ConfigEditor:
         self.abort_button.config(state = "normal")
         current_dir = Path(__file__).parent
         scripts_dir = os.path.join(current_dir, "Scripts") 
-        bat_file = os.path.join(scripts_dir, "run_suite2p.bat")
+        bat_file = os.path.join(scripts_dir, "run_sequence.bat")
         print(f"Executing {bat_file}")
         #subprocess.call([str(bat_file)])  # Execute sequence.bat
         threading.Thread(target=self.run_subprocess, args=(bat_file,)).start()
