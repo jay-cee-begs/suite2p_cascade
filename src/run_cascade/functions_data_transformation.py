@@ -17,7 +17,9 @@ SUITE2P_STRUCTURE = {
     "iscell": ["suite2p", "plane0", "iscell.npy"],
     "deltaF": ["suite2p", "plane0", "deltaF.npy"],
     "ops":["suite2p", "plane0", "ops.npy"],
-    "cascade_predictions": ["suite2p", "plane0", "predictions_deltaF.npy"]
+    "cascade_predictions": ["suite2p", "plane0", "predictions_deltaF.npy"],
+    "network_deltaF": ["suite2p", "plane0", "network_deltaF.npy"]
+
 }
 
 def load_npy_array(npy_path):

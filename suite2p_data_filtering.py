@@ -14,14 +14,13 @@ SUITE2P_STRUCTURE = {
     "iscell": ["suite2p", "plane0", "iscell.npy"],
     "deltaF": ["suite2p", "plane0", "deltaF.npy"],
     "ops":["suite2p", "plane0", "ops.npy"],
-    "cascade_predictions": ["suite2p", "plane0", "predictions_deltaF.npy"]
+    "cascade_predictions": ["suite2p", "plane0", "predictions_deltaF.npy"],
+    "network_deltaF": ["suite2p", "plane0", "network_deltaF.npy"]
 }
 
 def filter_cascade_predictions(directory):
     iscell = np.load(os.path.join(directory, *SUITE2P_STRUCTURE['iscell']), allow_pickle=True)
     deltaF = np.load(os.path.join(directory, *SUITE2P_STRUCTURE['cascade_predictions']), allow_pickle=True)
-
-
     iscell_boolean = iscell[:,0].astype(bool)
     filtered_neurons = [cell for cell, is_cell in zip(deltaF, iscell_boolean) if is_cell]
     output_path = os.path.join(os.path.abspath(directory), 'filtered_cascade_predictions.npy')
