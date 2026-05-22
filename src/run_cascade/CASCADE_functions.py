@@ -13,7 +13,23 @@ _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG
 
 def check_for_cascade_model(config):
-    """A full list of available models can be found in cascade_available_models.txt"""
+    """
+    Function to check that the pre-trained (or user-trained) Cascade model is downloaded
+    and available for use by the pipeline. 
+
+    Args:
+    ----------
+        config: SimpleNameSpace dict
+          JSON configurations file for the pipeline saved as config.json or analysis_config.json
+
+    Returns:
+    ----------
+        None
+
+    Notes:
+    ----------
+      A full list of available models can be found in cascade_available_models.txt
+    """
     cascade_file_path = config.general_settings.cascade_path
     cascade_path = Path(cascade_file_path).resolve()
     model_folder = cascade_path / "Pretrained_models"
@@ -26,7 +42,22 @@ def check_for_cascade_model(config):
        print(f"{config.analysis_params.model_name} already exists in Cascade\Pretrained_models")
 
 def load_neurons_x_time(file_path):
-    """Custom method to load data as 2d array with shape (neurons, nr_timepoints)"""
+    """
+    Function to load Cascade data as 2d array with shape (neurons, nr_timepoints).
+
+    Args:
+    ----------
+        file_path: str
+          Path to deltaF.npy file.
+          If a raw fluorescence (F.npy) file is used, Cascade will attempt to convert 
+          this to deltaF files (but it will not be completely accurate)
+
+    Returns:
+    ----------
+        traces: NumPy array
+          2D NumPy array (neurons, time_points)
+
+    """
 
     if file_path.endswith('.npy'):
       traces = np.load(file_path, allow_pickle=True)
@@ -44,7 +75,21 @@ def load_neurons_x_time(file_path):
     else:
         return traces
 
-def plots_and_basic_info(deltaF_file, config): ## maybe make into one function with cascade_this, comment what part does what and which can be commented out if not needed
+def plots_and_basic_info(deltaF_file, config): 
+    """
+    Function to plot Cascade outputs.
+
+    Args:
+    ----------
+        deltaF_file: str / file_path
+          Path to deltaF.npy file generated from Suite2p F.npy and Fneu.npy files.
+        config: SimpleNameSpace dictionary
+          configurations dictionary (config.json) loaded from batch_gui.config_loader
+
+    Returns:
+    ----------
+        Maybe returns plots????
+    """
 
     ROI_number = len(np.load(deltaF_file))
 
@@ -66,7 +111,6 @@ def plots_and_basic_info(deltaF_file, config): ## maybe make into one function w
       #np.random.seed(3952)
       ## plot size calculation, plot 5% of ROIs, minimum 4 (code doesnt work for size < 3), can be removed or replaced by fixed number
       plot_number = 6 ## or if fixed percentage plot_number = int(0.05*ROI_number)
-      if plot_number <4: plot_number = 4 ## can be removed
       neuron_indices = np.random.randint(traces.shape[0], size=plot_number)  ## if removed set number here or add plot_number = n at top
       time_axis = plot_dFF_traces(traces, neuron_indices, frame_rate)
       # plt.show()
@@ -77,7 +121,23 @@ def plots_and_basic_info(deltaF_file, config): ## maybe make into one function w
       print('Error message: '+str(e))
 
 def cascade_this(deltaF_file, config):
+    """
+    Function to run Cascade deconvolution.
 
+    Args:
+    ----------
+        deltaF_file: str / file_path
+          Path to deltaF.npy file generated from Suite2p F.npy and Fneu.npy files.
+        config: SimpleNameSpace dictionary
+          configurations dictionary (config.json) loaded from batch_gui.config_loader
+
+    Returns:
+    ----------
+        predictions_deltaF: NumPy file 
+          Cascade deconvolution results saved within suite2p directory for each processed
+          calcium imaging recording
+          
+    """
   # try:
     frame_rate = config.general_settings.frame_rate
     cascade_model_name = config.analysis_params.model_name
