@@ -23,13 +23,120 @@ SUITE2P_STRUCTURE = {
 }
 
 def load_npy_array(npy_path):
+    """
+    Load a NumPy `.npy` file into a NumPy array.
+    
+    This function loads the `.npy` file located at the specified `npy_path` and returns it as a NumPy array.
+    The `allow_pickle` option is set to `True` to allow loading pickled objects.
+    
+    Args:
+    ----------
+        npy_path (str or Path): The file path to the `.npy` file (e.g., `F.npy` or `Fneu.npy`).
+    
+    Returns:
+    ----------
+        numpy.ndarray: The loaded NumPy array from the `.npy` file.
+    
+    Example:
+    ----------
+        >>> load_npy_array('data/F.npy')
+        array([1, 2, 3])
+    """
     return np.load(npy_path, allow_pickle=True) #functionally equivalent to np.load(npy_array) but iterable; w/ Pickle
 
 def load_npy_df(npy_path):
+    """
+    Load a NumPy `.npy` file as a Pandas DataFrame.
+    
+    This function loads the `.npy` file at the specified `npy_path` and converts it into a Pandas DataFrame.
+    The `allow_pickle` option is set to `True` to allow loading pickled objects.
+    
+    Args:
+    ----------
+        npy_path (str or Path): The file path to the `.npy` file (e.g., `F.npy` or `Fneu.npy`).
+    
+    Returns:
+    ----------
+        pd.DataFrame: A Pandas DataFrame containing the loaded data from the `.npy` file.
+    
+    Example:
+    ----------
+        >>> load_npy_df('data/F.npy')
+        DataFrame with shape (3, 3)
+    """
     return pd.DataFrame(np.load(npy_path, allow_pickle=True)) #load suite2p outputs as pandas dataframe
+
+def load_npy_dict(npy_path):
+    """
+    Load a NumPy `.npy` file as a dictionary.
+    
+    This function loads the `.npy` file at the specified `npy_path` and returns the contents as a dictionary.
+    The `allow_pickle` option is set to `True` to allow loading pickled objects.
+    
+    Args:
+    ----------
+        npy_path (str or Path): The file path to the `.npy` file (e.g., `F.npy` or `Fneu.npy`).
+    
+    Returns:
+    ----------
+        dict: The loaded dictionary from the `.npy` file.
+    
+    Example:
+    ----------
+        >>> load_npy_dict('data/stat.npy')
+        {'key1': value1, 'key2': value2}
+    """
+    return np.load(npy_path, allow_pickle=True)[()] 
+
+def check_for_suite2p_output(folder_name_list):
+    """
+    Verifies whether each folder in a list of folders contains Suite2p-style output files.
+    
+    This function checks if the `stat.npy` file exists in each folder in the provided `folder_name_list`.
+    If any folder does not contain the required output files, the function will return `False`.
+    
+    Args:
+    ----------
+        folder_name_list (list of str): A list of folder paths to check for Suite2p output files.
+    
+    Returns:
+    ----------
+        bool: `True` if all folders contain the required Suite2p files, `False` otherwise.
+    
+    Example:
+    ----------
+        >>> check_for_suite2p_output(['/path/to/folder1', '/path/to/folder2'])
+        True
+    """
+
+    for folder in folder_name_list:
+        location = os.path.join(folder, *SUITE2P_STRUCTURE["stat"])
+        if os.path.exists(location):
+            continue
+        if not os.path.isfile(os.path.join(folder, location)):
+            return False
+    return True
 
 
 def check_deltaF(folder_name_list):
+    """
+    Checks if `deltaF.npy` exists in each folder in a list. If deltaF.npy does not exist the pipeline will calculate and generate it.
+    
+    This function checks each folder in the `folder_name_list` to see if the `deltaF.npy` file exists. If it doesn't,
+    the function will automatically calculate and generate `deltaF.npy` using the `detector_utility.calculate_deltaF` function.
+    
+    Args:
+    ----------
+        folder_name_list (list of str): A list of folder paths containing Suite2p-generated files.
+            
+    Returns:
+    ----------
+        None: If `deltaF.npy` is missing, it will be calculated and generated automatically.
+    
+    Example:
+    ----------
+        >>> check_deltaF(['/path/to/folder1', '/path/to/folder2'])
+    """
     for folder in folder_name_list:
         location = os.path.join(folder, *SUITE2P_STRUCTURE["deltaF"])
         if os.path.exists(location):
@@ -54,6 +161,24 @@ def check_deltaF(folder_name_list):
                 print("something went wrong, please calculate delta F manually by inserting the following code above: \n F_files = get_file_name_list(folder_path = main_folder, file_ending = 'F.npy') \n for file in F_files: calculate_deltaF(file)")
 
 def check_network_deltaF(folder_name_list):
+    """
+    Checks if a `network_deltaF.npy` file exists in each folder in a list. If network_deltaF.npy does not exist the pipeline will calculate and generate it.
+    
+    This function checks each folder in the `folder_name_list` to see if the `deltaF.npy` file exists. If it doesn't,
+    the function will automatically calculate and generate `deltaF.npy` using the `detector_utility.calculate_deltaF` function.
+    
+    Args:
+    ----------
+        folder_name_list (list of str): A list of folder paths containing Suite2p-generated files.
+            
+    Returns:
+    ----------
+        None: If `network_deltaF.npy` is missing, it will be calculated and generated automatically.
+    
+    Example:
+    ----------
+        >>> check_network_deltaF(['/path/to/folder1', '/path/to/folder2'])
+    """
     for folder in folder_name_list:
         location = os.path.join(folder, *SUITE2P_STRUCTURE["network_deltaF"])
         if os.path.exists(location):
@@ -77,7 +202,33 @@ def check_network_deltaF(folder_name_list):
                 print("something went wrong, please calculate delta F manually by inserting the following code above: \n F_files = get_file_name_list(folder_path = main_folder, file_ending = 'F.npy') \n for file in F_files: calculate_deltaF(file)")
 
 
-def get_file_name_list(folder_path, file_ending, supress_printing = False): ## accounts for possible errors if deltaF files have been created before
+def get_file_name_list(folder_path, file_ending, supress_printing = False):
+    """
+    Searches the given parent folder for specific Suite2p-generated files or subfolders containing recordings.
+    
+    This function recursively searches the `folder_path` for files matching the specified `file_ending` (e.g., `F.npy`,
+    `deltaF.npy`, or `samples`). It can also return subfolders containing both image and Suite2p analysis files.
+    
+    Args:
+    ----------
+        folder_path (str or Path): The root folder path to search for Suite2p files.
+        file_ending (str): The file type to search for. Accepted values: `F.npy`, `deltaF.npy`, `samples`.
+        config (SimpleNameSpace dict): Configurations should be loaded separately with  config_loader.load_json_config_file(file = None)
+        suppress_printing (bool, optional): Whether to suppress printing the found files/folders. Defaults to `False`.
+    
+    Returns:
+    ----------
+        list of str: A list of file or folder paths matching the specified `file_ending`.
+    
+    Example:
+    ----------
+        >>> get_all_suite2p_outputs_in_path('/path/to/data', 'F.npy')
+        ['/path/to/data/subject1/suite2p/plane0/F.npy', '/path/to/data/subject2/suite2p/plane0/F.npy']
+        >>> get_all_suite2p_outputs_in_path('/path/to/data', 'samples')
+        ['/path/to/data/subject1', '/path/to/data/subject2']
+    """
+
+    #TODO check if `config` should be added as a variable to this function
     file_names = []
     other_files = []
     try:
@@ -116,6 +267,25 @@ def get_file_name_list(folder_path, file_ending, supress_printing = False): ## a
 
 def get_sample_dict(main_folder):
     """returns a dictionary of all wells and the corresponding sample/replicate, the samples are sorted by date, everything sampled on the first date is then sample1, on the second date sample2, etc."""
+    """
+    Extract experimental dates from folder names and assign replicates to each unique date.
+    
+    This function scans the folder names in `main_folder` and extracts the dates from the beginning of each folder name.
+    It then assigns each unique date a corresponding replicate number (e.g., `sample1`, `sample2`).
+    
+    Args:
+    ----------
+        main_folder (str or Path): The path to the main folder containing subfolders with experiment data.
+    
+    Returns:
+    ----------
+        dict: A dictionary mapping each folder path to its corresponding sample/replicate number.
+    S
+    Example:
+    ----------
+        >>> get_experimental_dates('/path/to/main_folder')
+        {'/path/to/main_folder/experimental_condition/251030_file_image': 'sample_1', '/path/to/main_folder/experimental_condition/251126_file_image': 'sample_2'}
+    """
     well_folders = get_file_name_list(main_folder, "samples", supress_printing = True)
     date_list= []
     sample_dict = {}
@@ -134,6 +304,27 @@ def create_df(suite2p_dict, use_iscell = False): ## creates df structure for sin
     """this is the principle function in which we will create our .csv file structure; and where we will actually use
         our detector functions for spike detection and amplitude extraction"""
  
+    """
+    Translate Suite2p output dictionaries into raw and processed DataFrames.
+
+    Event detection, amplitude extraction, decay extraction, and ROI
+    classification are performed using detector and plotting utilities.
+
+    Args:
+    -----
+        suite2p_dict : dict
+            Dictionary produced by suite2p_utility.load_suite2p_output().
+        config : SimpleNameSpace dict
+            configurations.json file
+    Returns:
+    --------
+        tuple of pandas.DataFrame
+            (raw_df, processed_df)
+            raw_df : unfiltered ROI data
+            processed_df : ROIs with full computed metrics and filtering applied
+
+    """
+
     ## spike_amplitudes = find_predicted_peaks(suite2p_dict["cascade_predictions"], return_peaks = False) ## removed
     # spikes_per_neuron = find_predicted_peaks(suite2p_dict["cascade_predictions"]) ## removed
     masked_cascade_prediction = np.array(g_func.filter_cascade_predictions(suite2p_dict['cascade_predictions']))
@@ -158,7 +349,7 @@ def create_df(suite2p_dict, use_iscell = False): ## creates df structure for sin
                        index = range(0,len(suite2p_dict["F"])))
     
     df.index.set_names("NeuronID", inplace=True)
-
+    use_iscell = config.analysis_params.use_suite2p_ROI_classifier
     if not use_iscell:
         df["IsUsed"] = df["EstimatedSpikes"] > 0.1
     else:
@@ -168,7 +359,46 @@ def create_df(suite2p_dict, use_iscell = False): ## creates df structure for sin
     return df
 
 def load_suite2p_paths(data_folder, config, use_iscell = False):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for well_x)
-    """here we define our suite2p dictionary from the SUITE2P_STRUCTURE...see above"""
+    """
+    Load all Suite2p output files for a given recording into a single dictionary.
+
+    This includes fluorescence traces, neuropil signals, ROI statistics,
+    Suite2p processing options, and classification arrays. Optionally replaces
+    Suite2p's ``iscell.npy`` classification with user-defined skew-thresholding.
+
+    Args:
+    ----------
+        data_folder : str or Path
+            Path to the folder containing the Suite2p output directory.
+        groups : list of str
+            Names of experimental groups present inside ``main_folder``.
+        main_folder : str or Path
+            Root directory containing all experimental condition folders.
+        use_iscell : bool, optional
+            If ``True``, use Suite2p's ``iscell.npy`` array for ROI selection.
+            If ``False`` (default), compute ``IsUsed`` via skewness thresholding.
+
+    Returns:
+    ----------
+        dict
+            Dictionary containing all Suite2p arrays and metadata associated with
+            the recording, including assigned group and replicate label.
+    Example:
+    ----------
+            >>> load_suite2p_output('/path/to/data_folder', config_dict['general_settings']['groups'], config_dict['general_settings']['main_folder'], use_iscell = False)
+            {"F": [5,6,7,8...],
+            "Fneu": [0,1,2,3...],
+            "stat": {npix: [7], skew: [0.56], radius: 25,...}
+            "ops": {dict}
+            "iscell": 2D array [[1, 0.5602], [0, 0.1123]...],
+            "deltaF": [0.25, 0.5, 0.67, 0.012,...],
+            "IsUsed": [True, False, True, True, False, False, ...],
+            "Group": 'Experimental_Treatment_Condition',
+            "sample": 'Replicate01',
+            "file_name": '202511_this_is_the_calcium_imaging_video_file_w_extension" 
+            }
+        
+    """
     suite2p_dict = {
         "F": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["F"])),
         "Fneu": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["Fneu"])),
@@ -209,12 +439,6 @@ def load_suite2p_paths(data_folder, config, use_iscell = False):  ## creates a d
     # debugging
     if "iscell" not in suite2p_dict:
         raise KeyError ("'IsUsed' was not defined correctly either")
-    # if "Group" not in suite2p_dict:
-    #     raise KeyError("'Group' key not found in suite2p_dict.")
-    #     #TODO find a way to ignore files not in the group list if manually removed
-    # if not found_group:
-    #     raise KeyError(f"No group found in the data_folder path: {data_folder}")
-
     sample_dict = get_sample_dict(main_folder) ## creates the sample number dict
    
     suite2p_dict["sample"] = sample_dict[data_folder]  ## gets the sample number for the corresponding well folder from the sample dict
@@ -224,7 +448,48 @@ def load_suite2p_paths(data_folder, config, use_iscell = False):  ## creates a d
     return suite2p_dict
 
 def load_local_suite2p_output(data_folder, groups = None, main_folder = None, load_local_suite2p = True, use_iscell = False):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for well_x)
-    """here we define our suite2p dictionary from the SUITE2P_STRUCTURE...see above"""
+    """
+    Load an example Suite2p output file from a local directory without needing to open a configurations file.
+
+    This includes fluorescence traces, neuropil signals, ROI statistics,
+    Suite2p processing options, and classification arrays. Optionally replaces
+    Suite2p's ``iscell.npy`` classification with user-defined skew-thresholding.
+
+    Args:
+    ----------
+        data_folder : str or Path
+            Path to the folder containing the Suite2p output directory.
+        groups : list of str
+            Names of experimental groups present inside ``main_folder``.
+        main_folder : str or Path
+            Root directory containing all experimental condition folders.
+        use_iscell : bool, optional
+            If ``True``, use Suite2p's ``iscell.npy`` array for ROI selection.
+            If ``False`` (default), compute ``IsUsed`` via skewness thresholding.
+
+    Returns:
+    ----------
+        dict
+            Dictionary containing all Suite2p arrays and metadata associated with
+            the recording, including assigned group and replicate label.
+    Example:
+    ----------
+            >>> load_local_suite2p_output('/path/to/data_folder', 
+                                          groups = None, main_folder = None, 
+                                          load_local_suite2p = True, use_iscell = True)
+            {"F": [5,6,7,8...],
+            "Fneu": [0,1,2,3...],
+            "stat": {npix: [7], skew: [0.56], radius: 25,...}
+            "ops": {dict}
+            "iscell": 2D array [[1, 0.5602], [0, 0.1123]...],
+            "deltaF": [0.25, 0.5, 0.67, 0.012,...],
+            "IsUsed": [True, False, True, True, False, False, ...],
+            "Group": 'Experimental_Treatment_Condition',
+            "sample": 'Replicate01',
+            "file_name": '202511_this_is_the_calcium_imaging_video_file_w_extension" 
+            }
+        
+    """
     suite2p_dict = {
         "F": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["F"])),
         "Fneu": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["Fneu"])),
@@ -243,7 +508,6 @@ def load_local_suite2p_output(data_folder, groups = None, main_folder = None, lo
         suite2p_dict['IsUsed'] = suite2p_dict['iscell'][:,0].astype(bool)
  #TODO make sure that changing "path" to "data_folder" for using IsCell natively will still work
     suite2p_dict['data_folder'] = data_folder
-
 
     if load_local_suite2p:
         main_folder = suite2p_dict['data_folder'].split('\\')[:-2]
@@ -269,11 +533,6 @@ def load_local_suite2p_output(data_folder, groups = None, main_folder = None, lo
     # debugging
     if "iscell" not in suite2p_dict:
         raise KeyError ("'IsUsed' was not defined correctly either")
-    # if "Group" not in suite2p_dict:
-    #     raise KeyError("'Group' key not found in suite2p_dict.")
-    #     #TODO find a way to ignore files not in the group list if manually removed
-    # if not found_group:
-    #     raise KeyError(f"No group found in the data_folder path: {data_folder}")
 
     sample_dict = get_sample_dict(main_folder) ## creates the sample number dict
    
@@ -285,13 +544,24 @@ def load_local_suite2p_output(data_folder, groups = None, main_folder = None, lo
 
 
 def translate_suite2p_outputs_to_csv(main_folder, config, overwrite=False, check_for_iscell=True, update_iscell = True): ## creates output csv for all wells and saves them in .csv folder
-    """This will create .csv files for each video loaded from out data fram function below.
-        The structure will consist of columns that list: "Amplitudes": spike_amplitudes})
-        
-        col1: ROI #, col2: IsUsed (from iscell.npy); boolean, col3: Skew (from stats.npy); could be replaced with any 
-        stat >> compactness, col3: spike frames (relative to input frames), col4: amplitude of each spike detected measured 
-        from the baseline (the median of each trace)"""
-    
+    """
+    Convert Suite2p output folders into raw and processed CSV files.
+
+    Args:
+    --------
+        main_folder : str
+            Path containing Suite2p output folders.
+        check_for_iscell : bool, optional
+            Whether to classify ROIs using Suite2p's iscell.npy.
+        update_iscell : bool, optional
+            Whether to overwrite the iscell.npy file based on reclassification.
+
+    Returns:
+    --------
+        None
+
+    """
+
     well_folders = get_file_name_list(main_folder, "samples", supress_printing = True)
 
     output_path = os.path.join(main_folder, "csv_files")
@@ -342,8 +612,20 @@ def translate_suite2p_outputs_to_csv(main_folder, config, overwrite=False, check
 
     print(f"{len(well_folders)} .csv files were saved under {config.general_settings.main_folder+r'/csv_files'}")
 
-## create .pkl and final df ##
 def get_pkl_file_name_list(folder_path): 
+    """
+    Get all pickle (.pkl) files from a given folder path into a list of files.
+
+    Args:
+    --------
+        folder_path : str
+            Path containing pickle (.pkl) output files
+
+    Returns:
+    --------
+        pkl_files : list
+            List of pkl files from the provided `folder_path`
+    """
     pkl_files = []
     for root, dirs, files in os.walk(folder_path):
         for file in files:
@@ -353,9 +635,40 @@ def get_pkl_file_name_list(folder_path):
 
 
 def list_all_files_of_type(input_path, filetype):
+    """
+    List all files in a directory with a specific extension.
+
+    Args:
+    -----
+        input_path : str
+            Directory to search.
+        filetype : str
+            File extension filter.
+
+    Returns:
+    --------
+        list of str
+            Filenames matching the requested extension.
+
+    """
+
     return [os.path.join(input_path, path) for path in os.listdir(input_path) if path.endswith(filetype)]
 
 def csv_to_pickle(main_folder, overwrite=True):
+    """
+    Convert spike CSV files into pickled analysis dictionaries.
+
+    Args:
+    -----
+        input_path : str
+            Path containing a 'csv_files' directory.
+
+    Returns:
+    --------
+        None
+
+    """
+
     csv_files = list_all_files_of_type(main_folder+r"/csv_files", ".csv")
     print((csv_files))
     output_path = main_folder+r"/pkl_files"
@@ -380,7 +693,20 @@ def csv_to_pickle(main_folder, overwrite=True):
     print(f".pkl files saved under {main_folder+r'/pkl_files'}")
 
 def create_final_df(main_folder):
-    """ creates the final datat frame (all the wells in one dataframe) from which further analyses can be done"""
+    """
+    Create a dataframe containing the analysis of all calcium imaging recordings present in the Experiment folder (main_folder).
+
+    Args:
+    --------
+        main_folder : str
+            Path to main_folder or Experiment folder containing all calcium imaging recordings to process. 
+
+    Returns:
+    --------
+        None
+
+    """
+    
     pkl_files = get_pkl_file_name_list(main_folder)
     df_list = []
     for file in pkl_files:
@@ -393,7 +719,19 @@ def create_final_df(main_folder):
     ##alternative df from cell_stats dict, add previous functions back in then
 
 def calculate_iqr_and_outliers(data):
-    """Calculates IQR and identifies outliers in the data."""
+    """
+    Calculate IQR for a 1D input array (e.g., fluorescence trace, processed data, etc.)
+    
+    Args:
+    --------
+        data : 1D NumPy array
+            1D array or column of pd.DataFrame from which median, Q1, Q3 and IQR can be calculated
+
+    Returns:
+    --------
+        None
+
+    """
     try:
         Q1 = np.percentile(data, 25)
         Q3 = np.percentile(data, 75)
@@ -406,9 +744,58 @@ def calculate_iqr_and_outliers(data):
     return IQR, len(outliers)
 
 def get_unique_prefixes(group_names, prefix_length=3):
+    """
+    Function to extract unique prefixes which correspond to unique treatments / timepoints for imaging
+
+    Args:
+    --------
+        group_names : list
+            Group names corresponds to a list of groups to process (usually subfolders containing multiple repeats of images)
+        prefix_length : int, default = 3
+            length of characters to assign as the prefix or time_point of each image
+
+    Returns:
+    --------
+        dict : {name[:prefix_length] for name in group_names}
+
+    """
     return {name[:prefix_length] for name in group_names}
 
 def create_experiment_overview(main_folder, groups, use_iscell):
+    """
+    Final step in post-processing where csv files are generated for each file describing the overall activity of the cultures.
+    
+    Args:
+    --------
+        main_folder : str
+            Path-like Object for the main folder containing all image folders and analysis
+        groups : list
+            List of subfolders (one-level-down) from main_folder that contain image file folders and/or multivid file folders
+        use_iscell : boolean
+            Whether or not to use the Suite2p classification of ROIs as cells or not cells; alternative is to use activity/based or morphology
+            based measurements
+
+    Returns:
+    --------
+        df : pd.DataFrame
+            Pandas DataFrame containing all analyzed parameters for each image file
+        summary_stats : pd.DataFrame (aggregated)
+            Pandas DataFrame aggregated by Group and time_point including mean, median, and standard deviation calculations
+    
+    Workflow:
+    --------
+        1) Find all Cascade deconvolution (predictions_deltaF.npy) files
+        2) For each Cascade prediction file, load all other suite2p output files
+            (e.g., F, Fneu, iscell) 
+        3) Calculate baseline fluorescence (from functions_general.return_baseline_F)
+        4) Calculate cell instantaneous spike rate, sd, cv, and time_stamp means, sds, and cvs 
+            through general_functions.basic_stats_per_cell function
+        5) Mask array of neurons with iscell mask to return average active and inactive baseline (#TODO NEED TO UPDATE THIS)
+        6) Create a dictionary containing all of the calculated data for individual cells
+        7) Create an DataFrame from the dictionary
+        8) Aggregate the DataFrame by treatment group and timepoint and calculate mean, median and std. dev. for all parameters
+        9) Save the aggregated and base DataFrame to csv files in the main_folder
+    """
     dictionary_list = []
     
     for group in groups:
@@ -473,6 +860,21 @@ def create_experiment_overview(main_folder, groups, use_iscell):
 
     # Create a dynamic categorization function
     def categorize_time_point(group_name):
+        """
+        Iterator function to look through DataFrame column ('Group') for matching prefixes
+
+        Args:
+        --------
+            group_name : str
+                Name of subfolder one-level-down in main_folder which contains images and the prefix for the time_point of imaging
+        Returns:
+        --------
+            Prefix : str
+                3-character string of the time-point of a given recording
+            N/A : NULL
+                If no prefix exists for the given group or does not match, function returns "N/A"
+     
+        """
         for prefix in unique_prefixes:
             if group_name.startswith(prefix):
                 return prefix
