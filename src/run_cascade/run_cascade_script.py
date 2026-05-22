@@ -19,8 +19,37 @@ config = _DEFAULT_CONFIG
 
 
 def main(config_file = None):
+    """
+    Run Cascade deconvolution  preprocessing and analysis pipeline based on a configuration file.
+
+    This function loads a JSON configuration, containing all information of Cascade location,
+    Cascade pre-trained models, and other parameters. If the given pre-trained model is not available,
+    it is downloaded. Raw fluorescence files are converted into deltaF / F0 files (deltaF.npy), and 
+    process deltaF.npy files into Cascade predictions_deltaF.npy files for all files (if overwrite_cascade)
+    or for unprocessed files (if not overwrite_cascade) in the config.json file. 
+    The function again saves a analysis_config.json copy of the configurations used for analysis.
+
+    Args:
+    ----------
+        config_file : str or Path, optional
+            Path to a JSON configuration file. If omitted, the default configuration
+            from ``config_loader`` is used.
+
+    Returns:
+    ----------
+        None
+            The function performs processing and file I/O but does not return a value.
+
+
+    Workflow:
+    ----------
+        1. Load configuration (config.json) file.
+        2. Check if the pre-trained Cascade model is available locally.
+        3. Identify all image folders and processed Suite2p folders.
+        4. Run Cascade on unprocessed folders (or all folders if overwrite_cascade is enabled).
+        5. Save the Cascade deconvolution as predictions_deltaF.npy in each Suite2p output directory.
+    """
     try:
-            
         global config  # <- important
         global config_dict
         if config_file is not None:
