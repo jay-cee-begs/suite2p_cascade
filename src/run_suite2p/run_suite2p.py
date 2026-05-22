@@ -14,9 +14,39 @@ from run_cascade import functions_data_transformation
 _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG
 
-def export_image_files_to_suite2p_format(parent_directory, file_ending =  config.general_settings.data_extension:
-    """Export each image file (with variable file extension) into its own folder for suite2p processing, for all directories within a given parent directory."""
-    
+def export_image_files_to_suite2p_format(parent_directory, file_ending =  config.general_settings.data_extension):
+    """
+    Move image files into their own subfolders.
+     
+    This function takes image files with a given file extension and copies them into
+    their own subfolder to give 1 image per subfolder where the image name is preserved
+    in the folder name itself. This is necessary for Suite2p processing without the settings
+    'look_one_level_down'.
+
+    Args:
+    ----------
+        parent_directory: path / str
+            Path-like object pointing to main folder to search through
+        file_ending: str
+            File type / file ending for image file
+            example endings ('nd2', 'tif')
+
+    Returns:
+    ----------
+        Files organized in the following tree
+            /path/to/parent_folder
+            ├───experiment_condition_folder_1
+            │   ├───image_folder_1
+            |        ├───image_1
+            │   ├───image_folder_2
+            |        ├───image_2              
+            ├───experiment_condition_folder_2
+            │   ├───image_folder_1
+            |        ├───image_1
+            │   ├───image_folder_2
+            |        ├───image_2
+    """
+
     if not os.path.exists(parent_directory):
         print(f"Provided path does not exist: {parent_directory}")
         return
@@ -54,6 +84,23 @@ def export_image_files_to_suite2p_format(parent_directory, file_ending =  config
                     print(f"Failed to process {file} due to {e}")
             
 def count_image_files_in_folder(current_path, file_ending):
+    """
+    Count the number of image files (or files with a certain file ending) present
+    in the current path.
+
+        Args:
+    ----------
+        current_path: path / str
+            Path-like object pointing to a folder containing image files
+        file_ending: str
+            File type / file ending for image file
+            example endings ('nd2', 'tif')
+
+    Returns:
+    ----------
+        Count: int
+            Number of files matching a file ending within a given folder
+    """
     count = 0
     for file in os.listdir(current_path):
         if file.endswith(file_ending):
@@ -99,41 +146,59 @@ def get_all_image_folders_in_path(path, file_ending = config.general_settings.da
 
 
 def process_files_with_suite2p(image_list, ops):
-        """
-        Processes a list of image paths using the run_s2p function, applying specified config.json.
+    """
+    Process a list of image folders using the Suite2p pipeline.
 
-        Args:
-        image_list (list of str): List of file paths to the images to be processed.
-        """
-        for image_path in image_list:
-            try:
-                 fast_disk_path = r'C:\BIN'
-                 if not os.path.exists(fast_disk_path):
-                      os.makedirs(fast_disk_path)
-                 db = {
-                    'h5py': [], # a single h5 file path
-                    'h5py_key': 'data',
-                    'look_one_level_down': False, # whether to look in ALL subfolders when searching for images
-                    'data_path': [image_path], # a list of folders with images 
-                                                        # (or folder of folders with images if look_one_level_down is True, or subfolders is not empty)
-                                                        
-                    'subfolders': [], # choose subfolders of 'data_path' to look in (optional)
-                    'fast_disk': fast_disk_path, # string which specifies where the binary file will be stored (should be an SSD)
-                 }
-            
-                 opsEnd = run_s2p(ops=ops, db=db)
-            except (ValueError, AssertionError, IndexError, Exception) as e:
-                 print(f"Error processing {image_path}: {e}")
+    This function wraps Suite2p’s ``run_s2p`` function and applies a user-provided
+    ``ops`` dictionary to each image folder. A temporary fast-disk directory is
+    created if needed to store Suite2p-generated binary files.
+
+    Args:
+    ----------
+        image_list : list of str or Path
+            List of folder paths containing images to be processed by Suite2p.
+        ops : dict
+            The Suite2p ``ops`` settings dictionary, typically loaded from ``ops.npy``.
+    
+    Returns:
+    ----------
+        None
+
+    Notes:
+    ----------
+    Each item in ``image_list`` is treated as a separate Suite2p input folder.
+    Any exceptions raised during Suite2p processing are caught and reported,
+    allowing the loop to continue.
+    """
+    for image_path in image_list:
+        try:
+                fast_disk_path = r'C:\BIN'
+                if not os.path.exists(fast_disk_path):
+                    os.makedirs(fast_disk_path)
+                db = {
+                'h5py': [], # a single h5 file path
+                'h5py_key': 'data',
+                'look_one_level_down': False, # whether to look in ALL subfolders when searching for images
+                'data_path': [image_path], # a list of folders with images 
+                                                    # (or folder of folders with images if look_one_level_down is True, or subfolders is not empty)
+                                                    
+                'subfolders': [], # choose subfolders of 'data_path' to look in (optional)
+                'fast_disk': fast_disk_path, # string which specifies where the binary file will be stored (should be an SSD)
+                }
+        
+                opsEnd = run_s2p(ops=ops, db=db)
+        except (ValueError, AssertionError, IndexError, Exception) as e:
+                print(f"Error processing {image_path}: {e}")
 
 def main(config_file = None):
     """
-    Run a full Suite2p preprocessing and analysis pipeline based on a configuration file.
+    Run Suite2p preprocessing and analysis based on an (optional) configuration file.
 
     This function loads a JSON configuration, prepares Suite2p-compatible image
-    folders, processes unprocessed recordings with Suite2p, translates Suite2p
-    outputs to CSV, converts spike CSVs to pickles, and generates summary
-    statistics for the experiment. A copy of the analysis configuration is saved
-    as ``analysis_config.json`` inside the main experiment folder.
+    folders, processes unprocessed recordings with Suite2p, and prepares recordings
+    to be processed further by Cascade downstream in another virtual environment.
+    A copy of the analysis configuration is saved as ``analysis_config.json`` 
+    inside the main experiment folder.
 
     Args:
     ----------
@@ -151,11 +216,9 @@ def main(config_file = None):
     ----------
         1. Load configuration and ``ops.npy`` Suite2p settings.
         2. Export raw images into Suite2p format.
-        3. Identify all image folders and detect existing Suite2p outputs.
-        4. Run Suite2p on unprocessed folders (or all folders if overwrite is enabled).
-        5. Convert Suite2p outputs to CSV and pickle formats.
-        6. Generate experiment summary tables and statistical outputs.
-        7. Save the analysis configuration used for reproducibility.
+        3. Identify all image folders and detect existing Suite2p outputs for concatenation or single image processing.
+        4. Run Suite2p on unprocessed folders (or all folders if overwrite_suite2p is enabled).
+        5. Save the analysis configuration used for reproducibility.
 
     """
     try:    
@@ -238,11 +301,13 @@ if __name__ == "__main__":
     main()
 
 
-"""To Run:
+"""
+To Run:
 activate suite2p
 import run_suite2p 
 if __name__ == "__main__":
     run_suite2p.main()
 
 or simply in ipynb file: run_suite2p_main()
-    """
+
+"""
