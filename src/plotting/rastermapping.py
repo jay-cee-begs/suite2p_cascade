@@ -98,7 +98,7 @@ def visualize_culture_activity(suite2p_dict, save_path):
     ax3 = plt.subplot(grid[2:, 20:])
     ops = suite2p_dict["ops"]
     Img = functions_plots.getImg(ops)
-    scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.create_df(suite2p_dict), use_iscell = config.analysis_params.use_suite2p_ROI_classifier)
+    scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.df_from_suite2p_dict(suite2p_dict), use_iscell = config.analysis_params.use_suite2p_ROI_classifier)
     functions_plots.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
     plt.savefig(os.path.join(save_path, "dF_F_raster_summary.png"))
     plt.savefig(os.path.join(save_path, "dF_F_raster_summary.svg"))
@@ -193,7 +193,7 @@ def visualize_glia_activity(suite2p_dict, save_path):
     ax3 = plt.subplot(grid[2:, 20:])
     ops = suite2p_dict["ops"]
     Img = functions_plots.getImg(ops)
-    scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.create_df(suite2p_dict), use_iscell = config.analysis_params.use_suite2p_ROI_classifier)
+    scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.df_from_suite2p_dict(suite2p_dict), use_iscell = config.analysis_params.use_suite2p_ROI_classifier)
     functions_plots.dispGlia(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
     plt.savefig(os.path.join(save_path, "glia_dF_F_raster_summary.png"))
     plt.savefig(os.path.join(save_path, "glia_dF_F_raster_summary.svg"))
@@ -276,7 +276,7 @@ def simple_raster_plot(suite2p_dict, color_map, save_path = None,frame_rate = No
     ax3 = plt.subplot(grid[2:, 20:])
     ops = suite2p_dict["ops"]
     Img = functions_plots.getImg(ops)
-    scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.create_df(suite2p_dict), use_iscell = config.analysis_params.use_suite2p_ROI_classifier)
+    scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.df_from_suite2p_dict(suite2p_dict), use_iscell = config.analysis_params.use_suite2p_ROI_classifier)
     file = suite2p_dict['file_name'].split('\\')[0]
     functions_plots.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
     group = suite2p_dict['Group']

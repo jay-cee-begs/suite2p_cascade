@@ -184,16 +184,16 @@ def check_network_deltaF(folder_name_list):
         if os.path.exists(location):
             continue
         elif not config.analysis_params.baseline_correction:
-            g_func.calculate_deltaF(location.replace("deltaF.npy","F.npy"))
+            g_func.calculate_deltaF(location.replace("network_deltaF.npy","F.npy"))
             if os.path.exists(location):
                 continue
         elif config.analysis_params.baseline_correction and config.analysis_params.correction_method == 'airPLS':
-            g_func.calculate_deltaF_airPLS(location.replace("deltaF.npy","F.npy"), 
+            g_func.calculate_deltaF_airPLS(location.replace("network_deltaF.npy","F.npy"), 
                                            event_threshold=config.analysis_params.MAD_baseline_filter_threshold)
             if os.path.exists(location):
                 continue
         elif config.analysis_params.baseline_correction and config.analysis_params.correction_method == 'rolling median':
-            g_func.rolling_correction_deltaF(location.replace("deltaF.npy","F.npy"), config = config,
+            g_func.rolling_correction_deltaF(location.replace("network_deltaF.npy","F.npy"), config = config,
                                              event_threshold= config.analysis_params.MAD_baseline_filter_threshold,
                                              lambda_window=config.analysis_params.lambda_window)
             if os.path.exists(location):
@@ -265,8 +265,7 @@ def get_file_name_list(folder_path, file_ending, supress_printing = False):
         print("Is the file ending spelled right?")
         return other_files
 
-def get_sample_dict(main_folder):
-    """returns a dictionary of all wells and the corresponding sample/replicate, the samples are sorted by date, everything sampled on the first date is then sample1, on the second date sample2, etc."""
+def get_experimental_dates(main_folder):
     """
     Extract experimental dates from folder names and assign replicates to each unique date.
     
@@ -300,10 +299,7 @@ def get_sample_dict(main_folder):
                 sample_dict[well_folders[i1]]=f"sample_{i2+1}"
     return sample_dict
 
-def create_df(suite2p_dict, use_iscell = False): ## creates df structure for single sample (e.g. well_x) csv file, input is dict resulting from load_suite2p_paths
-    """this is the principle function in which we will create our .csv file structure; and where we will actually use
-        our detector functions for spike detection and amplitude extraction"""
- 
+def df_from_suite2p_dict(suite2p_dict, config): ## creates df structure for single sample (e.g. well_x) csv file, input is dict resulting from load_suite2p_paths
     """
     Translate Suite2p output dictionaries into raw and processed DataFrames.
 
@@ -439,7 +435,7 @@ def load_suite2p_paths(data_folder, config, use_iscell = False):  ## creates a d
     # debugging
     if "iscell" not in suite2p_dict:
         raise KeyError ("'IsUsed' was not defined correctly either")
-    sample_dict = get_sample_dict(main_folder) ## creates the sample number dict
+    sample_dict = get_experimental_dates(main_folder) ## creates the sample number dict
    
     suite2p_dict["sample"] = sample_dict[data_folder]  ## gets the sample number for the corresponding well folder from the sample dict
  
@@ -534,7 +530,7 @@ def load_local_suite2p_output(data_folder, groups = None, main_folder = None, lo
     if "iscell" not in suite2p_dict:
         raise KeyError ("'IsUsed' was not defined correctly either")
 
-    sample_dict = get_sample_dict(main_folder) ## creates the sample number dict
+    sample_dict = get_experimental_dates(main_folder) ## creates the sample number dict
    
     suite2p_dict["sample"] = sample_dict[data_folder]  ## gets the sample number for the corresponding well folder from the sample dict
  
@@ -578,7 +574,7 @@ def translate_suite2p_outputs_to_csv(main_folder, config, overwrite=False, check
 
         suite2p_dict = load_suite2p_paths(folder, config)
 
-        output_df = create_df(suite2p_dict, use_iscell=check_for_iscell)
+        output_df = df_from_suite2p_dict(suite2p_dict, use_iscell=check_for_iscell)
     
 
         output_df.to_csv(translated_path)
