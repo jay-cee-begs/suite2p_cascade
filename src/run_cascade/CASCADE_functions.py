@@ -19,7 +19,7 @@ def check_for_cascade_model(config):
 
     Args:
     ----------
-        config: SimpleNameSpace dict
+        config : SimpleNameSpace dict
           JSON configurations file for the pipeline saved as config.json or analysis_config.json
 
     Returns:
@@ -47,14 +47,14 @@ def load_neurons_x_time(file_path):
 
     Args:
     ----------
-        file_path: str
+        file_path : str
           Path to deltaF.npy file.
           If a raw fluorescence (F.npy) file is used, Cascade will attempt to convert 
           this to deltaF files (but it will not be completely accurate)
 
     Returns:
     ----------
-        traces: NumPy array
+        traces : NumPy array
           2D NumPy array (neurons, time_points)
 
     """
@@ -81,9 +81,9 @@ def plots_and_basic_info(deltaF_file, config):
 
     Args:
     ----------
-        deltaF_file: str / file_path
+        deltaF_file : str / file_path
           Path to deltaF.npy file generated from Suite2p F.npy and Fneu.npy files.
-        config: SimpleNameSpace dictionary
+        config : SimpleNameSpace dictionary
           configurations dictionary (config.json) loaded from batch_gui.config_loader
 
     Returns:
@@ -126,14 +126,14 @@ def cascade_this(deltaF_file, config):
 
     Args:
     ----------
-        deltaF_file: str / file_path
+        deltaF_file : str / file_path
           Path to deltaF.npy file generated from Suite2p F.npy and Fneu.npy files.
-        config: SimpleNameSpace dictionary
+        config : SimpleNameSpace dictionary
           configurations dictionary (config.json) loaded from batch_gui.config_loader
 
     Returns:
     ----------
-        predictions_deltaF: NumPy file 
+        predictions_deltaF : NumPy file 
           Cascade deconvolution results saved within suite2p directory for each processed
           calcium imaging recording
           
