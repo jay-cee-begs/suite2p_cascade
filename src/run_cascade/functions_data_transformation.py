@@ -31,11 +31,13 @@ def load_npy_array(npy_path):
     
     Args:
     ----------
-        npy_path (str or Path): The file path to the `.npy` file (e.g., `F.npy` or `Fneu.npy`).
+        npy_path : (str or Path)
+            The file path to the `.npy` file (e.g., `F.npy` or `Fneu.npy`)
     
     Returns:
     ----------
-        numpy.ndarray: The loaded NumPy array from the `.npy` file.
+        numpy.ndarray : 2D Array
+            The loaded NumPy array from the `.npy` file
     
     Example:
     ----------
@@ -53,11 +55,13 @@ def load_npy_df(npy_path):
     
     Args:
     ----------
-        npy_path (str or Path): The file path to the `.npy` file (e.g., `F.npy` or `Fneu.npy`).
+        npy_path : str or Path
+            The file path to the `.npy` file (e.g., `F.npy` or `Fneu.npy`)
     
     Returns:
     ----------
-        pd.DataFrame: A Pandas DataFrame containing the loaded data from the `.npy` file.
+        pd.DataFrame : DataFrame of NumPy file
+            A Pandas DataFrame containing the loaded data from the `.npy` file
     
     Example:
     ----------
@@ -75,11 +79,13 @@ def load_npy_dict(npy_path):
     
     Args:
     ----------
-        npy_path (str or Path): The file path to the `.npy` file (e.g., `F.npy` or `Fneu.npy`).
+        npy_path : str or Path
+            The file path to the `.npy` file (e.g., `F.npy` or `Fneu.npy`)
     
     Returns:
     ----------
-        dict: The loaded dictionary from the `.npy` file.
+        dict : 
+            The loaded dictionary from the `.npy` file.
     
     Example:
     ----------
@@ -97,11 +103,12 @@ def check_for_suite2p_output(folder_name_list):
     
     Args:
     ----------
-        folder_name_list (list of str): A list of folder paths to check for Suite2p output files.
+        folder_name_list : list of str
+            A list of folder paths to check for Suite2p output files
     
     Returns:
     ----------
-        bool: `True` if all folders contain the required Suite2p files, `False` otherwise.
+        boolean : `True` if all folders contain the required Suite2p files, `False` otherwise
     
     Example:
     ----------
@@ -127,11 +134,13 @@ def check_deltaF(folder_name_list):
     
     Args:
     ----------
-        folder_name_list (list of str): A list of folder paths containing Suite2p-generated files.
+        folder_name_list : list of str
+            A list of folder paths containing Suite2p-generated files
             
     Returns:
     ----------
-        None: If `deltaF.npy` is missing, it will be calculated and generated automatically.
+        None : 
+            If `deltaF.npy` is missing, it will be calculated and generated automatically
     
     Example:
     ----------
@@ -169,11 +178,13 @@ def check_network_deltaF(folder_name_list):
     
     Args:
     ----------
-        folder_name_list (list of str): A list of folder paths containing Suite2p-generated files.
+        folder_name_list : list of str
+            A list of folder paths containing Suite2p-generated files.
             
     Returns:
     ----------
-        None: If `network_deltaF.npy` is missing, it will be calculated and generated automatically.
+        None : 
+            If `network_deltaF.npy` is missing, it will be calculated and generated automatically.
     
     Example:
     ----------
@@ -211,14 +222,18 @@ def get_file_name_list(folder_path, file_ending, supress_printing = False):
     
     Args:
     ----------
-        folder_path (str or Path): The root folder path to search for Suite2p files.
-        file_ending (str): The file type to search for. Accepted values: `F.npy`, `deltaF.npy`, `samples`.
-        config (SimpleNameSpace dict): Configurations should be loaded separately with  config_loader.load_json_config_file(file = None)
-        suppress_printing (bool, optional): Whether to suppress printing the found files/folders. Defaults to `False`.
+        folder_path: str / Path
+            The root folder path to search for Suite2p files.
+        file_ending : str
+            The file type to search for. Accepted values: `F.npy`, `deltaF.npy`, `samples`
+        config : SimpleNameSpace dict 
+            Configurations should be loaded separately with  config_loader.load_json_config_file(file = None)
+        suppress_printing : bool, optional
+            Whether to suppress printing the found files/folders. Defaults to `False`
     
     Returns:
     ----------
-        list of str: A list of file or folder paths matching the specified `file_ending`.
+        list of str : A list of file or folder paths matching the specified `file_ending`.
     
     Example:
     ----------
@@ -274,11 +289,12 @@ def get_experimental_dates(main_folder):
     
     Args:
     ----------
-        main_folder (str or Path): The path to the main folder containing subfolders with experiment data.
+        main_folder : str / Path-like Object
+            The path to the main folder containing subfolders with experiment data.
     
     Returns:
     ----------
-        dict: A dictionary mapping each folder path to its corresponding sample/replicate number.
+        dict : A dictionary mapping each folder path to its corresponding sample/replicate number.
     S
     Example:
     ----------
