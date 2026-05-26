@@ -24,13 +24,13 @@ def getFilesWithExt(top_dir, files_ext):
     ----------
         top_dir : str / directory 
             Top / Parent directory containing image files
-        files_ext: str
+        files_ext : str
             File extension for given image files (e.g., 'tiff', 'nd2', 'tif')
             The function is optimized to find and convert ND2 files into tif files.
     
     Returns:
     ----------
-        matches: list
+        matches : list
             list of files matching files_ext within top_dir 
     """
     matches = []
