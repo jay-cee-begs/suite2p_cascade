@@ -17,14 +17,14 @@ from batch_gui.config_loader import load_json_config_file, load_json_dict
 _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG
 
-def random_individual_cell_histograms(deltaF_file, plot_number):
-    ## for individual cells, random sample of plot_number, (can also be set to randoms sample of size plot_number, i this case use code below to calculate plot number and then pass it to function) ##
+def random_individual_cell_histograms(deltaF_file, roi_percent):
+    ## for individual cells, random sample of roi_percent, (can also be set to randoms sample of size roi_percent, i this case use code below to calculate plot number and then pass it to function) ##
     ### ROI_number = len(np.load(file)) ## needs to be connected with plot number below if we always want to show fixed percentage of all possible histograms
-    ### plot_number = int(0.05*ROI_number) # plots random 5% of all cells
-    ### if plot_number <4: plot_number = 4
+    ### roi_percent = int(0.05*ROI_number) # plots random 5% of all cells
+    ### if roi_percent <4: roi_percent = 4
     
     array = np.load(rf"{deltaF_file}")
-    sample = random.sample(range(0, len(array)), plot_number)
+    sample = random.sample(range(0, len(array)), roi_percent)
     for i in sample: ## alterantive i in range(len(array)) to plot all
       plt.figure(figsize=(5,5))
       plt.hist(array[i], density=True, bins=200)
@@ -41,6 +41,20 @@ def deltaF_histogram_across_cells(deltaF_file):
     plt.show()
 
 def histogram_total_estimated_spikes(prediction_deltaF_file, output_directory):
+    """
+    Plot a histogram of the distribution of total Cascade-estimated spikes across all detected (and accepted) ROIs
+    Args:
+    ----------
+        predictions_deltaF_file : str / Path
+          Path-like object pointing to Cascade deconvolution prediction file (.npy)
+        
+        output_directory: str / Path
+            Directory where to save the generated plot; default is in the subfolder containing the image and Suite2p output
+
+    Returns:
+    ----------
+        None
+    """
     array = np.load(rf"{prediction_deltaF_file}")
     iscell_file = prediction_deltaF_file.replace("predictions_deltaF.npy", 'iscell.npy')
     iscell = np.load(rf"{iscell_file}", allow_pickle = True)
@@ -68,7 +82,21 @@ def histogram_total_estimated_spikes(prediction_deltaF_file, output_directory):
     print(f'Well Histograms for estimated spikes saved under {figure_output_path}')
     plt.close()
 
-def plot_group_histogram(group, predictions_deltaF_files): ## plots histograms of total spikes per neuron for each group, possible to add a third group
+def plot_group_histogram(group, predictions_deltaF_files): 
+    """
+    Plot a histogram of the distribution of total Cascade-estimated spikes across all detected (and accepted) ROIs for a given experiment condition
+    Args:
+    ----------
+        group : str
+            Name of subfolder / group to be processed with the function
+
+        predictions_deltaF_file : str / Path
+          Path-like object pointing to Cascade deconvolution prediction file (.npy)
+
+    Returns:
+    ----------
+        None
+    """
     group_arrays = []
     estimated_spikes = []
     for file in predictions_deltaF_files:
