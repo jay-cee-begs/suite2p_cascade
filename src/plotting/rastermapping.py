@@ -11,6 +11,32 @@ _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG
 
 def simple_raster_plot(suite2p_dict, color_map, save_path = None,frame_rate = None, z_score_activity = False, max_neuron_count = None, show_plot = False):
+    """
+    Create a simple rasterplot of a given suite2p processed file
+    Args:
+    ----------
+        suite2p_dict : dict
+            Dictionary containing all Suite2p output files
+        color_map : str, matplotlib.colormap
+            Color scheme for rasterplot
+        save_path : str, default = None
+            Folder path telling where to save the rasterplot. It is implemented to defaul to the same folder as the suite2p_dict
+        frame_rate : int
+            Speed of calcium imaging in frames per second (fps)
+        z_score_activity : bool, default = False
+            Should activity be normalized by Z-score; default is to show raw activity.
+            If activity is low, Z-score should be enabled
+        max_neuron_count : int
+            Y-limit for the maximum number of neurons to show; if less neurons exist than max, part of the rasterplot will be blank.
+        show_plot : bool, default = False
+            whether to run plt.show() for the rasterplot
+        
+
+    Returns:
+    ----------
+        if show_plot : run plt.show()
+        if save_path : run plt.save(save_path + file_name)
+    """
     iscell_mask = suite2p_dict['iscell'][:,0] == 1
     cascade_activity = suite2p_dict['cascade_predictions']
     #get only active neurons cascade predictions
