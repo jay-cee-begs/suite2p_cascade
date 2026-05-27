@@ -2,7 +2,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from statannotations.Annotator import Annotator
-from batch_process import config_loader
+from batch_gui import config_loader
 
 _DEFAULT_CONFIG = config_loader.load_json_config_file()
 config = _DEFAULT_CONFIG
