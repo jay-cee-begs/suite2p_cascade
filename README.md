@@ -77,7 +77,7 @@ The filepaths in the processing batch (.bat) file(s) will need to be updated *fi
 
 -- The gui can be found the folder batch_gui
 -- All backend GUI functions are found in batch_core
--- navigate to the batch_process folder from the suite2p_cascade folder by calling the command `cd src\batch_gui`
+-- navigate to the batch_gui folder from the suite2p_cascade folder by calling the command `cd src\batch_gui`
 -- it can be launched from the batch_gui folder with the command `python -m run_gui`
 
 
