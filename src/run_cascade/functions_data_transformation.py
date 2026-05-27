@@ -218,7 +218,7 @@ def get_file_name_list(folder_path, file_ending, supress_printing = False):
     Searches the given parent folder for specific Suite2p-generated files or subfolders containing recordings.
     
     This function recursively searches the `folder_path` for files matching the specified `file_ending` (e.g., `F.npy`,
-    `deltaF.npy`, or `samples`). It can also return subfolders containing both image and Suite2p analysis files.
+    `deltaF.npy`, `predictions_deltaF.npy` or `samples`). It can also return subfolders containing both image and Suite2p analysis files.
     
     Args:
     ----------
