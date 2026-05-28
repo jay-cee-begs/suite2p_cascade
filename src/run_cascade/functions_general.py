@@ -34,18 +34,20 @@ def return_baseline_F(F_file, Fneu):
 
         F0 = np.median(corrected_trace[baseline_mask])
         baseline_F.append(F0)
+
     return baseline_F
 
-def filter_cascade_predictions(prediction_deltaF_file, activity_threshold = 0.1):
+def filter_cascade_predictions(prediction_deltaF_file, config):
     """
-    Filter cascade predictions for ROIs based on predicted activity levels. Any 
+    Mask cascade predictions for ROIs based on predicted activity levels. Any ROI with less than 0.1 
+    predicted cascade spikes is set to be 0 predicted spikes 
     
     Args:
     -----------
         prediction_deltaF_file : 2D NumPy Array
             Cascade-predicted activity from deconvolution
-        activity_threshold : float
-            number of cascade-predicted spikes for ROI to be considered active (default = 0.1)
+        config : SimpleNameSpace dict
+            configurations JSON file for running the GUI / post-processing data
         
     Returns:
     -----------
@@ -190,7 +192,7 @@ def summed_spike_probs_per_cell(prediction_deltaF_file):
         summed_spike_probs_cell.append(np.nansum(cell))
     return summed_spike_probs_cell
 
-def calculate_deltaF(F_file, config, event_threshold = None):
+def calculate_deltaF(F_file, config):
     """
     Convert raw fluorescence (F.npy) into change in fluorescence compared to baseline (dF / F0).
 
@@ -218,16 +220,27 @@ def calculate_deltaF(F_file, config, event_threshold = None):
     deltaF= []
     for f, fneu in zip(F, Fneu):
         corrected_trace = f - (0.7*fneu) ## neuropil correction
+        if config.analysis_params.correction_method in ['airPLS', 'rolling_median']:
+            
+            if config.analysis_params.correction_method is "airPLS":
+                lambda_window = config.analysis_params.lambda_window
+                baseline_corrected = BaselineRemoval(corrected_trace)
+                corrected_trace = baseline_corrected.ZhangFit(lambda_= lambda_window)
+            if config.analysis_params.correction_method is "rolling_median":
+                baseline_corrected = remove_bleaching(corrected_trace, 
+                                                      baseline_correction='rolling_med', 
+                                                      window = lambda_window)
+                corrected_trace = baseline_corrected
         #Determine baseline F0 value
         trace_median = np.median(corrected_trace)
         trace_mad = np.median(np.abs(corrected_trace - trace_median))
         norm_sigma = 1.4826*trace_mad
+        event_threshold = config.analysis_params.MAD_baseline_filter_threshold
         baseline_mask = np.abs(corrected_trace - trace_median) < event_threshold * norm_sigma
         F0 = np.median(corrected_trace[baseline_mask])
 
         #calculate dF / F0
-        normalized_F = (corrected_trace - F0)/F0
-        
+        normalized_F = (corrected_trace)/F0        
         deltaF.append(normalized_F)
         
     deltaF = np.array(deltaF)
@@ -240,7 +253,7 @@ def calculate_deltaF(F_file, config, event_threshold = None):
 
     return deltaF
 
-
+##TODO cut this function
 def calculate_deltaF_airPLS(F_file, config, event_threshold = None, lambda_window = None):
     """
     Convert raw fluorescence (F.npy) into change in fluorescence compared to baseline (dF / F0).
@@ -282,7 +295,7 @@ def calculate_deltaF_airPLS(F_file, config, event_threshold = None, lambda_windo
         F0 = np.median(corrected_trace[baseline_mask])
 
         #calculate dF / F0
-        normalized_F = (airPLS_corrected - F0)/F0
+        normalized_F = (airPLS_corrected)/F0
         
         deltaF.append(normalized_F)
         
@@ -316,7 +329,7 @@ def rolling_med(input_series, window_size):
     m = r.median()
     return m
 
-def remove_bleaching(input_trace, baseline_correction, window = None):
+def remove_bleaching(input_trace, baseline_correction = "rolling_med", window = None):
     """
     Basic first-order polynomial function to remove bleaching from single ROI calcium imaging trace
 
