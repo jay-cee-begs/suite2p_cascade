@@ -5,6 +5,7 @@ import numpy as np
 from run_cascade import functions_general as g_func
 from batch_gui.config_loader import load_json_config_file, load_json_dict
 from plotting import functions_plots as fun_plot 
+from plotting import network_analysis as net_analysis
 
 _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG
@@ -352,8 +353,8 @@ def df_from_suite2p_dict(suite2p_dict, config): ## creates df structure for sing
                        "EstimatedSpikes": estimated_spike_total,
                        "SD_Estimated_Spks":basic_cell_stats[1],
                        "cv_Estimated_Spks":basic_cell_stats[2],
-                       "Total Frames": len(suite2p_dict["F"].T)-64,
-                       "SpikesFreq": avg_instantaneous_spike_rate, ## -64 because first and last entries in cascade are NaN, thus not considered in estimated spikes)
+                       "Total Frames": len(suite2p_dict["F"].T), 
+                       "SpikesFreq": avg_instantaneous_spike_rate, 
 
                        "group": suite2p_dict["Group"],
                        "dataset":suite2p_dict["sample"],
