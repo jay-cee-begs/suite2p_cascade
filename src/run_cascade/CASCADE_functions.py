@@ -138,7 +138,7 @@ def cascade_this(deltaF_file, config):
           calcium imaging recording
           
     """
-  # try:
+
     frame_rate = config.general_settings.frame_rate
     cascade_model_name = config.analysis_params.model_name
     cascade_model_file_path = os.path.join(config.general_settings.cascade_path, "Pretrained_models")
@@ -199,10 +199,8 @@ def cascade_this(deltaF_file, config):
     save_path = os.path.join(folder, file_name)
 
     # save as numpy file
+    spike_prob = np.nan_to_num(spike_prob)
     np.save(save_path, spike_prob)
     print(f"saved under {save_path} \n")
 
-  # except Exception as e:
-
-  #   print('\nSomething went wrong!\nEither the target file is missing, in this case please provide the correct location.\nOr your file is not yet completely uploaded, in this case wait until the upload is completed.\n')
-  #   print('Error message: '+str(e))
+  
