@@ -155,18 +155,18 @@ def check_deltaF(folder_name_list):
             g_func.calculate_deltaF(location.replace("deltaF.npy","F.npy"), config=config)
             if os.path.exists(location):
                 continue
-        elif config.analysis_params.baseline_correction and config.analysis_params.correction_method == 'airPLS':
-            g_func.calculate_deltaF_airPLS(location.replace("deltaF.npy","F.npy"), config=config, 
-                                           event_threshold=config.analysis_params.MAD_baseline_filter_threshold,
-                                           lambda_window=config.analysis_params.lambda_window)
-            if os.path.exists(location):
-                continue
-        elif config.analysis_params.baseline_correction and config.analysis_params.correction_method == 'rolling median':
-            g_func.rolling_correction_deltaF(location.replace("deltaF.npy","F.npy"), config = config,
-                                             event_threshold= config.analysis_params.MAD_baseline_filter_threshold,
-                                             lambda_window=config.analysis_params.lambda_window)
-            if os.path.exists(location):
-                continue
+        # elif config.analysis_params.baseline_correction and config.analysis_params.correction_method == 'airPLS':
+        #     g_func.calculate_deltaF_airPLS(location.replace("deltaF.npy","F.npy"), config=config, 
+        #                                    event_threshold=config.analysis_params.MAD_baseline_filter_threshold,
+        #                                    lambda_window=config.analysis_params.lambda_window)
+        #     if os.path.exists(location):
+        #         continue
+        # elif config.analysis_params.baseline_correction and config.analysis_params.correction_method == 'rolling median':
+        #     g_func.rolling_correction_deltaF(location.replace("deltaF.npy","F.npy"), config = config,
+        #                                      event_threshold= config.analysis_params.MAD_baseline_filter_threshold,
+        #                                      lambda_window=config.analysis_params.lambda_window)
+        #     if os.path.exists(location):
+        #         continue
             else:
                 print("something went wrong, please calculate delta F manually by inserting the following code above: \n F_files = get_file_name_list(folder_path = main_folder, file_ending = 'F.npy') \n for file in F_files: calculate_deltaF(file)")
 
