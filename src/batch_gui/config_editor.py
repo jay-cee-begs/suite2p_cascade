@@ -266,6 +266,7 @@ class ConfigEditor:
     def save(self):
         self.gen_settings.main_folder = self.main_folder_var.get()
         self.gen_settings.data_extension = self.data_extension_var.get()
+        self.gen_settings.cascade_path = self.cascade_path_var.get()
         self.gen_settings.frame_rate = self.frame_rate_var.get()
         self.gen_settings.ops_path = self.ops_path_var.get()
         self.gen_settings.bin_width = self.bin_width_var.get()
