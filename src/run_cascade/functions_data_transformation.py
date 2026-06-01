@@ -346,7 +346,10 @@ def df_from_suite2p_dict(suite2p_dict, config): ## creates df structure for sing
     basic_cell_stats = g_func.basic_estimated_stats_per_cell(masked_cascade_prediction)
     F_baseline = g_func.return_baseline_F(suite2p_dict["F"], suite2p_dict["Fneu"])
     avg_instantaneous_spike_rate, avg_cell_sds, avg_cell_cvs, avg_time_stamp_mean, avg_time_stamp_sds, avg_time_stamp_cvs = g_func.basic_stats_per_cell(masked_cascade_prediction)
-    
+    activity_threshold = config.analysis_params.cascade_activity_threshold
+    activity_mask = []
+    for spike_total in estimated_spike_total:
+        activity_mask.append(spike_total >= activity_threshold)
    
     df = pd.DataFrame({"IsUsed":suite2p_dict['IsUsed'],
                        "Baseline_F": F_baseline,
@@ -355,7 +358,7 @@ def df_from_suite2p_dict(suite2p_dict, config): ## creates df structure for sing
                        "cv_Estimated_Spks":basic_cell_stats[2],
                        "Total Frames": len(suite2p_dict["F"].T), 
                        "SpikesFreq": avg_instantaneous_spike_rate, 
-
+                       "ActiveROI": activity_mask,
                        "group": suite2p_dict["Group"],
                        "dataset":suite2p_dict["sample"],
                        "file_name": suite2p_dict["file_name"]},
