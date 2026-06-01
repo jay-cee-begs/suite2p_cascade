@@ -22,9 +22,7 @@ def main(config_file = None):
     if config.graph_settings.total_estimated_spike_histogram:
         for file, output in zip(predictions_deltaF_files, output_directories):
             fun_plot.histogram_total_estimated_spikes(file, output)
-    # # #TODO figure out how to compile group histograms
-    # # # for group in groups:
-    # # #     plot_group_histogram(group, predictions_deltaF_files)
+
     
     spike_maximum = fun_plot.get_max_spike_across_frames(predictions_deltaF_files)
     if config.graph_settings.total_estimated_spikes_per_frame or config.graph_settings.avg_estimated_spikes_per_frame:
