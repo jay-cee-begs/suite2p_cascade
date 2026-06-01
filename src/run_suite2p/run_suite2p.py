@@ -14,7 +14,7 @@ from run_cascade import functions_data_transformation
 _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG
 
-def export_image_files_to_suite2p_format(parent_directory, file_ending =  config.general_settings.data_extension):
+def export_image_files_to_suite2p_format(parent_directory, config):
     """
     Move image files into their own subfolders.
      
@@ -46,7 +46,7 @@ def export_image_files_to_suite2p_format(parent_directory, file_ending =  config
             │   ├───image_folder_2
             |        ├───image_2
     """
-
+    file_ending =  str(config.general_settings.data_extension)
     if not os.path.exists(parent_directory):
         print(f"Provided path does not exist: {parent_directory}")
         return
@@ -107,7 +107,7 @@ def count_image_files_in_folder(current_path, file_ending):
             count += 1
     return count
 
-def get_all_image_folders_in_path(path, file_ending = config.general_settings.data_extension):
+def get_all_image_folders_in_path(path, file_ending = str(config.general_settings.data_extension)):
     """
     Find all folders within a given path that contain exactly one `.nd2` file in their deepest subfolder.
 
@@ -235,7 +235,7 @@ def main(config_file = None):
             config_dict = load_json_dict()
 
         main_folder = config.general_settings.main_folder
-        data_extension = config.general_settings.data_extension
+        data_extension = str(config.general_settings.data_extension)
         ops_path = config.general_settings.ops_path
         ops = np.load(ops_path, allow_pickle=True).item()
         ops['frame_rate'] = config.general_settings.frame_rate
