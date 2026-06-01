@@ -19,14 +19,9 @@ def main(config_file = None):
 
     predictions_deltaF_files = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "predictions_deltaF.npy") ## get the names of the predicted spike files
     output_directories = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "samples")
-    if config.graph_settings.total_estimated_spike_histogram:
-        for file, output in zip(predictions_deltaF_files, output_directories):
-            fun_plot.histogram_total_estimated_spikes(file, output)
-
     
     spike_maximum = fun_plot.get_max_spike_across_frames(predictions_deltaF_files)
-    if config.graph_settings.total_estimated_spikes_per_frame or config.graph_settings.avg_estimated_spikes_per_frame:
-        for file, output in zip(predictions_deltaF_files, output_directories):
+    for file, output in zip(predictions_deltaF_files, output_directories):
             fun_plot.plot_total_spikes_per_frame(file, spike_maximum, output)
             fun_plot.plot_average_spike_probability_per_frame(file, output)
 #translate_suite2p_outputs_to_csv(main_folder, config, overwrite=False, check_for_iscell=True, update_iscell = True):
