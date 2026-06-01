@@ -46,6 +46,7 @@ class GenSettings:
         return GenSettings(
             main_folder=gs.get("main_folder", ""),
             data_extension=gs.get("data_extension", ""),
+            cascade_path=gs.get("cascade_path", ""),
             frame_rate=gs.get("frame_rate", 20),
             ops_path=gs.get("ops_path", ""),
             groups=gs.get("groups", []),
