@@ -353,8 +353,11 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
     """
     stat = suite2p_dict['stat']
     iscell = suite2p_dict['iscell']
+    F = suite2p_dict["F"]
+    Fneu = suite2p_dict["Fneu"]
     MIN_CASCADE_ACTIVITY = config.analysis_params.cascade_activity_threshold
     min_radius = 3
+    pixel_weight_threshold = 0.5
     pixel2neuron = np.full(frame_shape, fill_value=np.nan, dtype=float)
     scatters = dict(x=[], y=[], color=[], text=[])
     nid2idx = {}
@@ -367,7 +370,11 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
             estimated_spikes = output_df.iloc[n]["EstimatedSpikes"]
             radius = stat.iloc[n]['radius']
 
-            if estimated_spikes > MIN_CASCADE_ACTIVITY and radius >= min_radius:
+            sample_F = F[n]
+            sample_Fneu = Fneu[n]
+
+            med_pixel_weight = np.median(stat.iloc[n]['lam'])
+            if med_pixel_weight > pixel_weight_threshold and radius > min_radius and sample_F.min() > sample_Fneu.min():
                 nid2idx[n] = len(scatters["x"]) # Assign new idx
             else:
                 nid2idx_rejected[n] = len(scatters["x"])
