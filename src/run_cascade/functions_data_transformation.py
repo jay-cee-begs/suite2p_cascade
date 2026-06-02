@@ -358,7 +358,6 @@ def df_from_suite2p_dict(suite2p_dict, config): ## creates df structure for sing
                        "cv_Estimated_Spks":basic_cell_stats[2],
                        "Total Frames": len(suite2p_dict["F"].T), 
                        "SpikesFreq": avg_instantaneous_spike_rate, 
-                       "ActiveROI": activity_mask,
                        "group": suite2p_dict["Group"],
                        "dataset":suite2p_dict["sample"],
                        "file_name": suite2p_dict["file_name"]},
@@ -366,10 +365,26 @@ def df_from_suite2p_dict(suite2p_dict, config): ## creates df structure for sing
     
     df.index.set_names("NeuronID", inplace=True)
     use_iscell = config.analysis_params.use_suite2p_ROI_classifier
-    if not use_iscell:
-        df["IsUsed"] = df["EstimatedSpikes"] > 0.1
-    else:
+    df["ActiveROI"] = df["EstimatedSpikes"] > 0.1 and df['IsUsed'] == True
+    if use_iscell:
         df["IsUsed"] = suite2p_dict["iscell"][:,0]
+    else:
+        fluorescence_keys = []
+        stat = suite2p_dict['stat']
+        F = suite2p_dict['F']
+        Fneu = suite2p_dict['Fneu']
+        for n in range(stat.shape[0]): #         for n in range(stat.shape[0]):
+
+            radius = stat.iloc[n]['radius']
+
+            sample_F = F[n]
+            sample_Fneu = Fneu[n]
+
+            med_pixel_weight = np.median(stat.iloc[n]['lam'])
+            if med_pixel_weight > 0.5 and radius > 3 and sample_F.min() > sample_Fneu.min():
+                fluorescence_keys.append(True)
+            else:
+                fluorescence_keys.append(False)
 
     df.index.set_names("NeuronID", inplace=True)
     return df
@@ -426,7 +441,22 @@ def load_suite2p_paths(data_folder, config, use_iscell = False):  ## creates a d
 
     }
     if config.analysis_params.use_suite2p_ROI_classifier is False or use_iscell is False:
-        suite2p_dict["IsUsed"] = [(suite2p_dict["stat"]["skew"] >= 1)] 
+        fluorescence_keys = []
+        stat = suite2p_dict['stat']
+        F = suite2p_dict['F']
+        Fneu = suite2p_dict['Fneu']
+        for n in range(stat.shape[0]): #         for n in range(stat.shape[0]):
+
+            radius = stat.iloc[n]['radius']
+
+            sample_F = F[n]
+            sample_Fneu = Fneu[n]
+
+            med_pixel_weight = np.median(stat.iloc[n]['lam'])
+            if med_pixel_weight > 0.5 and radius > 3 and sample_F.min() > sample_Fneu.min():
+                fluorescence_keys.append(True)
+            else:
+                fluorescence_keys.append(False)
 
     else:
         suite2p_dict["IsUsed"] = pd.DataFrame(suite2p_dict["iscell"]).iloc[:,0].values.T
