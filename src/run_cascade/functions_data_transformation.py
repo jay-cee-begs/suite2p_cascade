@@ -126,7 +126,7 @@ def check_for_suite2p_output(folder_name_list):
     return True
 
 
-def check_deltaF(folder_name_list):
+def check_deltaF(folder_name_list, config):
     """
     Checks if `deltaF.npy` exists in each folder in a list. If deltaF.npy does not exist the pipeline will calculate and generate it.
     
@@ -170,7 +170,7 @@ def check_deltaF(folder_name_list):
             else:
                 print("something went wrong, please calculate delta F manually by inserting the following code above: \n F_files = get_file_name_list(folder_path = main_folder, file_ending = 'F.npy') \n for file in F_files: calculate_deltaF(file)")
 
-def check_network_deltaF(folder_name_list):
+def check_network_deltaF(folder_name_list, config):
     """
     Checks if a `network_deltaF.npy` file exists in each folder in a list. If network_deltaF.npy does not exist the pipeline will calculate and generate it.
     
@@ -195,24 +195,20 @@ def check_network_deltaF(folder_name_list):
         location = os.path.join(folder, *SUITE2P_STRUCTURE["network_deltaF"])
         if os.path.exists(location):
             continue
-        elif not config.analysis_params.baseline_correction:
-            g_func.calculate_deltaF(location.replace("network_deltaF.npy","F.npy"))
-            if os.path.exists(location):
-                continue
-        elif config.analysis_params.baseline_correction and config.analysis_params.correction_method == 'airPLS':
-            g_func.calculate_deltaF_airPLS(location.replace("network_deltaF.npy","F.npy"), 
-                                           event_threshold=config.analysis_params.MAD_baseline_filter_threshold)
-            if os.path.exists(location):
-                continue
-        elif config.analysis_params.baseline_correction and config.analysis_params.correction_method == 'rolling median':
-            g_func.rolling_correction_deltaF(location.replace("network_deltaF.npy","F.npy"), config = config,
-                                             event_threshold= config.analysis_params.MAD_baseline_filter_threshold,
-                                             lambda_window=config.analysis_params.lambda_window)
-            if os.path.exists(location):
-                continue
-            else:
-                print("something went wrong, please calculate delta F manually by inserting the following code above: \n F_files = get_file_name_list(folder_path = main_folder, file_ending = 'F.npy') \n for file in F_files: calculate_deltaF(file)")
-
+        else:
+            g_func.calculate_network_deltaF(location.replace("network_deltaF.npy","F.npy"), config = config)
+            
+        # elif config.analysis_params.baseline_correction and config.analysis_params.correction_method == 'airPLS':
+        #     g_func.calculate_deltaF_airPLS(location.replace("network_deltaF.npy","F.npy"), config = config,
+        #                                    event_threshold=config.analysis_params.MAD_baseline_filter_threshold)
+        #     if os.path.exists(location):
+        #         continue
+        # elif config.analysis_params.baseline_correction and config.analysis_params.correction_method == 'rolling median':
+        #     g_func.rolling_correction_deltaF(location.replace("network_deltaF.npy","F.npy"), config = config,
+        #                                      event_threshold= config.analysis_params.MAD_baseline_filter_threshold,
+        #                                      lambda_window=config.analysis_params.lambda_window)
+        #     if os.path.exists(location):
+        #         continue
 
 def get_file_name_list(folder_path, file_ending, supress_printing = False):
     """
@@ -272,7 +268,7 @@ def get_file_name_list(folder_path, file_ending, supress_printing = False):
             print(file_names)
         return file_names
     elif file_ending=="samples":
-        check_deltaF(file_names)  #checks if deltaf exists, else calculates it
+        check_deltaF(file_names, config)  #checks if deltaf exists, else calculates it
         if not supress_printing:
             print(f"{len(file_names)} folders containing {file_ending} found:")
             print(file_names)
@@ -438,6 +434,7 @@ def load_suite2p_paths(data_folder, config, use_iscell = False):  ## creates a d
         "deltaF": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['deltaF'])),
         "cascade_predictions": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["cascade_predictions"])),
         "iscell": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['iscell'])),
+        "network_deltaF": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['network_deltaF']))
 
     }
     if config.analysis_params.use_suite2p_ROI_classifier is False or use_iscell is False:
