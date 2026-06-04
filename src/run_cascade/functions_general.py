@@ -222,15 +222,16 @@ def calculate_deltaF(F_file, config):
         corrected_trace = f - (0.7*fneu) ## neuropil correction
         if config.analysis_params.correction_method in ['airPLS', 'rolling_median']:
             
-            if config.analysis_params.correction_method is "airPLS":
+            if config.analysis_params.correction_method == "airPLS":
                 lambda_window = config.analysis_params.lambda_window
                 baseline_corrected = BaselineRemoval(corrected_trace)
                 corrected_trace = baseline_corrected.ZhangFit(lambda_= lambda_window)
-            if config.analysis_params.correction_method is "rolling_median":
+            if config.analysis_params.correction_method == "rolling_median":
                 baseline_corrected = remove_bleaching(corrected_trace, 
                                                       baseline_correction='rolling_med', 
                                                       window = lambda_window)
                 corrected_trace = baseline_corrected
+                
         #Determine baseline F0 value
         trace_median = np.median(corrected_trace)
         trace_mad = np.median(np.abs(corrected_trace - trace_median))
@@ -252,6 +253,56 @@ def calculate_deltaF(F_file, config):
         print(f"deltaF files already exist for {F_file[len(config.general_settings.main_folder)+1:-21]}")
 
     return deltaF
+
+def calculate_network_deltaF(F_file, config):
+    savepath = rf"{F_file}".replace("\\F.npy","") ## make savepath original folder, indicates where deltaF.npy is saved
+    F = np.load(rf"{F_file}", allow_pickle=True)
+    Fneu = np.load(rf"{F_file[:-4]}"+"neu.npy", allow_pickle=True)
+    iscell = np.load(rf"{F_file[:-5]}"+"iscell.npy", allow_pickle=True)
+    new_deltaF = []
+    F0_list = []
+    savepath = rf"{F_file}".replace("\\F.npy","") ## make savepath original folder, indicates where deltaF.npy is saved
+    F = np.load(rf"{F_file}", allow_pickle=True)
+    Fneu = np.load(rf"{F_file[:-4]}"+"neu.npy", allow_pickle=True)
+    iscell = np.load(rf"{F_file[:-5]}"+"iscell.npy", allow_pickle=True)
+
+    network_deltaF= []
+    for f, fneu in zip(F, Fneu):
+        corrected_trace = f - (0.7*fneu) ## neuropil correction
+        if config.analysis_params.correction_method in ['airPLS', 'rolling_median']:
+            
+            if config.analysis_params.correction_method == "airPLS":
+                lambda_window = config.analysis_params.lambda_window
+                baseline_corrected = BaselineRemoval(corrected_trace)
+                corrected_trace = baseline_corrected.ZhangFit(lambda_= lambda_window)
+            if config.analysis_params.correction_method == "rolling_median":
+                baseline_corrected = remove_bleaching(corrected_trace, 
+                                                      baseline_correction='rolling_med', 
+                                                      window = lambda_window)
+                corrected_trace = baseline_corrected
+                
+        #Determine baseline F0 value
+        trace_median = np.median(corrected_trace)
+        trace_mad = np.median(np.abs(corrected_trace - trace_median))
+        norm_sigma = 1.4826*trace_mad
+        event_threshold = config.analysis_params.MAD_baseline_filter_threshold
+        baseline_mask = np.abs(corrected_trace - trace_median) < event_threshold * norm_sigma
+        F0 = np.median(corrected_trace[baseline_mask])
+
+        #calculate dF / F0
+        normalized_F = (corrected_trace)/F0        
+        network_deltaF.append(normalized_F)
+    network_deltaF = np.array(network_deltaF)
+    network_deltaF = np.squeeze(network_deltaF)
+    filtered_deltaF = network_deltaF[iscell[:,0] == 1]
+    if not os.path.exists(f"{savepath}/network_deltaF.npy"):
+        np.save(f"{savepath}/network_deltaF.npy", filtered_deltaF, allow_pickle=True)
+        print(f"delta F traces saved as network_deltaF.npy under {savepath}\n")
+    else:
+        print(f"deltaF files already exist for {F_file[len(config.general_settings.main_folder)+1:-21]}")
+
+    return filtered_deltaF
+
 
 ##TODO cut this function
 def calculate_deltaF_airPLS(F_file, config, event_threshold = None, lambda_window = None):
