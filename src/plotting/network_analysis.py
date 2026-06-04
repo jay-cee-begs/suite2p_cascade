@@ -8,43 +8,13 @@ from scipy.signal import find_peaks
 from BaselineRemoval import BaselineRemoval
 
 
-
-def load_and_plot_network(suite2p_dict):
-    F = suite2p_dict['F']
-    Fneu = suite2p_dict['Fneu']
-    iscell_mask = suite2p_dict['iscell'][:,0] == 1
-    def calculate_deltaF(F, Fneu):
-        new_deltaF = []
-        F0_list = []
-        for f, fneu in zip(F, Fneu):
-                corrected_trace = f - (0.4*fneu) ## neuropil correction
-
-                #Remove bleaching to generate change in Fluorescence
-                baseline_corrected = BaselineRemoval(corrected_trace)
-                airPLS_corrected = baseline_corrected.ZhangFit(lambda_= 10)
-
-                #Determine baseline F0 value
-                trace_median = np.median(corrected_trace)
-                trace_mad = np.median(np.abs(corrected_trace - trace_median))
-                norm_sigma = 1.4826*trace_mad
-                baseline_mask = np.abs(corrected_trace - trace_median) < 2 * norm_sigma
-                F0 = np.median(corrected_trace[baseline_mask])
-
-                #calculate dF / F0
-                normalized_F = (airPLS_corrected)/F0
-        
-                new_deltaF.append(normalized_F)
-                F0_list.append(F0)
-        new_deltaF = np.array(new_deltaF)
-        new_deltaF = np.squeeze(new_deltaF)
-        return new_deltaF
+def load_and_plot_network(suite2p_dict): 
     
-
-    deltaF = calculate_deltaF(F, Fneu)
-    active_neurons = deltaF[iscell_mask]
-
-    def calculate_zscore(masked_df):
-        Z = zscore(masked_df, axis = 1, ddof = 1)
+    plt.rcParams['svg.fonttype'] = 'none'
+    plt.rcParams['font.family'] = 'sans-serif'
+    plt.rcParams['font.sans-serif'] = 'Arial'
+    def calculate_zscore(network_deltaF):
+        Z = zscore(network_deltaF, axis = 1, ddof = 1)
         #Find 95% of activity for all neurons and filter
         # activity_fraction = (Z > 2).mean(axis = 0)
         activity_fraction = (Z > np.percentile(Z, 85, axis=1)[:, None]).mean(axis=0)
@@ -56,8 +26,7 @@ def load_and_plot_network(suite2p_dict):
             mode = 'same'
         )
         return Z, af_smooth, bin_window, activity_fraction
-    Z, af_smooth, bin_window, activity_fraction = calculate_zscore(active_neurons)
-    
+    Z, af_smooth, bin_window, activity_fraction = calculate_zscore(suite2p_dict['network_deltaF'])
     peaks, _  = find_peaks(activity_fraction, height = 0.1, distance = 5)
     burst_mask = np.zeros(Z.shape[1], dtype = bool)
     burst_width = 10
