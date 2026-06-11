@@ -576,12 +576,19 @@ def load_local_suite2p_output(data_folder, groups = None, main_folder = None, lo
     # debugging
     if "iscell" not in suite2p_dict:
         raise KeyError ("'IsUsed' was not defined correctly either")
-
-    sample_dict = get_experimental_dates(main_folder) ## creates the sample number dict
-   
-    suite2p_dict["sample"] = sample_dict[data_folder]  ## gets the sample number for the corresponding well folder from the sample dict
- 
+    # if "Group" not in suite2p_dict:
+    #     raise KeyError("'Group' key not found in suite2p_dict.")
+    #     #TODO find a way to ignore files not in the group list if manually removed
+    # if not found_group:
+    #     raise KeyError(f"No group found in the data_folder path: {data_folder}")
     suite2p_dict["file_name"] = str(os.path.join(data_folder.split('\\')[-1], *SUITE2P_STRUCTURE["cascade_predictions"]))
+
+    if main_folder is not None:
+        sample_dict = get_experimental_dates(main_folder) ## creates the sample number dict
+   
+        suite2p_dict["sample"] = sample_dict[data_folder]  ## gets the sample number for the corresponding well folder from the sample dict
+    else:
+        suite2p_dict['sample'] = suite2p_dict['file_name'].split('\\')[-1]
  
     return suite2p_dict
 
