@@ -114,7 +114,77 @@ def histogram_total_estimated_spikes(prediction_deltaF_file, output_directory = 
 
 
 
-    ## add titles axes labeling etc.
+def plot_somatic_traces(suite2p_dict, list = None, plot_cascade = False, trace_offset = 5, iscell_true = True, save_fig = False):
+    # Get boolean mask of valid cells
+    if iscell_true:
+        iscell_mask = suite2p_dict['iscell'][:, 0] == 1
+    else:
+        iscell_mask = suite2p_dict['iscell'][:,0] ==0
+    # Apply mask to deltaF
+    masked_dF = suite2p_dict['deltaF'][iscell_mask]
+    masked_cascade = suite2p_dict['cascade_predictions'][iscell_mask]
+    if list is None:
+        lst = np.random.choice(masked_dF.shape[0], size=10, replace=False)
+    else:
+        lst = list
+    # lst = [42, 133, 58, 9, 66, 43, 78, 128, 23 ,63,  27,  28, 96, 127,  34]
+    
+    print(lst)
+
+    plt.figure(figsize = (10,7))
+    ax = plt.gca()
+    # --- Colorblind-friendly palette ---
+    colors = ['#E69F00', '#56B4E9', '#009E73', '#F0E442', 
+            '#0072B2', '#D55E00', '#CC79A7', '#999999', '#000000', '#999933']
+    
+    frame_rate = 10
+    time = np.arange(suite2p_dict["deltaF"].shape[1]) / frame_rate
+    if not plot_cascade:
+        plt_traces = masked_dF[lst]
+        for i, trace in enumerate(plt_traces):
+            offset_trace = trace + i * trace_offset
+            ax.plot(time, offset_trace, color=colors[i % len(colors)], alpha=0.8)
+        
+    else:
+        plt_traces = masked_cascade[lst]
+        for i, trace in enumerate(plt_traces):
+            offset_trace = trace + i * 1
+            ax.plot(time, offset_trace, color=colors[i % len(colors)], alpha=0.8)
+
+    scalebar_time = 10  # seconds
+    scalebar_df = 1     # dF/F units
+    x0 = time[-1] + 2
+    y0 = -2
+
+    # Horizontal and vertical bars
+    ax.plot([x0, x0 + scalebar_time], [y0, y0], 'k', lw=2)
+    ax.plot([x0 + scalebar_time, x0 + scalebar_time], [y0, y0 + scalebar_df], 'k', lw=2)
+
+    # Scale bar labels
+    ax.text(x0 + scalebar_time / 2, y0 - 0.3, fr"{scalebar_time}$\ s$", ha='center', va='top')
+    if not plot_cascade:
+        ax.text(x0 + scalebar_time + 1, y0 + scalebar_df / 3,  fr"{scalebar_df} $\Delta F / F_0$", va='center', ha='left')
+    else:
+        ax.text(x0 + scalebar_time + 1, y0 + scalebar_df / 3,  f"{scalebar_df} CASCADE-predicted\nSpikes", va='center', ha='left')
+
+    # --- Minimalist figure: no axes ---
+    ax.axis('off')
+
+    # --- Optional: save to file ---
+    if save_fig:
+        from pathlib import Path
+        import os
+        save_path = suite2p_dict['data_folder']
+        plot_name = suite2p_dict['data_folder'].split('\\')[0]
+
+        if iscell_true:
+            plt.savefig(os.path.join(save_path, f'{plot_name}_neuron_dF_traces.svg'))
+        else:
+            plt.savefig(os.path.join(save_path, f'{plot_name}_glia_dF_traces.svg'))
+        # plt.savefig(os.path.join(save_path,'example_dF_traces.png'))
+
+    plt.tight_layout()
+    plt.show()
 
 def single_cell_trace_plotting(input_f): 
     """
