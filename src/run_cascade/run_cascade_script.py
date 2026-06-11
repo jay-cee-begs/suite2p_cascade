@@ -65,7 +65,7 @@ def main(config_file = None):
         if config.analysis_params.overwrite_cascade:
             F_traces = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending ="F.npy", supress_printing = True)
             for f in F_traces:
-                functions_general.calculate_deltaF(f)
+                functions_general.calculate_deltaF(f, config)
             suite2p_folders = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending ="samples", supress_printing = True)
             deltaF = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "deltaF.npy", supress_printing = True)
 
@@ -73,11 +73,11 @@ def main(config_file = None):
                 CASCADE_functions.plots_and_basic_info(file, config)
                 CASCADE_functions.cascade_this(file, config)
 
-        if not config.analysis_params_overwrite_cascade:
+        if not config.analysis_params.overwrite_cascade:
             predictions_deltaF_files = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "predictions_deltaF.npy") ## get the names of the predicted spike files
             F_traces = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending ="F.npy", supress_printing = True)
             for f in F_traces:
-                functions_general.calculate_deltaF(f)
+                functions_general.calculate_deltaF(f, config)
             suite2p_folders = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending ="samples", supress_printing = True)
             deltaF = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "deltaF.npy", supress_printing = True)
             unprocessed_folders = []
