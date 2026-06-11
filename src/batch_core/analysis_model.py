@@ -4,7 +4,7 @@ from dataclasses import dataclass
 class AnalysisParams:
 
     overwrite_suite2p: bool = False
-    overwrite_cacade: bool = False
+    overwrite_cascade: bool = False
     multivid_processing: bool = False
     use_suite2p_ROI_classifier: bool = False
     update_suite2p_iscell: bool = True
