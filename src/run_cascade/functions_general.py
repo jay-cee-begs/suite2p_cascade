@@ -223,7 +223,7 @@ def calculate_deltaF(F_file, config):
         if config.analysis_params.correction_method in ['airPLS', 'rolling_median']:
             
             if config.analysis_params.correction_method == "airPLS":
-                lambda_window = config.analysis_params.lambda_window
+                lambda_window = int(config.analysis_params.lambda_window)
                 baseline_corrected = BaselineRemoval(corrected_trace)
                 corrected_trace = baseline_corrected.ZhangFit(lambda_= lambda_window)
             if config.analysis_params.correction_method == "rolling_median":
