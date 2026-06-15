@@ -2,7 +2,10 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from statannotations.Annotator import Annotator
+from batch_gui import config_loader
 
+_DEFAULT_CONFIG = config_loader.load_json_config_file()
+config = _DEFAULT_CONFIG
 
 def plot_with_stats(data, metric, plot_type="violin", groups = None):
     """

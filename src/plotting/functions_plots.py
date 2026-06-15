@@ -12,18 +12,29 @@ import scipy.stats as stats
 from PIL import Image
 import seaborn as sns #needed for aggregated feature plots
 # import pynapple as nap #TODO if you need Pynapple plots, you cannot use alongside cascade as it will break the code
-from batch_process.config_loader import load_json_config_file, load_json_dict
+from batch_gui.config_loader import load_json_config_file, load_json_dict
 
-config = load_json_config_file()
+_DEFAULT_CONFIG = load_json_config_file()
+config = _DEFAULT_CONFIG
 
-def random_individual_cell_histograms(deltaF_file, plot_number):
-    ## for individual cells, random sample of plot_number, (can also be set to randoms sample of size plot_number, i this case use code below to calculate plot number and then pass it to function) ##
-    ### ROI_number = len(np.load(file)) ## needs to be connected with plot number below if we always want to show fixed percentage of all possible histograms
-    ### plot_number = int(0.05*ROI_number) # plots random 5% of all cells
-    ### if plot_number <4: plot_number = 4
+def random_individual_cell_histograms(deltaF_file, roi_percent = 5):
+    """
+    Plot a histogram of frames from a fluorescence trace for a percentage of the 
+    total ROIs at random
+    
+    Args:
+    ----------
+        deltaF_file : str
+          Path to deltaF.npy file.
+        roi_percent: int, default = 5
+            Percentage of total ROIs to plot the fluorescence of as histograms
+    Returns:
+    ----------
+        plt.hist(deltaF[i]) where i is a random ROI chosen from the population
+    """
     
     array = np.load(rf"{deltaF_file}")
-    sample = random.sample(range(0, len(array)), plot_number)
+    sample = random.sample(range(0, len(array)), roi_percent)
     for i in sample: ## alterantive i in range(len(array)) to plot all
       plt.figure(figsize=(5,5))
       plt.hist(array[i], density=True, bins=200)
@@ -31,6 +42,19 @@ def random_individual_cell_histograms(deltaF_file, plot_number):
       plt.show()
 
 def deltaF_histogram_across_cells(deltaF_file):
+    """
+    Plot a histogram of the fluorescence of all frames across all Cells / ROIs
+    from a calcium imaging recording...Likely not useful for anything except population metrics
+    
+    Args:
+    ----------
+        deltaF_file : str
+          Path to deltaF.npy file.
+       
+    Returns:
+    plt.hist(np.load(deltaF_file, allow_pickle = True))
+    ----------
+    """    
     array = np.load(rf"{deltaF_file}")
     list = array.flatten()
     list_cleaned = [x for x in list if not np.isnan(x)]
@@ -39,7 +63,23 @@ def deltaF_histogram_across_cells(deltaF_file):
     plt.title(f'Histogram df/F {deltaF_file[len(config.general_settings.main_folder)+1:]}')
     plt.show()
 
-def histogram_total_estimated_spikes(prediction_deltaF_file, output_directory):
+def histogram_total_estimated_spikes(prediction_deltaF_file, output_directory = None):
+    """
+    Plot a histogram of the distribution of total Cascade-estimated spikes across all detected (and accepted) ROIs.
+    Plot should be highly right skewed
+
+    Args:
+    ----------
+        predictions_deltaF_file : str / Path
+          Path-like object pointing to Cascade deconvolution prediction file (.npy)
+        
+        output_directory: str / Path
+            Directory where to save the generated plot; default is in the subfolder containing the image and Suite2p output
+
+    Returns:
+    ----------
+        None
+    """
     array = np.load(rf"{prediction_deltaF_file}")
     iscell_file = prediction_deltaF_file.replace("predictions_deltaF.npy", 'iscell.npy')
     iscell = np.load(rf"{iscell_file}", allow_pickle = True)
@@ -56,82 +96,163 @@ def histogram_total_estimated_spikes(prediction_deltaF_file, output_directory):
     plt.ylabel("Number of Neurons")
     plt.title(f'Total number of predicted spikes') # \n {prediction_deltaF_file[len(config.general_settings.main_folder)+1:-38]}
     plt.text(0.65, 0.9, f"Total Spikes \nPredicted: {int(sum(estimated_spikes))}", transform=plt.gca().transAxes)
-    figure_output_path = os.path.join(output_directory, 'spks_histogram.svg')
-    png_path = os.path.join(config.general_settings.main_folder, 'spks_histogram.png')
-    plt.savefig(png_path, bbox_inches = 'tight')
+    
+    if output_directory == None:
+        plt.show()
+   
+    else:
+        figure_output_path = os.path.join(output_directory, 'spks_histogram.svg')
+        png_path = os.path.join(config.output_directory, 'spks_histogram.png')
+        plt.savefig(png_path, bbox_inches = 'tight')
 
-    plt.savefig(figure_output_path, bbox_inches = 'tight')
-    print(f'Well Histograms for estimated spikes saved under {figure_output_path}')
-    plt.close()
+        svg_path = os.path.join(output_directory, 'spks_histogram.svg')
+        plt.savefig(figure_output_path, bbox_inches = 'tight')
+        plt.savefig(svg_path, bbox_inches = 'tight')
 
-def plot_group_histogram(group, predictions_deltaF_files): ## plots histograms of total spikes per neuron for each group, possible to add a third group
-    group_arrays = []
-    estimated_spikes = []
-    for file in predictions_deltaF_files:
-        if str(group) in file:
-            array = np.load(rf"{file}")
-            group_arrays.append(array)        
-    print(f"{len(group_arrays)} files found for group {group[len(config.general_settings.main_folder)+1:]}")
-    group_array = np.concatenate(group_arrays, axis=0)
-    print(f"{len(group_array)} total neurons in {group}")
-    for i in range(len(group_array)):
-        estimated_spikes.append(np.nansum(group_array[i]))
-    print(f"For group {group[len(config.general_settings.main_folder)+1:]} {int(sum(estimated_spikes))} spikes were predicted in total")
+        print(f'Well Histograms for estimated spikes saved under {figure_output_path}')
+        plt.close()
+
+
+
+def plot_somatic_traces(suite2p_dict, list = None, plot_cascade = False, trace_offset = 5, iscell_true = True, save_fig = False):
+    # Get boolean mask of valid cells
+    if iscell_true:
+        iscell_mask = suite2p_dict['iscell'][:, 0] == 1
+    else:
+        iscell_mask = suite2p_dict['iscell'][:,0] ==0
+    # Apply mask to deltaF
+    masked_dF = suite2p_dict['deltaF'][iscell_mask]
+    masked_cascade = suite2p_dict['cascade_predictions'][iscell_mask]
+    if list is None:
+        lst = np.random.choice(masked_dF.shape[0], size=10, replace=False)
+    else:
+        lst = list
+    # lst = [42, 133, 58, 9, 66, 43, 78, 128, 23 ,63,  27,  28, 96, 127,  34]
+    
+    print(lst)
+
+    plt.figure(figsize = (10,7))
+    ax = plt.gca()
+    # --- Colorblind-friendly palette ---
+    colors = ['#E69F00', '#56B4E9', '#009E73', '#F0E442', 
+            '#0072B2', '#D55E00', '#CC79A7', '#999999', '#000000', '#999933']
+    
+    frame_rate = 10
+    time = np.arange(suite2p_dict["deltaF"].shape[1]) / frame_rate
+    if not plot_cascade:
+        plt_traces = masked_dF[lst]
+        for i, trace in enumerate(plt_traces):
+            offset_trace = trace + i * trace_offset
+            ax.plot(time, offset_trace, color=colors[i % len(colors)], alpha=0.8)
+        
+    else:
+        plt_traces = masked_cascade[lst]
+        for i, trace in enumerate(plt_traces):
+            offset_trace = trace + i * 1
+            ax.plot(time, offset_trace, color=colors[i % len(colors)], alpha=0.8)
+
+    scalebar_time = 10  # seconds
+    scalebar_df = 1     # dF/F units
+    x0 = time[-1] + 2
+    y0 = -2
+
+    # Horizontal and vertical bars
+    ax.plot([x0, x0 + scalebar_time], [y0, y0], 'k', lw=2)
+    ax.plot([x0 + scalebar_time, x0 + scalebar_time], [y0, y0 + scalebar_df], 'k', lw=2)
+
+    # Scale bar labels
+    ax.text(x0 + scalebar_time / 2, y0 - 0.3, fr"{scalebar_time}$\ s$", ha='center', va='top')
+    if not plot_cascade:
+        ax.text(x0 + scalebar_time + 1, y0 + scalebar_df / 3,  fr"{scalebar_df} $\Delta F / F_0$", va='center', ha='left')
+    else:
+        ax.text(x0 + scalebar_time + 1, y0 + scalebar_df / 3,  f"{scalebar_df} CASCADE-predicted\nSpikes", va='center', ha='left')
+
+    # --- Minimalist figure: no axes ---
+    ax.axis('off')
+
+    # --- Optional: save to file ---
+    if save_fig:
+        from pathlib import Path
+        import os
+        save_path = suite2p_dict['data_folder']
+        plot_name = suite2p_dict['data_folder'].split('\\')[0]
+
+        if iscell_true:
+            plt.savefig(os.path.join(save_path, f'{plot_name}_neuron_dF_traces.svg'))
+        else:
+            plt.savefig(os.path.join(save_path, f'{plot_name}_glia_dF_traces.svg'))
+        # plt.savefig(os.path.join(save_path,'example_dF_traces.png'))
+
+    plt.tight_layout()
+    plt.show()
+
+def single_cell_trace_plotting(input_f): 
+    """
+    Plot the fluorescence trace of a given cell. 
+    NOTE: the function can only handle single fluorescence traces, to process
+            multiple traces, a for loop is required
+
+    Args:
+    ----------
+        input_f : 1D NumPy array
+          Fluorescence data from a single ROI
+
+    Returns:
+    ----------
+        plt.plot(input_f)
+        peak_detection_threshold = 'grey'
+        baseline estimate = 'red'  
+    """
+    from scipy.signal import find_peaks
+    threshold = np.nanmedian(input_f)+np.nanstd(input_f)
+    peaks, _ = find_peaks(input_f, distance = 5, height = threshold)
     plt.figure(figsize=(5,5))
-    plt.hist(estimated_spikes, bins=50, density=True)
-    plt.ylim(0, 0.5)
-    plt.xlim(0,100) ## maybe make dynamic (get_max_spike_across_frames() could be useful or slight alteration), so it's the same for all groups
-    plt.title(f'Histogram estimated total number of spikes, {group[len(config.general_settings.main_folder)+1:]}') ## y proprtion of neurons, x number of events, title estimated distribution total spike number
-    plt.xlabel("Number of estimated spikes")
-    group_name = group[len(config.general_settings.main_folder) + 1]
-    save_path = os.path.join(config.general_settings.main_folder, f'histogram_{group_name}.svg')
-
-    plt.savefig(save_path)
-    plt.close()
-
-    ## add titles axes labeling etc.
-
-# def single_cell_peak_plotting(input_f, title): ## input f needs to be single cell
-#     threshold = np.nanmedian(input_f)+np.nanstd(input_f)
-#     peaks, _ = find_peaks(input_f, distance = 5, height = threshold)
-#     plt.figure(figsize=(5,5))
-#     plt.plot(input_f)
-#     plt.plot(peaks, input_f[peaks], "x")
-#     plt.plot(np.full_like(input_f, threshold), "--",color = "grey") ## height in find_peaks
-#     plt.plot(np.full_like(input_f, np.nanmean(input_f)), "--", color = 'r')
-#     plt.title(title)
-#     plt.xlabel("frames")
-#     plt.show()
-
-#     ## not sure how useful, maybe calculate peaks by AUC??? ##
-
-# def visualization_process_single_cell(F_files, deltaF_files, predictions_deltaF_files, cells_plotted):
-#     for file_number in range(len(predictions_deltaF_files)):
-#         ## try with corrected trace too ??
-#         prediction_array = np.load(rf"{predictions_deltaF_files[file_number]}", allow_pickle=True)
-#         rawF_array = np.load(rf"{F_files[file_number]}", allow_pickle=True)
-#         deltaF_array = np.load(rf"{deltaF_files[file_number]}", allow_pickle=True)
-#         sample = np.random.randint(0,len(prediction_array), cells_plotted)
-#         for cell in sample:
-#             print(f"raw fluorescence {predictions_deltaF_files[file_number][len(config.general_settings.main_folder)+1:-38]}, cell {cell}")
-#             single_cell_peak_plotting(rawF_array[cell], f"Raw fluorescence {predictions_deltaF_files[file_number][-45:-38]}, cell {cell}")
-#             print(f"delta F {predictions_deltaF_files[file_number][len(config.general_settings.main_folder)+1:-38]}, cell {cell}")
-#             single_cell_peak_plotting(deltaF_array[cell], f"DeltaF {predictions_deltaF_files[file_number][-45:-38]}, cell {cell}")
-#             print(f"cascade predictions {predictions_deltaF_files[file_number][len(config.general_settings.main_folder)+1:-38]}, cell {cell}")
-#             single_cell_peak_plotting(prediction_array[cell], f"Cascade predictions {predictions_deltaF_files[file_number][-45:-38]}, cell {cell}")
-# ## maybe move those not used anymore to unused to other functions script
-
+    plt.plot(input_f)
+    plt.plot(peaks, input_f[peaks], "x")
+    plt.plot(np.full_like(input_f, threshold), "--",color = "grey") ## height in find_peaks
+    plt.plot(np.full_like(input_f, np.nanmedian(input_f)), "--", color = 'r')
+    plt.xlabel("frames")
+    plt.show()
+    
 def get_max_spike_across_frames(predictions_deltaF_file_list):
+    """
+    Compute the maximum predicted Cascade spikes across files. 
+    The function is primarily used to set axis limits for generating comparable plots.
+
+    Args:
+    ----------
+        predictions_deltaF_file_list : list
+          List of predictions_deltaF.npy files to be used 
+
+    Returns:
+    ----------
+        max(total_list) : maximum predicted spikes across all files
+    
+    """
     total_list=[]
     for file in predictions_deltaF_file_list:
         prediction_array = np.load(rf"{file}", allow_pickle=True)
         sum_rows = np.nansum(prediction_array, axis=0)
         total_list.extend(sum_rows)
     return(max(total_list))
-## maybe move cause not related to plotting
 
-def plot_total_spikes_per_frame(prediction_deltaF_file, max_spikes_all_samples, output_directory):
-    '''calculates the total spikes across whole culture at certain time point \n the first input is a prediction_deltaF_file, the second input determines the scaling of the y axis and can be calculated by get_max_spikes_across_data()'''
+def plot_total_spikes_per_frame(prediction_deltaF_file, max_spikes_all_samples, output_directory = None):
+    '''
+    Calculate and plot the total spikes recorded from all ROIs at each frame
+
+    Args:
+    ----------
+        predictions_deltaF_file_list : list
+          List of predictions_deltaF.npy files to be used 
+        max_spikes_all_samples : int
+            The maximum number of spikes in a single frame across all samples
+        output_directory : str, Path-like object, optional
+            Where should the plot be saved if not None
+
+    Returns:
+    ----------
+       Saves plot to output_directory if not None; otherwise plt.show()
+    '''
     prediction_array = np.load(rf"{prediction_deltaF_file}", allow_pickle=True)
     iscell_file = prediction_deltaF_file.replace('predictions_deltaF.npy', 'iscell.npy')
     iscell = np.load(rf"{iscell_file}", allow_pickle = True)
@@ -147,15 +268,37 @@ def plot_total_spikes_per_frame(prediction_deltaF_file, max_spikes_all_samples, 
     plt.ylim(0,max_spikes_all_samples+10) ## make dynamic
     plt.ylabel("Number of Predicted Spikes")
     plt.xlabel(f'Frame Number (10 frame = 1s)')
-    save_path = os.path.join(output_directory, 'total_spikes_per_frame.svg')
-    png_path =  os.path.join(output_directory, 'total_spikes_per_frame.png')
-    plt.savefig(save_path)
-    plt.savefig(png_path)
-    print(f'Total Spikes per frame saved under {save_path}')
-    plt.close()
+    if output_directory is not None:
+        save_path = os.path.join(output_directory, 'total_spikes_per_frame.svg')
+        png_path =  os.path.join(output_directory, 'total_spikes_per_frame.png')
+        save_path2 = os.path.join(output_directory, 'total_spikes_per_frame.png')
+        plt.savefig(save_path)
+        plt.savefig(png_path)
+        plt.savefig(save_path2)
+        print(f'Total Spikes per frame saved under {save_path}')
+        plt.close()
+    else:
+        plt.show()
 
-def plot_average_spike_probability_per_frame(predictions_deltaF_file, output_directory):
-    ''' plots average spike probability across all cells divided by total number of cells in dataset (regardless of active or not), standardizes output of plot_total_spikes_per_frame()'''
+def plot_average_spike_probability_per_frame(predictions_deltaF_file, output_directory = None):
+    '''
+    Calculate and plot the average spikes recorded divided by total ROIs (real cells).
+    Normalizes the output of `plot_total_spikes_per_frame`
+
+    Args:
+    ----------
+        predictions_deltaF_file_list : list
+          List of predictions_deltaF.npy files to be used 
+        max_spikes_all_samples : int
+            The maximum number of spikes in a single frame across all samples
+        output_directory : str, Path-like object, optional
+            Where should the plot be saved if not None
+
+    Returns:
+    ----------
+       Saves plot to output_directory if not None; otherwise plt.show()
+    '''
+   
     prediction_array = np.load(rf"{predictions_deltaF_file}", allow_pickle=True)
     iscell_file = predictions_deltaF_file.replace('predictions_deltaF.npy', 'iscell.npy')
     iscell = np.load(rf"{iscell_file}", allow_pickle = True)
@@ -168,22 +311,37 @@ def plot_average_spike_probability_per_frame(predictions_deltaF_file, output_dir
 
     plt.figure(figsize=(10,5))
     plt.plot(average, color = "green", label="average spike probability")
-    ## actief_aandeel = (get_active_proportion_list(file)) ##used to also plot "proportion" line, not used anymore cause interpretation difficult
-    #plt.plot(actief_aandeel, color = "magenta", label = "proportion of active cells")
-    #plt.legend()
+
     plt.title(f'Average spike probability across cells per frame')
     plt.text(0.315, -0.115, f"{predictions_deltaF_file[len(config.general_settings.main_folder)+1:-38]}", horizontalalignment='center', verticalalignment = "center", transform=plt.gca().transAxes)
     plt.ylim(0,1)
-    save_path = os.path.join(output_directory, 'avg_spike_probability_per_frame.svg')
-    png_path =  os.path.join(output_directory, 'avg_spike_probability_per_frame.png')
-    plt.savefig(png_path)
-    plt.savefig(save_path)
-    print(f'Average spike probability per frame saved under {save_path}')
-    plt.close()
+    if output_directory:
+        save_path = os.path.join(output_directory, 'avg_spike_probability_per_frame.svg')
+        png_path =  os.path.join(output_directory, 'avg_spike_probability_per_frame.png')
+        plt.savefig(save_path)
+        plt.savefig(png_path)
+        print(f'Average spike probability per frame saved under {save_path}')
+        plt.close()
+    else:
+        plt.show()
 
 ## ROI image
 def getImg(ops):
-    """Accesses suite2p ops file (itemized) and pulls out a composite image to map ROIs onto"""
+    """
+    Generate a normalized image from suite2p ops for ROI visualization.
+
+    Args:
+    ----------
+        ops : dict
+            Suite2p ops dictionary containing imaging outputs.
+        config : SimpleNameSpace dict
+            Configuration JSON file with analysis parameters.
+
+    Returns:
+    ----------
+        mimg: np.ndarray
+            Normalized 8-bit image for visualization saved as an array.
+    """
     Img = ops["meanImg"] # Also "max_proj", "meanImg", "meanImgE"
     mimg = Img # Use suite-2p source-code naming
     mimg1 = np.percentile(mimg,1)
@@ -196,7 +354,22 @@ def getImg(ops):
 
     #redefine locally suite2p.gui.utils import boundary
 def boundary(ypix,xpix):
-    """ returns pixels of mask that are on the exterior of the mask """
+    """
+    Compute the boundary pixels of a given ROI mask.
+    Function is taken directly from suite2p src code.
+
+    Args:
+    ----------
+        ypix : np.ndarray 
+            Y-coordinates of ROI pixels.
+        xpix : np.ndarray
+            X-coordinates of ROI pixels.
+
+    Returns:
+    ----------
+        tuple[np.ndarray, np.ndarray]:
+            Arrays of y and x coordinates representing the boundary pixels.
+    """
     ypix = np.expand_dims(ypix.flatten(),axis=1)
     xpix = np.expand_dims(xpix.flatten(),axis=1)
     npix = ypix.shape[0]
@@ -217,12 +390,44 @@ def boundary(ypix,xpix):
     return yext, xext
 
 #gets neuronal indices
-def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
-    """Accesses suite2p stats on ROIs and filters ROIs based on cascade spike probability being >= 1 into nid2idx and nid2idx_rejected (respectively)"""
+def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
+    """
+    Classify ROIs and compute spatial/statistical properties.
+
+    ROIs are categorized into synaptic, dendritic, or rejected based on
+    thresholds for peak count, skewness, and compactness.
+
+    Args:
+    ----------
+        suite2p_dict : dict
+            Dictionary containing suite2p outputs (stat, F, Fneu, iscell).
+        frame_shape : tuple[int, int]
+            Shape of the imaging frame (height, width).
+        output_df : pandas.DataFrame
+            DataFrame containing peak detection results.
+        config  : SimpleNameSpace dict
+            Configuration dictionary / JSON with analysis thresholds.
+        use_iscell : bool, optional
+            If True, classification is based only on iscell flag.
+
+    Returns:
+    ----------
+        tuple :
+            scatters (dict): ROI boundary coordinates.
+            nid2idx (dict): Mapping of ROI IDs to indices.
+            nid2idx_rejected (dict): Rejected ROI indices.
+            pixel2neuron (np.ndarray): Pixel-to-ROI mapping.
+            synapse_ID (list): List of accepted synapse IDs.
+            nid2idx_dendrite (dict): Dendritic ROI indices.
+            nid2idx_synapse (dict): Synaptic ROI indices.
+    """
     stat = suite2p_dict['stat']
     iscell = suite2p_dict['iscell']
-    MIN_PROB = 0.1
+    F = suite2p_dict["F"]
+    Fneu = suite2p_dict["Fneu"]
+    MIN_CASCADE_ACTIVITY = config.analysis_params.cascade_activity_threshold
     min_radius = 3
+    pixel_weight_threshold = 0.5
     min_skew = 1
     pixel2neuron = np.full(frame_shape, fill_value=np.nan, dtype=float)
     scatters = dict(x=[], y=[], color=[], text=[])
@@ -237,7 +442,11 @@ def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
             radius = stat.iloc[n]['radius']
             skew = stat.iloc[n]['skew']
 
-            if estimated_spikes > MIN_PROB and radius >= min_radius:
+            sample_F = F[n]
+            sample_Fneu = Fneu[n]
+
+            med_pixel_weight = np.median(stat.iloc[n]['lam'])
+            if med_pixel_weight > pixel_weight_threshold and radius > min_radius and sample_F.min() > sample_Fneu.min():
                 nid2idx[n] = len(scatters["x"]) # Assign new idx
             else:
                 nid2idx_rejected[n] = len(scatters["x"])
@@ -254,7 +463,7 @@ def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
     else:
         for n in range(stat.shape[0]):
 
-            if iscell[n,0]:
+            if iscell[n,0] == 1 or iscell[n,0] == 1.0 or iscell[n,0] == True:
                 nid2idx[n] = len(scatters["x"]) # Assign new idx
             else:
                 nid2idx_rejected[n] = len(scatters["x"])
@@ -275,6 +484,35 @@ def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
 
 def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
              pixel2neuron, F, Fneu, save_path=None, axs=None):
+             """
+            Display ROI overlays of accepted ROIs on a background image.
+
+            Args:
+            ----------
+                MaxImg : np.ndarray
+                    Background image (e.g., max projection).
+                scatters : dict
+                    ROI boundary coordinates.
+                nid2idx : dict
+                    Mapping of ROI IDs to indices.
+                nid2idx_rejected : dict
+                    Rejected ROI indices.
+                pixel2neuron : np.ndarray
+                    Pixel-to-ROI mapping array.
+                F : np.ndarray
+                    Fluorescence traces.
+                Fneu : np.ndarray
+                    Neuropil signals.
+                save_path : str, optional
+                    File path to save the output image.
+                axs : matplotlib.axes.Axes, optional
+                    Existing axes to plot on.
+
+            Returns:
+            ----------
+                Returns Imaged Region overlayed with detected / accepted ROIs
+                if axis is provided, will put plot into a figure
+             """
              if axs is None:
                 fig = plt.figure(constrained_layout=True)
                 NUM_GRIDS=12
@@ -311,6 +549,37 @@ def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
 
 def dispGlia(MaxImg, scatters, nid2idx, nid2idx_rejected,
              pixel2neuron, F, Fneu, save_path=None, axs=None):
+             """
+            Display ROI overlays of accepted ROIs on a background image.
+            NOTE: This is only viable when using a cell-permeable dye to stain all cells
+
+            Args:
+            ----------
+                MaxImg : np.ndarray
+                    Background image (e.g., max projection).
+                scatters : dict
+                    ROI boundary coordinates.
+                nid2idx : dict
+                    Mapping of ROI IDs to indices.
+                nid2idx_rejected : dict
+                    Rejected ROI indices.
+                pixel2neuron : np.ndarray
+                    Pixel-to-ROI mapping array.
+                F : np.ndarray
+                    Fluorescence traces.
+                Fneu : np.ndarray
+                    Neuropil signals.
+                save_path : str, optional
+                    File path to save the output image.
+                axs : matplotlib.axes.Axes, optional
+                    Existing axes to plot on.
+
+            Returns:
+            ----------
+                Returns Imaged Region overlayed with detected / rejected ROIs
+                if axis is provided, will put plot into a figure
+                Rejected ROIs correspond to glia only if a cell-permeable indicator dye is used.
+             """
              if axs is None:
                 fig = plt.figure(constrained_layout=True)
                 NUM_GRIDS=12
@@ -347,7 +616,29 @@ def dispGlia(MaxImg, scatters, nid2idx, nid2idx_rejected,
 
 
 def create_suite2p_ROI_masks(stat, frame_shape, nid2idx, output_path):
-    """Function designed to do what was done above, except mask the ROIs for detection in other programs (e.g. FlouroSNNAP)"""
+    """
+    Generate and save ROI masks for external analysis tools.
+
+    Creates a binary mask image where ROI pixels are labeled and saves
+    it as an image file.
+
+    Args:
+    ----------
+        stat (pandas.DataFrame):
+            Suite2p stat DataFrame containing ROI pixel coordinates.
+        frame_shape (tuple[int, int]):
+            Shape of the imaging frame (height, width).
+        nid2idx (dict):
+            Mapping of ROI IDs to indices.
+        output_path (str):
+            File path to save the ROI mask image.
+
+    Returns:
+    ----------
+        tuple :
+            PIL.Image.Image: Saved image object.
+            np.ndarray: ROI mask array.
+    """   
     #Make an empty array to contain the nid2idx masks
     roi_masks = np.zeros(frame_shape, dtype=int)
 
@@ -365,86 +656,18 @@ def create_suite2p_ROI_masks(stat, frame_shape, nid2idx, output_path):
         #Set ROI pixels to mask
 
         roi_masks[ypix, xpix] = 255 # n + 1 helps to differentiate masks from background
-    # plt.figure(figsize=(10, 10))
-    # plt.imshow(roi_masks, cmap='gray', interpolation='none')
-    # # plt.colorbar(label='ROI ID')
-    # plt.title('ROI Mask')
-    # plt.tight_layout()
-    # plt.show()
+
     im = Image.fromarray(roi_masks)
     im.save(output_path)
     return im, roi_masks
     
-# example call roi_masks = create_suite2p_ROI_masks(stat, getImg(ops).shape, nid2idx)
-
-# def pynapple_plots(file_path, output_directory):#, video_label):
-#     import warnings
-#     warnings.filterwarnings('ignore')
-    
-#     with open(file_path, 'rb') as f:
-#         data = pickle.load(f)
-#     df_cell_stats = data['cell_stats']
-    
-    
-#     my_tsd = {}
-#     for idx in df_cell_stats['SynapseID'][0:]:
-#         my_tsd[idx] = nap.Tsd(t=df_cell_stats[df_cell_stats['SynapseID']==idx]['PeakTimes'][idx],
-#                             d=df_cell_stats[df_cell_stats['SynapseID']==idx]['Amplitudes'][idx],time_units='s')
-        
-#     Interval_1 = nap.IntervalSet(0,180)
-#     # Interval_2 = nap.IntervalSet(250,290)
-#     # Interval_3 = nap.IntervalSet(290,450)
-    
-#     interval_set = [Interval_1]#,
-#                 #Interval_2]
-    
-#     #Make the figure
-#     plt.figure(figsize=(6,6))
-#     plt.subplot(2,1,1)
-#     for i, idx in enumerate(df_cell_stats['SynapseID']):
-# #     
-#         plt.eventplot(df_cell_stats[df_cell_stats['SynapseID']==idx]['PeakTimes'],lineoffsets=i,linelength=0.8)
-# #     
-#         plt.ylabel('SynapseID')
-#         plt.xlabel('Time (s)')
-#         plt.ylim(0,1500)
-#         plt.tight_layout()
-#     plt.subplot(2,1,2)
-#     for i in range(1): #change range for multiple intervals
-#         # plt.title(file_path)
-#         # plt.title(f'interval {i+1}')
-#         for idx in my_tsd.keys():
-#             plt.plot(my_tsd[idx].restrict(interval_set[i]).index,my_tsd[idx].restrict(interval_set[i]).values,color=f'C{idx}',marker='o',ls='',alpha=0.5)
-#         plt.ylabel('Amplitude')
-#         plt.ylim(0,1000)
-#         plt.xlabel('Spike time (s)')
-#         plt.tight_layout()
-
-#     base_file_name = os.path.splitext(os.path.basename(file_path))[0]
-    
-#     #Check if output 
-#     if not os.path.exists(output_directory):
-#         os.makedirs(output_directory)
-    
-#     figure_output_path = os.path.join(output_directory, f'{base_file_name}_figure.svg')
-
-#     plt.savefig(figure_output_path)
-#     plt.show()
-
-#             ## You can then just group the amplitude as you want for later analysis
-
-#     transient_count = []
-#     for idx in my_tsd.keys():
-#         transient_count.append(my_tsd[idx].restrict(interval_set[0]).shape[0])
-
-
-
 
 _available_tests = {
     "mann-whitney-u": stats.mannwhitneyu,
     "wilcoxon": stats.wilcoxon,
     "paired_t": stats.ttest_rel,
 }
+
 def get_significance_text(series1, series2, test="mann-whitney-u", bonferroni_correction=1, show_ns=False, 
                           cutoff_dict={"*":0.05, "**":0.01, "***":0.001, "****":0.00099}, return_string="{text}\n{pvalue:.4f}"):
     statistic, pvalue = _available_tests[test](series1, series2)
