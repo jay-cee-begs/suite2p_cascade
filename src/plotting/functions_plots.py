@@ -428,6 +428,7 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
     MIN_CASCADE_ACTIVITY = config.analysis_params.cascade_activity_threshold
     min_radius = 3
     pixel_weight_threshold = 0.5
+    min_skew = 1
     pixel2neuron = np.full(frame_shape, fill_value=np.nan, dtype=float)
     scatters = dict(x=[], y=[], color=[], text=[])
     nid2idx = {}
@@ -439,6 +440,7 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
         for n in range(stat.shape[0]):
             estimated_spikes = output_df.iloc[n]["EstimatedSpikes"]
             radius = stat.iloc[n]['radius']
+            skew = stat.iloc[n]['skew']
 
             sample_F = F[n]
             sample_Fneu = Fneu[n]
