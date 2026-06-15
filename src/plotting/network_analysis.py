@@ -1,4 +1,5 @@
 from run_cascade import functions_data_transformation as fdt,  functions_general as fun_g
+from batch_gui.config_loader import load_json_config_file, load_json_dict
 from plotting import rastermapping
 import matplotlib.pyplot as plt
 from scipy.stats import zscore, norm
@@ -6,6 +7,8 @@ import numpy as np
 import pandas as pd
 from scipy.signal import find_peaks
 from BaselineRemoval import BaselineRemoval
+import os
+
 
 
 def load_and_plot_network(suite2p_dict): 
@@ -96,3 +99,29 @@ def load_and_plot_network(suite2p_dict):
     plt.savefig(os.path.join(save_path, f"{group}_global_activity.svg"))
     ###NOTE Z is deltaF since no more z-score
     return Z, af_smooth, peaks, bin_window, global_signal, burst_width, burst_mask
+
+def main(config_file = None):
+    try:
+        global config  # <- important
+        global config_dict
+        if config_file is not None:
+            config = load_json_config_file(config_file)
+            config_dict = load_json_dict(config_file)
+
+        else:
+            config = load_json_config_file()
+            config_dict = load_json_dict()
+    except KeyboardInterrupt as e:
+        print("Outputs interrupted by user")
+    finally:
+        import json
+        with open(os.path.join(config.general_settings.main_folder, 'analysis_config.json'), 'w') as f:
+            json.dump(config_dict, f, indent = 4)
+        print(f"Analysis parameters saved in {config.general_settings.main_folder} as analysis_config.json")
+        from datetime import datetime
+
+        now = datetime.now()
+
+        current_time = now.strftime("%H:%M:%S")
+        print("Current Time =", current_time)
+if __name__ == '__main__':
