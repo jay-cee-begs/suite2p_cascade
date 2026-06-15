@@ -213,7 +213,7 @@ def calculate_deltaF(F_file, config):
             ZhangFit / airPLS automated baseline correction
             deltaF is saved into the suite2p output folder generated from suite2p ROI detection.
     """
-
+    from BaselineRemoval import BaselineRemoval
     savepath = rf"{F_file}".replace("\\F.npy","") ## make savepath original folder, indicates where deltaF.npy is saved
     F = np.load(rf"{F_file}", allow_pickle=True)
     Fneu = np.load(rf"{F_file[:-4]}"+"neu.npy", allow_pickle=True)
@@ -225,12 +225,11 @@ def calculate_deltaF(F_file, config):
             if config.analysis_params.correction_method == "airPLS":
                 lambda_window = int(config.analysis_params.lambda_window)
                 baseline_corrected = BaselineRemoval(corrected_trace)
-                corrected_trace = baseline_corrected.ZhangFit(lambda_= lambda_window)
+                baseline_corrected = baseline_corrected.ZhangFit(lambda_= lambda_window)
             if config.analysis_params.correction_method == "rolling_median":
                 baseline_corrected = remove_bleaching(corrected_trace, 
                                                       baseline_correction='rolling_med', 
                                                       window = lambda_window)
-                corrected_trace = baseline_corrected
                 
         #Determine baseline F0 value
         trace_median = np.median(corrected_trace)
@@ -240,8 +239,12 @@ def calculate_deltaF(F_file, config):
         baseline_mask = np.abs(corrected_trace - trace_median) < event_threshold * norm_sigma
         F0 = np.median(corrected_trace[baseline_mask])
 
-        #calculate dF / F0
-        normalized_F = (corrected_trace)/F0        
+        if config.analysis_params.correction_method in ['airPLS','rolling_median']:
+                
+            #calculate dF / F0
+            normalized_F = (baseline_corrected)/F0
+        else: 
+            normalized_F = (corrected_trace-F0) / F0        
         deltaF.append(normalized_F)
         
     deltaF = np.array(deltaF)
