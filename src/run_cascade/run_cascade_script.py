@@ -73,7 +73,7 @@ def main(config_file = None):
                 CASCADE_functions.plots_and_basic_info(file, config)
                 CASCADE_functions.cascade_this(file, config)
 
-        if not config.analysis_params.overwrite_cascade:
+        else:
             predictions_deltaF_files = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "predictions_deltaF.npy") ## get the names of the predicted spike files
             F_traces = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending ="F.npy", supress_printing = True)
             for f in F_traces:
@@ -82,16 +82,17 @@ def main(config_file = None):
             deltaF = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "deltaF.npy", supress_printing = True)
             unprocessed_folders = []
             cascade_suffix = 'suite2p\plane0\predictions_deltaF.npy'
+            cascade_processed_files = []
+            for file in predictions_deltaF_files:
+                cascade_processed_files.append(file.split(cascade_suffix)[-1])
             for folder in suite2p_folders:
-                
-                try:
-                    cascade_data = np.load(os.path.join(folder, 'suite2p','plane0','predictions_deltaF.npy'), allow_pickle=True)
-                except (FileNotFoundError) as e:
+                if folder not in cascade_processed_files:
                     unprocessed_folders.append(folder)
 
             for folder in unprocessed_folders:
-                CASCADE_functions.plots_and_basic_info(file, config)
-                CASCADE_functions.cascade_this(file, config)
+                folder = os.path.join(folder, *functions_data_transformation.SUITE2P_STRUCTURE['deltaF'])
+                CASCADE_functions.plots_and_basic_info(folder, config)
+                CASCADE_functions.cascade_this(folder, config)
             
         import json
         with open(os.path.join(config.general_settings.main_folder, 'analysis_config.json'), 'w') as f:
