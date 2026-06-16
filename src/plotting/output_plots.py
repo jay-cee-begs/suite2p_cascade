@@ -35,7 +35,6 @@ def main(config_file = None):
 
 if __name__=="__main__":
     main()
-    if config.graph_settings.rastermap_plot:
-        rastermapping.main()
+    rastermapping.main()
     # networkx_functions.main()
 
