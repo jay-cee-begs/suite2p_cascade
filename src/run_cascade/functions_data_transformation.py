@@ -434,7 +434,7 @@ def load_suite2p_paths(data_folder, config, use_iscell = False):  ## creates a d
         "deltaF": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['deltaF'])),
         "cascade_predictions": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["cascade_predictions"])),
         "iscell": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['iscell'])),
-        "network_deltaF": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['network_deltaF']))
+        # "network_deltaF": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['network_deltaF']))
 
     }
     if config.analysis_params.use_suite2p_ROI_classifier is False or use_iscell is False:
