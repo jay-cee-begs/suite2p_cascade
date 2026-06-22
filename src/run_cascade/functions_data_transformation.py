@@ -5,7 +5,7 @@ import numpy as np
 from run_cascade import functions_general as g_func
 from batch_gui.config_loader import load_json_config_file, load_json_dict
 from plotting import functions_plots as fun_plot 
-from plotting import network_analysis as net_analysis
+from network_analysis import network_analysis as net_analysis
 
 _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG
@@ -246,8 +246,8 @@ def get_file_name_list(folder_path, file_ending, supress_printing = False):
     try:
         config = load_json_config_file(folder_path)
     except FileNotFoundError as e:
-        print("No Analysis configurations file exists for this folder")
-        return
+        config = load_json_config_file()
+
     
     for root, dirs, files in os.walk(folder_path):
         for file in files:
@@ -301,15 +301,22 @@ def get_experimental_dates(main_folder):
     well_folders = get_file_name_list(main_folder, "samples", supress_printing = True)
     date_list= []
     sample_dict = {}
-    for well in well_folders:
-        date_list.append(os.path.basename(well)[0:6]) #date_list.append(os.path.basename(well).split("_")[0]) ## append dates; should change if the date is not in the beginning of the file name usually [:6]
-    distinct_dates = [i for i in set(date_list)]
-    distinct_dates.sort(key=lambda x: int(x))
- 
+    try:
+        for well in well_folders:
+            date_list.append(os.path.basename(well)[0:6]) #date_list.append(os.path.basename(well).split("_")[0]) ## append dates; should change if the date is not in the beginning of the file name usually [:6]
+        distinct_dates = [i for i in set(date_list)]
+        distinct_dates.sort(key=lambda x: int(x))
+    except (TypeError, ValueError) as e:
+        for well in well_folders:
+            date_list.append('000123')
+        distinct_dates = [i for i in set(date_list)]
+        # distinct_dates.sort(key=lambda x: int(x))
+        
     for i1 in range(len(well_folders)):
         for i2, date in enumerate(distinct_dates):
             if date in well_folders[i1]: # if date in list
                 sample_dict[well_folders[i1]]=f"sample_{i2+1}"
+
     return sample_dict
 
 def df_from_suite2p_dict(suite2p_dict, config): ## creates df structure for single sample (e.g. well_x) csv file, input is dict resulting from load_suite2p_paths
@@ -336,7 +343,7 @@ def df_from_suite2p_dict(suite2p_dict, config): ## creates df structure for sing
 
     ## spike_amplitudes = find_predicted_peaks(suite2p_dict["cascade_predictions"], return_peaks = False) ## removed
     # spikes_per_neuron = find_predicted_peaks(suite2p_dict["cascade_predictions"]) ## removed
-    masked_cascade_prediction = np.array(g_func.filter_cascade_predictions(suite2p_dict['cascade_predictions']))
+    masked_cascade_prediction = np.array(g_func.filter_cascade_predictions(suite2p_dict['cascade_predictions'], config))
     estimated_spike_total = np.array(g_func.summed_spike_probs_per_cell(masked_cascade_prediction))
     # estimated_spike_std = np.std(np.array(summed_spike_probs_per_cell(suite2p_dict["cascade_predictions"])))
     basic_cell_stats = g_func.basic_estimated_stats_per_cell(masked_cascade_prediction)
@@ -347,7 +354,7 @@ def df_from_suite2p_dict(suite2p_dict, config): ## creates df structure for sing
     for spike_total in estimated_spike_total:
         activity_mask.append(spike_total >= activity_threshold)
    
-    df = pd.DataFrame({"IsUsed":suite2p_dict['IsUsed'],
+    df = pd.DataFrame({
                        "Baseline_F": F_baseline,
                        "EstimatedSpikes": estimated_spike_total,
                        "SD_Estimated_Spks":basic_cell_stats[1],
@@ -359,11 +366,12 @@ def df_from_suite2p_dict(suite2p_dict, config): ## creates df structure for sing
                        "file_name": suite2p_dict["file_name"]},
                        index = range(0,len(suite2p_dict["F"])))
     
+    
     df.index.set_names("NeuronID", inplace=True)
     use_iscell = config.analysis_params.use_suite2p_ROI_classifier
-    df["ActiveROI"] = df["EstimatedSpikes"] > 0.1 and df['IsUsed'] == True
     if use_iscell:
         df["IsUsed"] = suite2p_dict["iscell"][:,0]
+
     else:
         fluorescence_keys = []
         stat = suite2p_dict['stat']
@@ -381,7 +389,8 @@ def df_from_suite2p_dict(suite2p_dict, config): ## creates df structure for sing
                 fluorescence_keys.append(True)
             else:
                 fluorescence_keys.append(False)
-
+        df['IsUsed'] = fluorescence_keys
+    df["ActiveROI"] = (df["EstimatedSpikes"] > 0.1) & (df['IsUsed'] == True)
     df.index.set_names("NeuronID", inplace=True)
     return df
 
@@ -456,9 +465,14 @@ def load_suite2p_paths(data_folder, config, use_iscell = False):  ## creates a d
                 fluorescence_keys.append(False)
 
     else:
-        suite2p_dict["IsUsed"] = pd.DataFrame(suite2p_dict["iscell"]).iloc[:,0].values.T
-        suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["iscell"])
-        suite2p_dict['IsUsed'] = suite2p_dict['iscell'][:,0].astype(bool)
+        print(f"Sample: {data_folder}")
+        print(f"iscell shape: {suite2p_dict['iscell'].shape}")
+        print(f"iscell dtype: {suite2p_dict['iscell'].dtype}")
+        try:
+
+            suite2p_dict['IsUsed'] = suite2p_dict['iscell'][:,0].astype(bool)
+        except IndexError as e:
+            suite2p_dict['IsUsed'] = suite2p_dict['iscell']
  #TODO make sure that changing "path" to "data_folder" for using IsCell natively will still work
     suite2p_dict['data_folder'] = data_folder
 
@@ -593,7 +607,7 @@ def load_local_suite2p_output(data_folder, groups = None, main_folder = None, lo
     return suite2p_dict
 
 
-def translate_suite2p_outputs_to_csv(main_folder, config, overwrite=False, check_for_iscell=True, update_iscell = True): ## creates output csv for all wells and saves them in .csv folder
+def translate_suite2p_outputs_to_csv(main_folder, config, overwrite=False, check_for_iscell=False, update_iscell = True): ## creates output csv for all wells and saves them in .csv folder
     """
     Convert Suite2p output folders into raw and processed CSV files.
 
@@ -628,7 +642,7 @@ def translate_suite2p_outputs_to_csv(main_folder, config, overwrite=False, check
 
         suite2p_dict = load_suite2p_paths(folder, config)
 
-        output_df = df_from_suite2p_dict(suite2p_dict, use_iscell=check_for_iscell)
+        output_df = df_from_suite2p_dict(suite2p_dict, config)
     
 
         output_df.to_csv(translated_path)
@@ -636,7 +650,7 @@ def translate_suite2p_outputs_to_csv(main_folder, config, overwrite=False, check
 
         ops = suite2p_dict["ops"]
         Img = fun_plot.getImg(ops)
-        scatters, nid2idx, nid2idx_rejected, pixel2neuron = fun_plot.getStats(suite2p_dict, Img.shape, output_df, use_iscell=check_for_iscell)
+        scatters, nid2idx, nid2idx_rejected, pixel2neuron = fun_plot.getStats(suite2p_dict, Img.shape, output_df, config, use_iscell=check_for_iscell)
         iscell_path = os.path.join(folder, *SUITE2P_STRUCTURE['iscell'])
         parent_iscell = load_npy_array(iscell_path)
         print("parent_iscell type:", type(parent_iscell))
@@ -730,9 +744,9 @@ def csv_to_pickle(main_folder, overwrite=True):
         pkl_path = os.path.join(output_path, 
                                         f"{os.path.basename(file[:-4])}"
                                         f"Dur{int(config.general_settings.EXPERIMENT_DURATION)}s"
-                                        f"Int{int(config.general_settings.FRAME_INTERVAL*1000)}ms"
+                                        f"Int{int((1/config.general_settings.frame_rate)*1000)}ms"
                                         f"Bin{int(config.general_settings.BIN_WIDTH*1000)}ms"
-                                            + ("_filtered" if config.general_settings.FILTER_NEURONS else "") +
+                                         +
                                         ".pkl")
         if os.path.exists(pkl_path) and not overwrite:
             print(f"Processed file {pkl_path} already exists!")
@@ -849,7 +863,8 @@ def create_experiment_overview(main_folder, groups, use_iscell):
     dictionary_list = []
     
     for group in groups:
-        groups_predictions_deltaF_files = get_file_name_list(folder_path=group, file_ending="predictions_deltaF.npy", supress_printing=True)
+        groups_predictions_deltaF_files = get_file_name_list(folder_path=os.path.join(config.general_settings.main_folder, group), 
+                                                             file_ending="predictions_deltaF.npy", supress_printing=True)
         
         for file in groups_predictions_deltaF_files:
             
