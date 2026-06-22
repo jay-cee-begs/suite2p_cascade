@@ -1,6 +1,6 @@
 from run_cascade import functions_data_transformation as fdt,  functions_general as fun_g
 from batch_gui.config_loader import load_json_config_file, load_json_dict
-from plotting import rastermapping
+from network_analysis import rastermapping
 import matplotlib.pyplot as plt
 from scipy.stats import zscore, norm
 import numpy as np 
