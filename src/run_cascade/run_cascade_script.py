@@ -81,7 +81,7 @@ def main(config_file = None):
             suite2p_folders = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending ="samples", supress_printing = True)
             deltaF = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "deltaF.npy", supress_printing = True)
             unprocessed_folders = []
-            cascade_suffix = 'suite2p\plane0\predictions_deltaF.npy'
+            cascade_suffix = '\\suite2p\\plane0\\predictions_deltaF.npy' #TODO Fix hardcoded '\\' for linux implementation
             cascade_processed_files = []
             for file in predictions_deltaF_files:
                 cascade_processed_files.append(file.split(cascade_suffix)[-1])
