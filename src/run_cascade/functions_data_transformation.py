@@ -650,7 +650,7 @@ def translate_suite2p_outputs_to_csv(main_folder, config, overwrite=False, check
 
         ops = suite2p_dict["ops"]
         Img = fun_plot.getImg(ops)
-        scatters, nid2idx, nid2idx_rejected, pixel2neuron = fun_plot.getStats(suite2p_dict, Img.shape, output_df, config, use_iscell=check_for_iscell)
+        scatters, nid2idx, nid2idx_rejected, pixel2neuron,nid2idx_neuron, nid2idx_glia = fun_plot.getStats(suite2p_dict, Img.shape, output_df, config, use_iscell=check_for_iscell)
         iscell_path = os.path.join(folder, *SUITE2P_STRUCTURE['iscell'])
         parent_iscell = load_npy_array(iscell_path)
         print("parent_iscell type:", type(parent_iscell))
@@ -672,7 +672,7 @@ def translate_suite2p_outputs_to_csv(main_folder, config, overwrite=False, check
 
         
         image_save_path = os.path.join(main_folder, f"{folder}_plot.png") #TODO explore changing "input path" to "folder" to save the processing in the same 
-        fun_plot.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
+        fun_plot.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, nid2idx_neuron, nid2idx_glia,suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
 
     print(f"{len(well_folders)} .csv files were saved under {config.general_settings.main_folder+r'/csv_files'}")
 
