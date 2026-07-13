@@ -1,6 +1,6 @@
 from run_cascade import functions_data_transformation
 from plotting import functions_plots as fun_plot
-from plotting import rastermapping, networkx_functions
+from network_analysis import rastermapping, networkx_functions
 from batch_gui.config_loader import load_json_config_file, load_json_dict
 
 _DEFAULT_CONFIG = load_json_config_file()

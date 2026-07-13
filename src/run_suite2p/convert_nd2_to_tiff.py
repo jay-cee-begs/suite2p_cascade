@@ -9,7 +9,7 @@ import sys
 # sys.path.insert(0, 'D:/users/JC/suite2p-0.14.0')
 from suite2p import run_s2p
 
-from batch_gui. config_loader import load_json_config_file, load_json_dict
+from batch_gui.config_loader import load_json_config_file, load_json_dict
 from run_cascade import functions_data_transformation
 
 _DEFAULT_CONFIG = load_json_config_file()
