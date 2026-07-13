@@ -111,10 +111,10 @@ def simple_raster_plot(suite2p_dict, color_map, save_path = None,frame_rate = No
     ax3 = plt.subplot(grid[2:, 20:])
     ops = suite2p_dict["ops"]
     Img = functions_plots.getImg(ops)
-    scatters, nid2idx, nid2idx_rejected, pixel2neuron = functions_plots.getStats(suite2p_dict, Img.shape, fdt.df_from_suite2p_dict(suite2p_dict, config), config, use_iscell = config.analysis_params.use_suite2p_ROI_classifier)
+    scatters, nid2idx, nid2idx_rejected, pixel2neuron, nid2idx_neuron, nid2idx_glia = functions_plots.getStats(suite2p_dict, Img.shape, fdt.df_from_suite2p_dict(suite2p_dict, config), config, use_iscell = config.analysis_params.use_suite2p_ROI_classifier)
     #params suite2p_dict, frame_shape, output_df, config, use_iscell = False
     file = suite2p_dict['file_name'].split('\\')[0]
-    functions_plots.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
+    functions_plots.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, nid2idx_neuron, nid2idx_glia,suite2p_dict["F"], suite2p_dict["Fneu"], axs=ax3)
     group = suite2p_dict['Group']
     file = suite2p_dict['data_folder'].split('\\')[-1]
     if save_path is not None:
