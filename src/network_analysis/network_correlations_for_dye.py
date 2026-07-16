@@ -94,21 +94,27 @@ def calculate_normalized_deltaF(F, Fneu, baseline_correction = None, lambda_wind
 
 
     
-    if by_type == "Cell":
-        for f, fneu in zip(F, Fneu):
-            corrected_trace = f - (0.7*fneu) ## neuropil correction
 
+    for f, fneu in zip(F, Fneu):
+        corrected_trace = f - (0.7*fneu) ## neuropil correction
+        
+        if baseline_correction is None:
             deltaF.append((corrected_trace-corrected_trace.min())/ (corrected_trace.max() - corrected_trace.min()))
-    else:
-        corrected_traces = F - 0.7*Fneu
-        pop_max = corrected_traces.max()
-        pop_min = corrected_traces.min()
-
-        for f, fneu in zip(F, Fneu):
-            corrected_trace = f - (0.7*fneu) ## neuropil correction
-
-            deltaF.append((corrected_trace-pop_min)/ (pop_max - pop_min))
-
+        else:
+            if baseline_correction in ['rolling_median', 'airPLS']:
+                if baseline_correction is 'airPLS':
+                    from BaselineRemoval import BaselineRemoval
+                    base_corr = BaselineRemoval(corrected_trace)
+                    if lambda_window is None:
+                        deltaF = base_corr.ZhangFit(lambda_ = 100)
+                    else:
+                        deltaF = base_corr.ZhangFit(lambda_ = lambda_window)
+                if baseline_correction is 'rolling_median':
+                    from run_cascade import functions_data_transformation as fdt, functions_general as fun_g
+                    if lambda_window is not None:
+                        deltaF = fun_g.remove_bleaching(corrected_trace, baseline_correction="rolling_med", window = lambda_window)
+                    else:
+                        deltaF = fun_g.remove_bleaching(corrected_trace, baseline_correction='rolling_med',window = 250)
     deltaF = np.array(deltaF)
     deltaF = np.squeeze(deltaF)
 
