@@ -398,7 +398,6 @@ def df_from_suite2p_dict(suite2p_dict, config): ## creates df structure for sing
             else:
                 fluorescence_keys.append(False)
         df['IsUsed'] = fluorescence_keys
-    df["ActiveROI"] = (df["EstimatedSpikes"] > 0.1) & (df['IsUsed'] == True)
     df.index.set_names("NeuronID", inplace=True)
     
     return df
@@ -708,6 +707,33 @@ def get_pkl_file_name_list(folder_path):
                 pkl_files.append(os.path.join(root, file))
     return pkl_files
 
+def create_experiment_summary(main_folder):
+    """
+    Create merged experiment-level summary CSV files from processed ROI data.
+
+    Args:
+    -----
+        main_folder : str
+            Path containing the 'csv_files' directory.
+
+    Returns:
+    --------
+        DataFrame
+            merged_df : concatenated per-recording data across all ROIs selected
+    """
+    home = main_folder
+    csv_file_path = os.path.join(main_folder, 'csv_files')
+    csv_files = list_all_files_of_type(csv_file_path, '.csv')
+    image_csvs = [file for file in csv_files]
+    df_list = [pd.read_csv(os.path.join(csv_file_path, csv)) for csv in image_csvs]
+    merged_df = pd.concat(df_list, ignore_index=True)
+        
+# Include non-numeric columns in the final aggregated dataframe
+    main_group = os.path.basename(main_folder)
+    merged_df.to_csv(os.path.join(home, f'{main_group}_experiment_summary.csv'))
+        
+    return merged_df
+
 
 def list_all_files_of_type(input_path, filetype):
     """
@@ -874,7 +900,7 @@ def create_experiment_overview(main_folder, groups, use_iscell):
     dictionary_list = []
     
     for group in groups:
-        groups_predictions_deltaF_files = get_file_name_list(folder_path=os.path.join(config.general_settings.main_folder, group), 
+        groups_predictions_deltaF_files = get_file_name_list(folder_path=os.path.join(main_folder, group), 
                                                              file_ending="predictions_deltaF.npy", supress_printing=True)
         
         for file in groups_predictions_deltaF_files:
@@ -932,7 +958,7 @@ def create_experiment_overview(main_folder, groups, use_iscell):
     # Create DataFrame from dictionary list
     df = pd.DataFrame(dictionary_list)
 
-    unique_prefixes = get_unique_prefixes(df['Group'])
+    # unique_prefixes = get_unique_prefixes(df['Group'])
 
     # Create a dynamic categorization function
     def categorize_time_point(group_name):
@@ -951,18 +977,18 @@ def create_experiment_overview(main_folder, groups, use_iscell):
                 If no prefix exists for the given group or does not match, function returns "N/A"
      
         """
-        for prefix in unique_prefixes:
-            if group_name.startswith(prefix):
-                return prefix
-        return 'N/A'
+        # for prefix in unique_prefixes:
+        #     if group_name.startswith(prefix):
+        #         return prefix
+        # return 'N/A'
 
     # Add a new column 'Time_Point' based on the unique prefixes
-    df['Time_Point'] = df['Group'].apply(categorize_time_point)
+    # df['Time_Point'] = df['Group'].apply(categorize_time_point)
 
     # Ensure 'N/A' categories are handled
-    df = df[df['Time_Point'] != 'N/A']
+    # df = df[df['Time_Point'] != 'N/A']
     # Calculate summary statistics for each unique group
-    summary_stats = df.groupby(['Group', 'Time_Point']).agg({
+    summary_stats = df.groupby(['Group']).agg({
         'Neuron_Count': ['mean', 'std','median'],
         'Active_Neuron_Count': ['mean', 'std','median'],
         'Active_Neuron_Proportion': ['mean', 'std','median'],
