@@ -19,7 +19,7 @@ SUITE2P_STRUCTURE = {
     "deltaF": ["suite2p", "plane0", "deltaF.npy"],
     "ops":["suite2p", "plane0", "ops.npy"],
     "cascade_predictions": ["suite2p", "plane0", "predictions_deltaF.npy"],
-    "network_deltaF": ["suite2p", "plane0", "network_deltaF.npy"]
+    "network_deltaF": ["suite2p", "plane0", "F_network_normalized.npy"]
 
 }
 
@@ -196,7 +196,7 @@ def check_network_deltaF(folder_name_list, config):
         if os.path.exists(location):
             continue
         else:
-            g_func.calculate_network_deltaF(location.replace("network_deltaF.npy","F.npy"), config = config)
+            g_func.calculate_network_deltaF(location.replace("F_network_normalized.npy","F.npy"), config = config)
             
         # elif config.analysis_params.baseline_correction and config.analysis_params.correction_method == 'airPLS':
         #     g_func.calculate_deltaF_airPLS(location.replace("network_deltaF.npy","F.npy"), config = config,
@@ -392,6 +392,7 @@ def df_from_suite2p_dict(suite2p_dict, config): ## creates df structure for sing
         df['IsUsed'] = fluorescence_keys
     df["ActiveROI"] = (df["EstimatedSpikes"] > 0.1) & (df['IsUsed'] == True)
     df.index.set_names("NeuronID", inplace=True)
+    
     return df
 
 def load_suite2p_paths(data_folder, config, use_iscell = False):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for well_x)
@@ -443,7 +444,7 @@ def load_suite2p_paths(data_folder, config, use_iscell = False):  ## creates a d
         "deltaF": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['deltaF'])),
         "cascade_predictions": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["cascade_predictions"])),
         "iscell": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['iscell'])),
-        # "network_deltaF": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['network_deltaF']))
+        "network_deltaF": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['network_deltaF']))
 
     }
     if config.analysis_params.use_suite2p_ROI_classifier is False or use_iscell is False:
@@ -555,6 +556,8 @@ def load_local_suite2p_output(data_folder, groups = None, main_folder = None, lo
         "deltaF": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['deltaF'])),
         "cascade_predictions": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["cascade_predictions"])),
         "iscell": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['iscell'])),
+        "network_deltaF": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['network_deltaF']))
+
 }
     if not use_iscell:
         suite2p_dict["IsUsed"] = [(suite2p_dict["stat"]["skew"] >= 1)] 

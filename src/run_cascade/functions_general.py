@@ -283,26 +283,19 @@ def calculate_network_deltaF(F_file, config):
                 corrected_trace = baseline_corrected
                 
         #Determine baseline F0 value
-        trace_median = np.median(corrected_trace)
-        trace_mad = np.median(np.abs(corrected_trace - trace_median))
-        norm_sigma = 1.4826*trace_mad
-        event_threshold = config.analysis_params.MAD_baseline_filter_threshold
-        baseline_mask = np.abs(corrected_trace - trace_median) < event_threshold * norm_sigma
-        F0 = np.median(corrected_trace[baseline_mask])
-
-        #calculate dF / F0
-        normalized_F = (corrected_trace)/F0        
+        normalized_F = (corrected_trace - corrected_trace.min()) / (corrected_trace.max() - corrected_trace.min())
+        
+        #calculate normalized network fluorescence        
         network_deltaF.append(normalized_F)
     network_deltaF = np.array(network_deltaF)
     network_deltaF = np.squeeze(network_deltaF)
-    filtered_deltaF = network_deltaF[iscell[:,0] == 1]
     if not os.path.exists(f"{savepath}/network_deltaF.npy"):
-        np.save(f"{savepath}/network_deltaF.npy", filtered_deltaF, allow_pickle=True)
-        print(f"delta F traces saved as network_deltaF.npy under {savepath}\n")
+        np.save(f"{savepath}/F_network_normalized.npy", network_deltaF, allow_pickle=True)
+        print(f"Normalized F traces saved as F_network_normalized.npy under {savepath}\n")
     else:
         print(f"deltaF files already exist for {F_file[len(config.general_settings.main_folder)+1:-21]}")
 
-    return filtered_deltaF
+    return network_deltaF
 
 
 ##TODO cut this function
