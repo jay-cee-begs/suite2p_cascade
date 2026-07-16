@@ -357,16 +357,24 @@ def df_from_suite2p_dict(suite2p_dict, config): ## creates df structure for sing
     df = pd.DataFrame({
                        "Baseline_F": F_baseline,
                        "EstimatedSpikes": estimated_spike_total,
+                       "ActiveROI": estimated_spike_total > 0.1,
                        "SD_Estimated_Spks":basic_cell_stats[1],
                        "cv_Estimated_Spks":basic_cell_stats[2],
-                       "Total Frames": len(suite2p_dict["F"].T), 
+                       "Total_Frames": len(suite2p_dict["F"].T), 
                        "SpikesFreq": avg_instantaneous_spike_rate, 
-                       "group": suite2p_dict["Group"],
-                       "dataset":suite2p_dict["sample"],
-                       "file_name": suite2p_dict["file_name"]},
+                       "Experimental_Group": suite2p_dict["Group"],
+                       "Replicate_No.":suite2p_dict["sample"],
+                       "File_Name": suite2p_dict["file_name"]},
                        index = range(0,len(suite2p_dict["F"])))
     
-    
+        
+    # if config.analysis_params.multivid_processing:
+    #         for vid_idx in range(n_vids):
+    #             df[f"Video_{vid_idx}_PeakTimes"] = all_peaks[vid_idx]
+    #             df[f"Video_{vid_idx}_Amplitudes"] = all_amplitudes[vid_idx]
+    #             df[f"Video_{vid_idx}_Count"] = all_counts[vid_idx]
+    #             df[f"Video_{vid_idx}_Frames"] = vid_len[vid_idx]
+
     df.index.set_names("NeuronID", inplace=True)
     use_iscell = config.analysis_params.use_suite2p_ROI_classifier
     if use_iscell:
