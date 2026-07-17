@@ -195,6 +195,30 @@ from scipy.ndimage import label
         else:
             plt.close()
 
+    peaks, _ = find_peaks(af_smooth, height=activity_threshold, distance=peak_distance)
+
+    # --- Two individual criteria ---
+    burst_mask = af_smooth > activity_threshold
+    recruitment_threshold = total_cells * recruitment_fraction
+    recruitment_mask = n_active_cells > recruitment_threshold
+
+    # --- Combined event mask: both criteria must hold ---
+    event_mask = burst_mask & recruitment_mask
+
+    # --- Label discrete events and summarize each one ---
+    labeled_events, n_events = label(event_mask)
+    event_stats = []
+    for event_id in range(1, n_events + 1):
+        frames = np.where(labeled_events == event_id)[0]
+        event_stats.append({
+            'event_id': event_id,
+            'start_frame': int(frames[0]),
+            'end_frame': int(frames[-1]),
+            'duration_frames': int(len(frames)),
+            'peak_amplitude': float(af_smooth[frames].max()),
+            'max_neurons_recruited': int(n_active_cells[frames].max()),
+        })
+
     def create_plots(input_trace, plot_title, ylabel="Fraction active", ylim=None, axhline_val=None):
         plt.figure(figsize=(10, 4))
         plt.plot(input_trace, label='Activity trace', color='black', alpha=0.4, lw=2)
