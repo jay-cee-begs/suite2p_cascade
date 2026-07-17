@@ -31,6 +31,65 @@ from scipy.signal import find_peaks
 from scipy.ndimage import label
 
 
+    """
+    Detect and characterize synchronous network events from normalized (0-1) calcium
+    fluorescence traces, using two complementary criteria:
+
+        1) Population-level activity: the fraction of cells simultaneously active
+           (smoothed) exceeds `activity_threshold`.
+        2) Neuron recruitment: the raw number of co-active cells exceeds
+           `recruitment_fraction` of the total classified-cell count.
+
+    A frame is only called part of a synchronous network event if BOTH criteria
+    are met (burst_mask & recruitment_mask). Discrete events are then labeled and
+    summarized (duration, amplitude, neurons recruited) rather than left as a
+    frame-wise boolean mask.
+
+    Args:
+    --------
+        suite2p_dict : dict
+            Must contain 'network_deltaF' (cells x frames, normalized 0-1) and
+            'iscell' (suite2p classification array, iscell[:,0] == 1 for real cells).
+            Optionally 'Group' for labeling saved plots.
+        activity_threshold : float
+            Threshold on smoothed population-activity fraction (0-1) to call a
+            frame "elevated." Default 0.1.
+        recruitment_fraction : float
+            Fraction of total classified cells that must be simultaneously active
+            to satisfy the recruitment criterion. Default 0.4 (40%).
+        bin_window : int
+            Width (in frames) of the moving-average smoothing window applied to
+            the population activity trace.
+        peak_distance : int
+            Minimum spacing (in frames) between detected peaks, passed to
+            scipy.signal.find_peaks.
+        save_path : str or None
+            If provided, saves both plots as .png and .svg to this directory.
+        show_plots : bool
+            Whether to call plt.show() for the two diagnostic plots.
+        show_recruitment_diagnostic : bool
+            If True, plots a histogram of the per-frame fraction of classified
+            cells co-active, with a vertical line at the current
+            `recruitment_fraction` cutoff. Useful for sanity-checking whether
+            0.4 (or whatever value you're using) is a defensible threshold for
+            this recording, rather than an arbitrary guess.
+
+    Returns:
+    --------
+        results : dict
+            af_smooth           : smoothed population-activity trace
+            global_activity     : raw (unsmoothed) population-activity trace
+            cell_activity       : boolean array (cells x frames) of per-cell activity
+            n_active_cells      : per-frame count of co-active cells
+            peaks               : frame indices of detected activity peaks
+            burst_mask          : bool array, population-activity criterion only
+            recruitment_mask    : bool array, neuron-recruitment criterion only
+            event_mask          : bool array, BOTH criteria met (the actual network events)
+            event_stats         : list of dicts, one per discrete event, with
+                                   start/end frame, duration, peak amplitude,
+                                   and max neurons recruited during the event
+    """
+
     plt.rcParams['svg.fonttype'] = 'none'
     plt.rcParams['font.family'] = 'sans-serif'
     plt.rcParams['font.sans-serif'] = 'Arial'
@@ -41,6 +100,12 @@ from scipy.ndimage import label
         activity_fraction = (Z > np.percentile(Z, 85, axis=1)[:, None]).mean(axis=0)
         bin_window = 5
         #smooth activity_fraction by 500 ms
+        """
+        calcium_traces : (n_cells, n_frames) array, normalized 0-1 per ROI.
+        A cell is "active" on a frame if it exceeds its own 95th-percentile value
+        -- since traces are already min-max normalized per-ROI, this threshold is
+        comparable across cells without needing z-scoring.
+        """
         af_smooth = np.convolve(
             activity_fraction,
             np.ones(bin_window) / bin_window,
