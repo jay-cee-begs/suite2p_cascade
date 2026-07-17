@@ -13,6 +13,24 @@ import os
 
 def load_and_plot_network(suite2p_dict): 
     
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.stats import zscore, norm
+from scipy.signal import find_peaks
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+from scipy.signal import find_peaks
+from scipy.ndimage import label
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+from scipy.signal import find_peaks
+from scipy.ndimage import label
+
+
     plt.rcParams['svg.fonttype'] = 'none'
     plt.rcParams['font.family'] = 'sans-serif'
     plt.rcParams['font.sans-serif'] = 'Arial'
