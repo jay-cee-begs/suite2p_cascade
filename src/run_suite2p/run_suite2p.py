@@ -61,12 +61,12 @@ def export_image_files_to_suite2p_format(parent_directory, config):
         # Processing each file within the directory
         files = []
         for file in os.listdir(dir_path):
-            if os.path.isfile(os.path.join(dir_path, file) and file.endswith(file_ending)):
+            if os.path.isfile(os.path.join(dir_path, file)) and file.endswith(file_ending):
                 files.append(file)
             
-            if len(files) == 0:
-                print(f"No {file_ending} files in {dir_path}")
-                continue
+        if len(files) == 0:
+            print(f"No {file_ending} files in {dir_path}")
+            continue
 
         for file in files:
                 name, _ = os.path.splitext(file)

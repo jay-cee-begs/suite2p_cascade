@@ -13,6 +13,7 @@ from PIL import Image
 import seaborn as sns #needed for aggregated feature plots
 # import pynapple as nap #TODO if you need Pynapple plots, you cannot use alongside cascade as it will break the code
 from batch_gui.config_loader import load_json_config_file, load_json_dict
+from run_cascade import functions_data_transformation as fdt 
 
 _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG
@@ -425,6 +426,11 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
     iscell = suite2p_dict['iscell']
     F = suite2p_dict["F"]
     Fneu = suite2p_dict["Fneu"]
+    try:
+        dye_classifier = fdt.load_npy_dict(os.path.join(suite2p_dict['data_folder'], 'suite2p', 'plane0', 'dye_classifier.npy'))
+    except FileNotFoundError as e:
+        print("Not using Pearson's Correlations for dye analysis")
+        dye_classifier = None
     MIN_CASCADE_ACTIVITY = config.analysis_params.cascade_activity_threshold
     min_radius = 3
     pixel_weight_threshold = 0.5
@@ -433,9 +439,11 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
     scatters = dict(x=[], y=[], color=[], text=[])
     nid2idx = {}
     nid2idx_rejected = {}
+    nid2idx_glia = {}
+    nid2idx_neuron = {}
     print(f"Number of detected ROIs: {stat.shape[0]}")
     
-    if not use_iscell:
+    if not use_iscell and dye_classifier is None:
 
         for n in range(stat.shape[0]):
             estimated_spikes = output_df.iloc[n]["EstimatedSpikes"]
@@ -460,7 +468,7 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
             scatters['x'] += [xext]
             scatters['y'] += [yext]
             pixel2neuron[ypix, xpix] = n
-    else:
+    elif use_iscell:
         for n in range(stat.shape[0]):
 
             if iscell[n,0] == 1 or iscell[n,0] == 1.0 or iscell[n,0] == True:
@@ -478,12 +486,33 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
             scatters['x'] += [xext]
             scatters['y'] += [yext]
             pixel2neuron[ypix, xpix] = n
+    elif dye_classifier is not None:
+        dye_classifications = dye_classifier
+        for n in range(stat.shape[0]):
+            if n in dye_classifications['idx_active_cascade']:
+                nid2idx[n] = len(scatters['x'])
+                if n in dye_classifications['idx_neuro']:
+                    nid2idx_neuron[n] = len(scatters['x'])
+                if n in dye_classifications['idx_glia']:
+                    nid2idx_glia[n] = len(scatters['x'])
+            else:
+                nid2idx_rejected[n] = len(scatters['x'])
+                
+            ypix = stat.iloc[n]['ypix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+            xpix = stat.iloc[n]['xpix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+            valid_idx = (xpix>=0) & (xpix < frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
+            ypix = ypix[valid_idx]
+            xpix = xpix[valid_idx]
+            yext, xext = boundary(ypix, xpix)
+            scatters['x'] += [xext]
+            scatters['y'] += [yext]
+            pixel2neuron[ypix, xpix] = n
 
-    return scatters, nid2idx, nid2idx_rejected, pixel2neuron
+    return scatters, nid2idx, nid2idx_rejected, pixel2neuron, nid2idx_neuron, nid2idx_glia
 
 
 def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
-             pixel2neuron, F, Fneu, save_path=None, axs=None):
+             pixel2neuron,nid2idx_neuron, nid2idx_glia, F, Fneu, save_path=None, axs=None):
              """
             Display ROI overlays of accepted ROIs on a background image.
 
@@ -526,10 +555,8 @@ def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
              ax1.imshow(MaxImg, cmap='gist_gray')
              ax1.tick_params(axis='both', which='both', bottom=False, top=False, 
                              labelbottom=False, left=False, right=False, labelleft=False)
-             print("Neurons count:", len(nid2idx))
              norm = Normalize(vmin=0, vmax=1, clip=True) 
              mapper = cm.ScalarMappable(norm=norm, cmap=cm.gist_rainbow) 
-
              def plotDict(n2d2idx_dict, override_color = None):
                  for neuron_id, idx in n2d2idx_dict.items():
                      color = override_color if override_color else mapper.to_rgba(scatters['color'][idx])
@@ -537,15 +564,23 @@ def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
                             
                      sc = ax1.scatter(scatters["x"][idx], scatters['y'][idx], color = color, 
                                       marker='.', s=1)
-             plotDict(nid2idx, 'cyan')
+             if len(nid2idx_neuron) is not 0:
+                 print("Using dye-based classifier")
+                 print("Neurons count:", len(nid2idx_neuron))
+                 plotDict(nid2idx_neuron, 'cyan')
+                 ax1.set_title(f"{len(nid2idx_neuron)} neurons used (cyan) out of {len(nid2idx_neuron)+len(nid2idx_glia)} total neurons detected") 
+             else:
+                print("Neurons count:", len(nid2idx))
+                
+                plotDict(nid2idx, 'cyan')
              #TODO make this editable by the user
             #  plotDict(nid2idx_rejected, 'm')
-             ax1.set_title(f"{len(nid2idx)} neurons used (cyan) out of {len(nid2idx)+len(nid2idx_rejected)} total neurons detected") 
+                ax1.set_title(f"{len(nid2idx)} neurons used (cyan) out of {len(nid2idx)+len(nid2idx_rejected)} total neurons detected") 
              if save_path:
-                 plt.savefig(save_path)
-                 plt.close(fig)
+                plt.savefig(save_path)
+                plt.close(fig)
              else:
-                 return ax1
+                return ax1
 
 def dispGlia(MaxImg, scatters, nid2idx, nid2idx_rejected,
              pixel2neuron, F, Fneu, save_path=None, axs=None):

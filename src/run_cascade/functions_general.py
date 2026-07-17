@@ -8,7 +8,7 @@ from BaselineRemoval import BaselineRemoval
 _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG
 
-def return_baseline_F(F_file, Fneu):
+def return_baseline_F(F, Fneu):
     """
     Calculate and return the baseline fluorescence based on MAD values for a given trace
     Args:
@@ -21,9 +21,6 @@ def return_baseline_F(F_file, Fneu):
         baseline_F : 1D NumPy array
             median of baseline-filtered fluorescence values
     """
-
-    F = np.load(F_file, allow_pickle = True)
-    Fneu = np.load(rf"{F_file}".replace("F.npy", "Fneu.npy"), allow_pickle=True)
     baseline_F = []
     for f, fneu in zip(F, Fneu):
         corrected_trace = f - (0.7*fneu) ## neuropil correction
@@ -55,7 +52,7 @@ def filter_cascade_predictions(prediction_deltaF_file, config):
             Cascade-predicted activity from deconvolution where ROIs below activity threshold are masked to have 0 activity
     """
     cascade_prediction = np.nan_to_num(prediction_deltaF_file)
-    mask = np.sum(cascade_prediction, axis=1) <  float(config.analysis_params.predicted_spike_threshold)
+    mask = np.sum(cascade_prediction, axis=1) <  float(config.analysis_params.cascade_activity_threshold)
     cascade_prediction[mask] = 0
     return cascade_prediction
 
@@ -97,12 +94,13 @@ def basic_stats_per_cell(prediction_deltaF_file):
     frames = prediction_deltaF_file.shape[1] #Number of columns
     cells = prediction_deltaF_file.shape[0] #Number of rows
     sum = []
+    FRAME_INTERVAL = 1/config.general_settings.frame_rate*1000
     for cell in prediction_deltaF_file:
         mean=np.nanmean(cell)
         sum.append(np.nansum(cell))
         if mean > 0:
 
-            cell_instant_spike_rate.append(mean/config.general_settings.FRAME_INTERVAL)
+            cell_instant_spike_rate.append(mean/FRAME_INTERVAL)
         # cell_means.append(mean)
             sd=np.nanstd(cell)
             cell_sds.append(sd)
@@ -285,26 +283,19 @@ def calculate_network_deltaF(F_file, config):
                 corrected_trace = baseline_corrected
                 
         #Determine baseline F0 value
-        trace_median = np.median(corrected_trace)
-        trace_mad = np.median(np.abs(corrected_trace - trace_median))
-        norm_sigma = 1.4826*trace_mad
-        event_threshold = config.analysis_params.MAD_baseline_filter_threshold
-        baseline_mask = np.abs(corrected_trace - trace_median) < event_threshold * norm_sigma
-        F0 = np.median(corrected_trace[baseline_mask])
-
-        #calculate dF / F0
-        normalized_F = (corrected_trace)/F0        
+        normalized_F = (corrected_trace - corrected_trace.min()) / (corrected_trace.max() - corrected_trace.min())
+        
+        #calculate normalized network fluorescence        
         network_deltaF.append(normalized_F)
     network_deltaF = np.array(network_deltaF)
     network_deltaF = np.squeeze(network_deltaF)
-    filtered_deltaF = network_deltaF[iscell[:,0] == 1]
     if not os.path.exists(f"{savepath}/network_deltaF.npy"):
-        np.save(f"{savepath}/network_deltaF.npy", filtered_deltaF, allow_pickle=True)
-        print(f"delta F traces saved as network_deltaF.npy under {savepath}\n")
+        np.save(f"{savepath}/F_network_normalized.npy", network_deltaF, allow_pickle=True)
+        print(f"Normalized F traces saved as F_network_normalized.npy under {savepath}\n")
     else:
         print(f"deltaF files already exist for {F_file[len(config.general_settings.main_folder)+1:-21]}")
 
-    return filtered_deltaF
+    return network_deltaF
 
 
 ##TODO cut this function

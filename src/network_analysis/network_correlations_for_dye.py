@@ -1,5 +1,6 @@
 import numpy as np
-
+import pandas as pd
+from BaselineRemoval import BaselineRemoval
 
 def estimate_single_trace_baseline_noise_mad(F_trace, event_threshold = 2):
     """
@@ -93,25 +94,32 @@ def calculate_normalized_deltaF(F, Fneu, baseline_correction = None, lambda_wind
 
 
     
-    if by_type == "Cell":
-        for f, fneu in zip(F, Fneu):
-            corrected_trace = f - (0.7*fneu) ## neuropil correction
 
+    for f, fneu in zip(F, Fneu):
+        corrected_trace = f - (0.7*fneu) ## neuropil correction
+        
+        if baseline_correction is None:
             deltaF.append((corrected_trace-corrected_trace.min())/ (corrected_trace.max() - corrected_trace.min()))
-    else:
-        corrected_traces = F - 0.7*Fneu
-        pop_max = corrected_traces.max()
-        pop_min = corrected_traces.min()
-
-        for f, fneu in zip(F, Fneu):
-            corrected_trace = f - (0.7*fneu) ## neuropil correction
-
-            deltaF.append((corrected_trace-pop_min)/ (pop_max - pop_min))
-
+        else:
+            if baseline_correction in ['rolling_median', 'airPLS']:
+                if baseline_correction is 'airPLS':
+                    from BaselineRemoval import BaselineRemoval
+                    base_corr = BaselineRemoval(corrected_trace)
+                    if lambda_window is None:
+                        deltaF = base_corr.ZhangFit(lambda_ = 100)
+                    else:
+                        deltaF = base_corr.ZhangFit(lambda_ = lambda_window)
+                if baseline_correction is 'rolling_median':
+                    from run_cascade import functions_data_transformation as fdt, functions_general as fun_g
+                    if lambda_window is not None:
+                        deltaF = fun_g.remove_bleaching(corrected_trace, baseline_correction="rolling_med", window = lambda_window)
+                    else:
+                        deltaF = fun_g.remove_bleaching(corrected_trace, baseline_correction='rolling_med',window = 250)
     deltaF = np.array(deltaF)
     deltaF = np.squeeze(deltaF)
 
     return deltaF
+
 
 def glob_roi_corr(trace, global_signal, max_lag = 10):
 
@@ -153,10 +161,11 @@ def process_suite2p_dict(d):
     stat = d['stat']
     deltaF = d['deltaF']
     iscell = d['iscell']
+    cascade = d['cascade_predictions']
 
     n_rois = len(iscell[:,0])
-
-    bad_ROI_mask = Fneu.max(axis = 1) > F.max(axis = 1)
+    background = F - Fneu
+    bad_ROI_mask = background.min(axis = 1) < 0 
     idx_fneu_over_f = list(np.where(bad_ROI_mask == 1)[0])
 
 
@@ -165,11 +174,11 @@ def process_suite2p_dict(d):
     norm_F = calculate_normalized_deltaF(F, Fneu, by_type="Cell", event_threshold=2)
     for n in range(n_rois):
         trace = deltaF[n]
-        
+        cascade_analysis = np.nansum(cascade[n])
         sigma, baseline = estimate_single_trace_baseline_noise_mad(trace, )
         peaks, properties = find_peaks(trace, height = np.median(baseline) + 4*sigma, distance = 3,
                                        width = (2,50))
-        if len(peaks) == 0:
+        if len(peaks) == 0 and cascade_analysis <= 0.1:
             continue
         idx_active.append(n)
         peak_info[n] = {'peaks': peaks, 'propoerties': properties}
@@ -182,6 +191,9 @@ def process_suite2p_dict(d):
     template_score = []
     active_traces = deltaF[idx_active]
     global_signal = np.mean(active_traces,axis = 0)
+    corr_glob = BaselineRemoval(global_signal)
+    corr_glob = corr_glob.ZhangFit(lambda_ = 100)
+    global_signal = corr_glob
     active_corr = {}
     for id in idx_active:
         zero_lag_corr, best_corr, best_lag = glob_roi_corr(deltaF[id], global_signal=global_signal, max_lag= 10)
@@ -193,12 +205,17 @@ def process_suite2p_dict(d):
         }
 
     glob_neuron_idx = []
+    glob_neuron_corr = []
     glob_glia_idx = []
+    glob_glia_corr = []
+
     for roi_id, scores in active_corr.items():
-        if scores['zero_lag_corr'] < 0.5:
+        if scores['zero_lag_corr'] < 0.4:
             glob_glia_idx.append(roi_id)
+            glob_glia_corr.append(scores['zero_lag_corr'])
         else:
             glob_neuron_idx.append(roi_id)
+            glob_neuron_corr.append(scores['zero_lag_corr'])
     results = {
         "Group": d['Group'],
         'File': d['data_folder'],
@@ -210,10 +227,13 @@ def process_suite2p_dict(d):
         'n_neuro': len(idx_neuron),
         'idx_neuro': idx_neuron,
         'idx_neuro_corr': glob_neuron_idx,
+        'neuro_corr': glob_neuron_corr,
         'n_glia': len(idx_glia),
         'idx_glia': idx_glia,
         'idx_glia_corr': glob_glia_idx,
+        'glia_corr': glob_glia_corr,
 
     
     }
-    return results, active_corr
+    return results, active_corr, global_signal
+
