@@ -235,6 +235,20 @@ from scipy.ndimage import label
     create_plots(n_active_cells.astype(float), "Neurons Recruited", ylabel="Active neuron count", ylim=(0, total_cells), axhline_val=recruitment_threshold)
 
 
+
+    results = {
+        'af_smooth': af_smooth,
+        'deltaF_activity':deltaF_activity,
+        'network_activity': network_activity,
+        'n_active_cells': n_active_cells,
+        'peaks': peaks,
+        'burst_mask': burst_mask,
+        'recruitment_mask': recruitment_mask,
+        'event_mask': event_mask,
+        'event_stats': event_stats,
+    }
+    return results
+
 def main(config_file = None):
     try:
         global config  # <- important
