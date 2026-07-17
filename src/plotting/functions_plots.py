@@ -432,7 +432,7 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
         print("Not using Pearson's Correlations for dye analysis")
         dye_classifier = None
     MIN_CASCADE_ACTIVITY = config.analysis_params.cascade_activity_threshold
-    min_radius = 3
+    # min_radius = 3
     pixel_weight_threshold = 0.5
     min_skew = 1
     pixel2neuron = np.full(frame_shape, fill_value=np.nan, dtype=float)
@@ -454,7 +454,7 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
             sample_Fneu = Fneu[n]
 
             med_pixel_weight = np.median(stat.iloc[n]['lam'])
-            if med_pixel_weight > pixel_weight_threshold and radius > min_radius and sample_F.min() > sample_Fneu.min():
+            if med_pixel_weight > pixel_weight_threshold and sample_F.min() > sample_Fneu.min():
                 nid2idx[n] = len(scatters["x"]) # Assign new idx
             else:
                 nid2idx_rejected[n] = len(scatters["x"])
