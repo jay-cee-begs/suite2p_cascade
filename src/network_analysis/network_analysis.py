@@ -93,34 +93,20 @@ from scipy.ndimage import label
     plt.rcParams['svg.fonttype'] = 'none'
     plt.rcParams['font.family'] = 'sans-serif'
     plt.rcParams['font.sans-serif'] = 'Arial'
-    def calculate_zscore(network_deltaF):
-        Z = zscore(network_deltaF, axis = 1, ddof = 1)
-        #Find 95% of activity for all neurons and filter
-        # activity_fraction = (Z > 2).mean(axis = 0)
-        activity_fraction = (Z > np.percentile(Z, 85, axis=1)[:, None]).mean(axis=0)
-        bin_window = 5
-        #smooth activity_fraction by 500 ms
+
+    def process_normalized_fluorescence(deltaF_traces, normalized_traces):
         """
         calcium_traces : (n_cells, n_frames) array, normalized 0-1 per ROI.
         A cell is "active" on a frame if it exceeds its own 95th-percentile value
         -- since traces are already min-max normalized per-ROI, this threshold is
         comparable across cells without needing z-scoring.
         """
+        network_activity = normalized_traces > np.percentile(normalized_traces, 95, axis=1)[:, None]
+        deltaF_activity = deltaF_traces.mean(axis=0)
+        n_active_cells = network_activity.sum(axis=0)
+
         af_smooth = np.convolve(
-            activity_fraction,
-            np.ones(bin_window) / bin_window,
-            mode = 'same'
-        )
-        return Z, af_smooth, bin_window, activity_fraction
-    Z, af_smooth, bin_window, activity_fraction = calculate_zscore(suite2p_dict['network_deltaF'])
-    peaks, _  = find_peaks(activity_fraction, height = 0.1, distance = 5)
-    burst_mask = np.zeros(Z.shape[1], dtype = bool)
-    burst_width = 10
-    for p in peaks:
-        burst_mask[max(0, p-burst_width):min(Z.shape[1], p + burst_width)] = True
-        global_signal = Z.mean(axis=0)
-        global_smooth = np.convolve(
-            global_signal,
+            deltaF_activity,
             np.ones(bin_window) / bin_window,
             mode='same'
         )
@@ -182,6 +168,7 @@ from scipy.ndimage import label
     plt.savefig(os.path.join(save_path, f"{group}_global_activity.svg"))
     ###NOTE Z is deltaF since no more z-score
     return Z, af_smooth, peaks, bin_window, global_signal, burst_width, burst_mask
+        return af_smooth, deltaF_activity, network_activity, n_active_cells
 
 def main(config_file = None):
     try:
