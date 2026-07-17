@@ -11,8 +11,6 @@ import os
 
 
 
-def load_and_plot_network(suite2p_dict): 
-    
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import zscore, norm
@@ -31,6 +29,9 @@ from scipy.signal import find_peaks
 from scipy.ndimage import label
 
 
+def load_and_plot_network(suite2p_dict, activity_threshold=0.05, recruitment_fraction=0.1,
+                            bin_window=5, peak_distance=10, save_path=None, show_plots=True,
+                            show_recruitment_diagnostic=True):
     """
     Detect and characterize synchronous network events from normalized (0-1) calcium
     fluorescence traces, using two complementary criteria:
@@ -110,64 +111,6 @@ from scipy.ndimage import label
             np.ones(bin_window) / bin_window,
             mode='same'
         )
-    
-    norm_global = global_smooth / global_smooth.max()
-    plt.rcParams['svg.fonttype'] = 'none'
-    plt.rcParams['font.family'] = 'sans-serif'
-    plt.rcParams['font.sans-serif'] = 'Arial'
-    plt.figure(figsize=(10,4))
-    plt.plot(activity_fraction, label='Activity fraction', color = 'black', alpha = 0.4,lw=2)
-    plt.plot(peaks, activity_fraction[peaks], 'x', label='Burst peaks')
-    # plt.plot(norm_global, 
-    #         alpha=0.4, label='Global mean (norm)')
-    plt.axhline(0.1, color='k', ls='--', alpha=0.5)
-    plt.fill_between(
-        np.arange(len(burst_mask)),
-        norm_global.min(),
-        norm_global.max(),
-        where=burst_mask,
-        color='red',
-        alpha=0.2,
-        label='Network bursts'
-    )
-    plt.ylim(-0.2, 1)
-    plt.xlabel("Frame")
-    plt.ylabel("Fraction active")
-    plt.title("Network bursts defined by population participation")
-    plt.tight_layout()
-    # plt.legend()
-    group = suite2p_dict["Group"]
-    import os
-    save_path = r'D:\zeiss\Documents\JC_presents'
-    plt.savefig(os.path.join(save_path, f"{group}_simple_network_bursts.png"))
-    plt.savefig(os.path.join(save_path, f"{group}_simple_network_bursts.svg"))
-    plt.show()
-    global_min = np.min(global_signal)
-    offset = abs(0 - global_min)
-    plt.plot(global_signal + offset)
-    plt.plot(peaks,global_signal[peaks] + offset, 'x')
-    # plt.plot(peaks, global_signal[peaks], 'x', label='Burst peaks')
-    # plt.plot(norm_global, 
-    #         alpha=0.4, label='Global mean (norm)')
-    plt.fill_between(
-        np.arange(len(burst_mask)),
-        global_signal.min() + offset,
-        global_signal.max() + offset,
-        where=burst_mask,
-        color='red',
-        alpha=0.2,
-        label='Network bursts'
-    )
-    plt.xlabel("Time [s]")
-    plt.ylabel("Global Activity")
-    plt.ylim(0, 6)
-    plt.title("Network bursts defined by population participation")
-    plt.tight_layout()
-    save_path = r'D:\zeiss\Documents\JC_presents'
-    plt.savefig(os.path.join(save_path, f"{group}_global_activity.png"))
-    plt.savefig(os.path.join(save_path, f"{group}_global_activity.svg"))
-    ###NOTE Z is deltaF since no more z-score
-    return Z, af_smooth, peaks, bin_window, global_signal, burst_width, burst_mask
         return af_smooth, deltaF_activity, network_activity, n_active_cells
 
     # Restrict to suite2p-classified cells so numerator/denominator of the
