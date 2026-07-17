@@ -178,6 +178,23 @@ from scipy.ndimage import label
     total_cells = iscell_mask.sum()
 
     af_smooth, deltaF_activity, network_activity, n_active_cells = process_normalized_fluorescence(masked_deltaF_traces, masked_normalized_traces)
+
+    if show_recruitment_diagnostic:
+        recruited_fraction_per_frame = n_active_cells / total_cells
+        plt.figure(figsize=(6, 4))
+        plt.hist(recruited_fraction_per_frame, bins=50, color='steelblue', alpha=0.8)
+        plt.axvline(recruitment_fraction, color='red', ls='--',
+                    label=f'current cutoff = {recruitment_fraction}')
+        plt.xlabel("Fraction of classified cells co-active (per frame)")
+        plt.ylabel("Number of frames")
+        plt.title("Distribution of per-frame neuron recruitment")
+        plt.legend()
+        plt.tight_layout()
+        if show_plots:
+            plt.show()
+        else:
+            plt.close()
+
 def main(config_file = None):
     try:
         global config  # <- important
