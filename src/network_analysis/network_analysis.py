@@ -195,6 +195,46 @@ from scipy.ndimage import label
         else:
             plt.close()
 
+    def create_plots(input_trace, plot_title, ylabel="Fraction active", ylim=None, axhline_val=None):
+        plt.figure(figsize=(10, 4))
+        plt.plot(input_trace, label='Activity trace', color='black', alpha=0.4, lw=2)
+        plt.plot(peaks, input_trace[peaks], 'x', label='Peaks')
+        if axhline_val is not None:
+            plt.axhline(axhline_val, color='k', ls='--', alpha=0.5)
+        
+        plt.fill_between(
+            np.arange(len(event_mask)),
+            input_trace.min(),
+            input_trace.max(),
+            where=event_mask,
+            color='red',
+            alpha=0.2,
+            label='Network events'
+        )
+        if ylim is not None:
+            plt.ylim(ylim)
+        plt.xlabel("Frame")
+        plt.ylabel(ylabel)
+        plt.title(plot_title)
+        plt.legend()
+        plt.tight_layout()
+
+        if save_path is not None:
+            group = suite2p_dict["Group"]
+            fname_base = f"{group}_{plot_title.replace(' ', '_').lower()}"
+            plt.savefig(os.path.join(save_path, f"{fname_base}.png"))
+            plt.savefig(os.path.join(save_path, f"{fname_base}.svg"))
+
+        if show_plots:
+            plt.show()
+        else:
+            plt.close()
+
+    create_plots(deltaF_activity, "Raw Amplitude (deltaF/F0)", ylabel="Mean deltaF/F0", ylim=None, axhline_val=activity_threshold)
+    create_plots(af_smooth, "Smoothed Amplitude (deltaF/F0)", ylabel="Mean deltaF/F0", ylim=None, axhline_val=activity_threshold)
+    create_plots(n_active_cells.astype(float), "Neurons Recruited", ylabel="Active neuron count", ylim=(0, total_cells), axhline_val=recruitment_threshold)
+
+
 def main(config_file = None):
     try:
         global config  # <- important
