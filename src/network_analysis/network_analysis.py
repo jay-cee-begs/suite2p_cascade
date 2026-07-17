@@ -170,6 +170,14 @@ from scipy.ndimage import label
     return Z, af_smooth, peaks, bin_window, global_signal, burst_width, burst_mask
         return af_smooth, deltaF_activity, network_activity, n_active_cells
 
+    # Restrict to suite2p-classified cells so numerator/denominator of the
+    # recruitment criterion stay consistent with each other.
+    iscell_mask = suite2p_dict['iscell'][:, 0] == 1
+    masked_normalized_traces = suite2p_dict['network_deltaF'][iscell_mask]
+    masked_deltaF_traces = suite2p_dict['deltaF'][iscell_mask]
+    total_cells = iscell_mask.sum()
+
+    af_smooth, deltaF_activity, network_activity, n_active_cells = process_normalized_fluorescence(masked_deltaF_traces, masked_normalized_traces)
 def main(config_file = None):
     try:
         global config  # <- important
