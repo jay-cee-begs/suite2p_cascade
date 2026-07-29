@@ -214,6 +214,19 @@ def unpack_sync_event_stats(suite2p_dict, results):
                 **network_event,
             }
             unpacked_events.append(event_with_id)
+    if not unpacked_events:
+        unpacked_events.append({
+            "Group": suite2p_dict['Group'],
+            "Replicate_No.": suite2p_dict['sample'],
+            "File_Name": os.path.basename(suite2p_dict['data_folder']),
+            "event_id": None,
+            "start_frame": None,
+            "end_frame": None,
+            "duration_frames": np.nan,
+            "peak_amplitude": np.nan,
+            "max_neurons_recruited": np.nan,
+        
+        })
     return pd.DataFrame(unpacked_events)
 
 # def process_sync_events(list_of_unpacked_events):
