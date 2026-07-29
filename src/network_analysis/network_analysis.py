@@ -144,7 +144,7 @@ def load_and_plot_network(suite2p_dict, activity_threshold=0.05, recruitment_fra
             'start_frame': int(frames[0]),
             'end_frame': int(frames[-1]),
             'duration_frames': int(len(frames)),
-            'peak_amplitude': float(af_smooth[frames].max()),
+            'peak_amplitude': float(deltaF_activity[frames].max()),
             'max_neurons_recruited': int(n_active_cells[frames].max()),
         })
 
