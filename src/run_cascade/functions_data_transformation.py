@@ -6,6 +6,7 @@ from run_cascade import functions_general as g_func
 from batch_gui.config_loader import load_json_config_file, load_json_dict
 from plotting import functions_plots as fun_plot 
 from network_analysis import network_analysis as net_analysis
+from pathlib import Path
 
 _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG
@@ -198,17 +199,7 @@ def check_network_deltaF(folder_name_list, config):
         else:
             g_func.calculate_network_deltaF(location.replace("F_network_normalized.npy","F.npy"), config = config)
             
-        # elif config.analysis_params.baseline_correction and config.analysis_params.correction_method == 'airPLS':
-        #     g_func.calculate_deltaF_airPLS(location.replace("network_deltaF.npy","F.npy"), config = config,
-        #                                    event_threshold=config.analysis_params.MAD_baseline_filter_threshold)
-        #     if os.path.exists(location):
-        #         continue
-        # elif config.analysis_params.baseline_correction and config.analysis_params.correction_method == 'rolling median':
-        #     g_func.rolling_correction_deltaF(location.replace("network_deltaF.npy","F.npy"), config = config,
-        #                                      event_threshold= config.analysis_params.MAD_baseline_filter_threshold,
-        #                                      lambda_window=config.analysis_params.lambda_window)
-        #     if os.path.exists(location):
-        #         continue
+     
 
 def get_file_name_list(folder_path, file_ending, supress_printing = False):
     """
@@ -350,6 +341,7 @@ def df_from_suite2p_dict(suite2p_dict, config): ## creates df structure for sing
     F_baseline = g_func.return_baseline_F(suite2p_dict["F"], suite2p_dict["Fneu"])
     avg_instantaneous_spike_rate, avg_cell_sds, avg_cell_cvs, avg_time_stamp_mean, avg_time_stamp_sds, avg_time_stamp_cvs = g_func.basic_stats_per_cell(masked_cascade_prediction)
     activity_threshold = config.analysis_params.cascade_activity_threshold
+    
     activity_mask = []
     for spike_total in estimated_spike_total:
         activity_mask.append(spike_total >= activity_threshold)
@@ -651,12 +643,9 @@ def translate_suite2p_outputs_to_csv(main_folder, config, overwrite=False, check
             continue
 
         suite2p_dict = load_suite2p_paths(folder, config)
-
+        
         output_df = df_from_suite2p_dict(suite2p_dict, config)
-    
-
         output_df.to_csv(translated_path)
-        print(f"csv created for {folder}")
 
         ops = suite2p_dict["ops"]
         Img = fun_plot.getImg(ops)
@@ -681,6 +670,15 @@ def translate_suite2p_outputs_to_csv(main_folder, config, overwrite=False, check
             print("Using iscell from suite2p to classify ROIs")
 
         
+        print(f"csv created for {folder}")
+        sync_results = net_analysis.load_and_plot_network(suite2p_dict, activity_threshold=0.05, recruitment_fraction=0.1, bin_window=5, 
+                                           peak_distance=10, save_path = suite2p_dict['data_folder'],
+                                           show_plots = False, show_recruitment_diagnostic=False)
+        
+        unpacked_events = net_analysis.unpack_sync_event_stats(suite2p_dict, sync_results)
+
+        unpacked_events.to_csv(os.path.join(output_path, f"{output_directory}_synchronous_events.csv"))      
+
         image_save_path = os.path.join(main_folder, f"{folder}_plot.png") #TODO explore changing "input path" to "folder" to save the processing in the same 
         fun_plot.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, nid2idx_neuron, nid2idx_glia,suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
 
@@ -725,6 +723,8 @@ def create_experiment_summary(main_folder):
     csv_file_path = os.path.join(main_folder, 'csv_files')
     csv_files = list_all_files_of_type(csv_file_path, '.csv')
     image_csvs = [file for file in csv_files]
+    image_csvs = [file for file in csv_files if "sync" not in file]
+    sync_csvs = [file for file in csv_files if "synchronous_events" in file]
     df_list = [pd.read_csv(os.path.join(csv_file_path, csv)) for csv in image_csvs]
     merged_df = pd.concat(df_list, ignore_index=True)
         
@@ -777,21 +777,23 @@ def csv_to_pickle(main_folder, overwrite=True):
         os.mkdir(output_path)
 
     for file in csv_files:
-        df = pd.read_csv(file)
-        pkl_path = os.path.join(output_path, 
-                                        f"{os.path.basename(file[:-4])}"
-                                        f"Dur{int(config.general_settings.EXPERIMENT_DURATION)}s"
-                                        f"Int{int((1/config.general_settings.frame_rate)*1000)}ms"
-                                        f"Bin{int(config.general_settings.BIN_WIDTH*1000)}ms"
-                                         +
-                                        ".pkl")
-        if os.path.exists(pkl_path) and not overwrite:
-            print(f"Processed file {pkl_path} already exists!")
-            continue
+        if "sync" not in file:
 
-        df.to_pickle(pkl_path)
-        print(f"{pkl_path} created")
-    print(f".pkl files saved under {main_folder+r'/pkl_files'}")
+            df = pd.read_csv(file)
+            pkl_path = os.path.join(output_path, 
+                                            f"{os.path.basename(file[:-4])}"
+                                            f"Dur{int(config.general_settings.EXPERIMENT_DURATION)}s"
+                                            f"Int{int((1/config.general_settings.frame_rate)*1000)}ms"
+                                            f"Bin{int(config.general_settings.BIN_WIDTH*1000)}ms"
+                                            +
+                                            ".pkl")
+            if os.path.exists(pkl_path) and not overwrite:
+                print(f"Processed file {pkl_path} already exists!")
+                continue
+
+            df.to_pickle(pkl_path)
+            print(f"{pkl_path} created")
+        print(f".pkl files saved under {main_folder+r'/pkl_files'}")
 
 def create_final_df(main_folder):
     """
@@ -940,6 +942,7 @@ def create_experiment_overview(main_folder, groups, use_iscell):
                     
             dictionary_list.append({
                 'Prediction_File': file[len(main_folder)+1:], 
+                'File_Name': str(suite2p_dict['data_folder']), 
                 'Neuron_Count': neuron_count,
                 'Active_Neuron_Count': active_neurons, 
                 'Active_Neuron_Proportion': round(active_neurons/neuron_count * 100, 2),
@@ -950,8 +953,10 @@ def create_experiment_overview(main_folder, groups, use_iscell):
                 'Avg_Estimated_Spikes_per_cell': total_estimated_spikes / active_neurons,
                 "SC_Avg_Instantaneous_Firing_Rate(Hz)": avg_cell_instantaneous_spike_rate,
                 "Instantaneous_Spikes_CV": cell_cvs,
-                "Network_Framewise_Avg_Instantaneous_Firing_Freq": time_stamp_means,
-                "Network_Framewise_CV": time_stamp_cvs,
+                "Total_Network_Bursts": len(synchrony['peaks']),
+                "Avg_Time_of_Burst": np.nanmean(unpacked_sync_event_stats['duration_frames']),
+                "Avg_Neuronal_Recruitment": np.nanmean(unpacked_sync_event_stats['max_neurons_recruited']),
+                "Avg_Peak_Sync_Amplitude": np.nanmean(unpacked_sync_event_stats['peak_amplitude']),
                 "Group": group[len(main_folder)+1:]
             })
     
@@ -999,8 +1004,10 @@ def create_experiment_overview(main_folder, groups, use_iscell):
         'Avg_Estimated_Spikes_per_cell': ['mean', 'std','median'],
         "SC_Avg_Instantaneous_Firing_Rate(Hz)": ['mean', 'std','median'],
         "Instantaneous_Spikes_CV": ['mean', 'std','median'],
-        "Network_Framewise_Avg_Instantaneous_Firing_Freq": ['mean', 'std','median'],
-        "Network_Framewise_CV": ['mean', 'std','median']
+        "Total_Network_Bursts": ['mean', 'std','median'],
+        "Avg_Time_of_Burst": ['mean', 'std','median'],
+        "Avg_Neuronal_Recruitment": ['mean', 'std','median'],
+        "Avg_Peak_Sync_Amplitude": ['mean', 'std','median']
     })
 
     # Save both raw data and summary statistics to CSV
