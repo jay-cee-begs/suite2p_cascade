@@ -204,13 +204,17 @@ def load_and_plot_network(suite2p_dict, activity_threshold=0.05, recruitment_fra
     }
     return results
 
-def main(config_file = None):
-    try:
-        global config  # <- important
-        global config_dict
-        if config_file is not None:
-            config = load_json_config_file(config_file)
-            config_dict = load_json_dict(config_file)
+def unpack_sync_event_stats(suite2p_dict, results):
+    unpacked_events = []
+    for network_event in results['event_stats']:
+            event_with_id = {
+                "Group": suite2p_dict['Group'],
+                "Replicate_No.": suite2p_dict['sample'],
+                "File_Name": os.path.basename(suite2p_dict['data_folder']),
+                **network_event,
+            }
+            unpacked_events.append(event_with_id)
+    return pd.DataFrame(unpacked_events)
 
         else:
             config = load_json_config_file()
