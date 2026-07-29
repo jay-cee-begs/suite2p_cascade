@@ -864,7 +864,7 @@ def get_unique_prefixes(group_names, prefix_length=3):
     """
     return {name[:prefix_length] for name in group_names}
 
-def create_experiment_overview(main_folder, groups, use_iscell):
+def create_experiment_overview(config, use_iscell):
     """
     Final step in post-processing where csv files are generated for each file describing the overall activity of the cultures.
     
@@ -900,7 +900,8 @@ def create_experiment_overview(main_folder, groups, use_iscell):
         9) Save the aggregated and base DataFrame to csv files in the main_folder
     """
     dictionary_list = []
-    
+    main_folder = config.general_settings.main_folder
+    groups = config.general_settings.groups
     for group in groups:
         group_folders = get_file_name_list(folder_path=os.path.join(main_folder, group), 
                                                              file_ending="samples", supress_printing=True)
@@ -925,7 +926,7 @@ def create_experiment_overview(main_folder, groups, use_iscell):
             
             suite2p_dict = load_suite2p_paths(folder, config, use_iscell = config.analysis_params.use_suite2p_ROI_classifier)
             synchrony = net_analysis.load_and_plot_network(suite2p_dict, activity_threshold=0.05, recruitment_fraction=0.1,
-                                               bin_window=config.general_settings.bin_window, peak_distance = 10, save_path = suite2p_dict['data_folder'],
+                                               bin_window=config.general_settings.BIN_WIDTH, peak_distance = 10, save_path = suite2p_dict['data_folder'],
                                                show_plots = False, show_recruitment_diagnostic=False)
             unpacked_sync_event_stats = net_analysis.unpack_sync_event_stats(suite2p_dict, synchrony)
 
@@ -949,7 +950,7 @@ def create_experiment_overview(main_folder, groups, use_iscell):
             total_estimated_spikes = round(sum(estimated_spikes), 2)
                     
             dictionary_list.append({
-                'File_Name': str(suite2p_dict['data_folder']), 
+                'File_Name': str(suite2p_dict['file_name']), 
                 'Neuron_Count': neuron_count,
                 'Active_Neuron_Count': active_neurons, 
                 'Active_Neuron_Proportion': round(active_neurons/neuron_count * 100, 2),
@@ -960,11 +961,13 @@ def create_experiment_overview(main_folder, groups, use_iscell):
                 'Avg_Estimated_Spikes_per_cell': total_estimated_spikes / active_neurons,
                 "SC_Avg_Instantaneous_Firing_Rate(Hz)": avg_cell_instantaneous_spike_rate,
                 "Instantaneous_Spikes_CV": cell_cvs,
-                "Total_Network_Bursts": len(synchrony['peaks']),
-                "Avg_Time_of_Burst": np.nanmean(unpacked_sync_event_stats['duration_frames']),
-                "Avg_Neuronal_Recruitment": np.nanmean(unpacked_sync_event_stats['max_neurons_recruited']),
-                "Avg_Peak_Sync_Amplitude": np.nanmean(unpacked_sync_event_stats['peak_amplitude']),
-                "Group": group[len(main_folder)+1:]
+                "Total_Network_Bursts": len(synchrony['event_stats']),
+                "Avg_Time_of_Burst": unpacked_sync_event_stats['duration_frames'].mean(),
+                "Avg_Neuronal_Recruitment": unpacked_sync_event_stats['max_neurons_recruited'].mean(),
+                "Avg_Peak_Sync_Amplitude": unpacked_sync_event_stats['peak_amplitude'].mean(),
+                "Group": suite2p_dict['Group'],
+                'Data_Folder': suite2p_dict['data_folder'],
+                "Replicate_No.": suite2p_dict['sample']
             })
     
     # Create DataFrame from dictionary list
