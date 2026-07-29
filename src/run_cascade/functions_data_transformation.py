@@ -722,10 +722,10 @@ def create_experiment_summary(main_folder):
     home = main_folder
     csv_file_path = os.path.join(main_folder, 'csv_files')
     csv_files = list_all_files_of_type(csv_file_path, '.csv')
-    image_csvs = [file for file in csv_files]
     image_csvs = [file for file in csv_files if "sync" not in file]
     sync_csvs = [file for file in csv_files if "synchronous_events" in file]
     df_list = [pd.read_csv(os.path.join(csv_file_path, csv)) for csv in image_csvs]
+    sync_list = [pd.read_csv(os.path.join(csv_file_path, csv)) for csv in sync_csvs]
     merged_df = pd.concat(df_list, ignore_index=True)
         
 # Include non-numeric columns in the final aggregated dataframe
@@ -902,26 +902,34 @@ def create_experiment_overview(main_folder, groups, use_iscell):
     dictionary_list = []
     
     for group in groups:
-        groups_predictions_deltaF_files = get_file_name_list(folder_path=os.path.join(main_folder, group), 
-                                                             file_ending="predictions_deltaF.npy", supress_printing=True)
+        group_folders = get_file_name_list(folder_path=os.path.join(main_folder, group), 
+                                                             file_ending="samples", supress_printing=True)
         
-        for file in groups_predictions_deltaF_files:
+        for folder in group_folders:
             
             # Load F, Fneu arrays
-            F_file = file.replace('predictions_deltaF.npy', 'F.npy')
-            iscell_file = file.replace('predictions_deltaF.npy', 'iscell.npy')
-            Fneu_file = file.replace('predictions_deltaF.npy', 'Fneu.npy')
-            F = np.load(rf"{F_file}", allow_pickle=True)
-            Fneu = np.load(rf"{Fneu_file}", allow_pickle=True)
+            F = load_npy_array(os.path.join(folder, *SUITE2P_STRUCTURE['F'])) 
+            cascade_predictions = load_npy_array(os.path.join(folder, *SUITE2P_STRUCTURE['cascade_predictions']))
+            iscell = load_npy_array(os.path.join(folder, *SUITE2P_STRUCTURE['iscell'])) 
+            Fneu = load_npy_array(os.path.join(folder, *SUITE2P_STRUCTURE['Fneu'])) 
+            deltaF = load_npy_array(os.path.join(folder, *SUITE2P_STRUCTURE['deltaF'])) 
+            F_normalized = load_npy_array(os.path.join(folder, *SUITE2P_STRUCTURE['network_deltaF'])) 
+
+            
             baseline_F = g_func.return_baseline_F(F, Fneu)
-            iscell = np.load(rf"{iscell_file}", allow_pickle=True)
             iscell_mask = iscell[:,0] == 1
 
-            array = np.load(rf"{file}", allow_pickle=True)
+            array = cascade_predictions
             avg_cell_instantaneous_spike_rate, cell_sds, cell_cvs, time_stamp_means, time_stamp_sds, time_stamp_cvs = g_func.basic_stats_per_cell(array)
             neuron_count = len(array)
-        
+            
+            suite2p_dict = load_suite2p_paths(folder, config, use_iscell = config.analysis_params.use_suite2p_ROI_classifier)
+            synchrony = net_analysis.load_and_plot_network(suite2p_dict, activity_threshold=0.05, recruitment_fraction=0.1,
+                                               bin_window=config.general_settings.bin_window, peak_distance = 10, save_path = suite2p_dict['data_folder'],
+                                               show_plots = False, show_recruitment_diagnostic=False)
+            unpacked_sync_event_stats = net_analysis.unpack_sync_event_stats(suite2p_dict, synchrony)
 
+    
             if not use_iscell:
                 active_neurons = sum(np.nansum(row) > 0.1 for row in array)
             # Separate and average the baseline fluorescence
@@ -941,7 +949,6 @@ def create_experiment_overview(main_folder, groups, use_iscell):
             total_estimated_spikes = round(sum(estimated_spikes), 2)
                     
             dictionary_list.append({
-                'Prediction_File': file[len(main_folder)+1:], 
                 'File_Name': str(suite2p_dict['data_folder']), 
                 'Neuron_Count': neuron_count,
                 'Active_Neuron_Count': active_neurons, 
