@@ -216,21 +216,58 @@ def unpack_sync_event_stats(suite2p_dict, results):
             unpacked_events.append(event_with_id)
     return pd.DataFrame(unpacked_events)
 
-        else:
-            config = load_json_config_file()
-            config_dict = load_json_dict()
-    except KeyboardInterrupt as e:
-        print("Outputs interrupted by user")
-    finally:
-        import json
-        with open(os.path.join(config.general_settings.main_folder, 'analysis_config.json'), 'w') as f:
-            json.dump(config_dict, f, indent = 4)
-        print(f"Analysis parameters saved in {config.general_settings.main_folder} as analysis_config.json")
-        from datetime import datetime
+# def process_sync_events(list_of_unpacked_events):
+#     pd_list = []
+#     for events in list_of_unpacked_events:
+#         pd_list.append(events.groupby(["Group", "File_Name"]).agg({
+#         'duration_frames': ['mean','std'],
+#         'peak_amplitude': ['mean','std'],
+#         'max_neurons_recruited': ['mean','std']
+#         }))
+#     final_df = pd.concat(pd_list)
 
-        now = datetime.now()
 
-        current_time = now.strftime("%H:%M:%S")
-        print("Current Time =", current_time)
-if __name__ == '__main__':
-    main()
+# def main(config_file = None):
+#     try:
+#         global config  # <- important
+#         global config_dict
+#         if config_file is not None:
+#             config = load_json_config_file(config_file)
+#             config_dict = load_json_dict(config_file)
+
+#         else:
+#             config = load_json_config_file()
+#             config_dict = load_json_dict()
+#         suite2p_folders = fdt.get_file_name_list(config.general_settings.main_folder, 'samples', supress_printing=True)
+#         all_results = []
+#         all_events = []
+#         for folder in suite2p_folders:
+#             suite2p_dict = fdt.load_suite2p_paths(folder, config, use_iscell = config.analysis_params.use_suite2p_ROI_classifier)
+#             results = load_and_plot_network(suite2p_dict, show_plots = False)
+#             for network_event in results['event_stats']:
+#                 event_with_id = {
+#                     "Group": suite2p_dict['Group'],
+#                     "Replicate_No.": suite2p_dict['sample'],
+#                     "File_Name": os.path.basename(suite2p_dict['data_folder']),
+#                     **network_event,
+#                 }
+#                 all_events.append(event_with_id)
+#             all_results.append(results)
+#         results_df = pd.DataFrame(all_results)
+#         event_df = pd.DataFrame(all_events)
+#     except KeyboardInterrupt as e:
+#         print("Outputs interrupted by user")
+#     finally:
+#         import json
+#         with open(os.path.join(config.general_settings.main_folder, 'analysis_config.json'), 'w') as f:
+#             json.dump(config_dict, f, indent = 4)
+#         print(f"Analysis parameters saved in {config.general_settings.main_folder} as analysis_config.json")
+#         from datetime import datetime
+
+#         now = datetime.now()
+
+#         current_time = now.strftime("%H:%M:%S")
+#         print("Current Time =", current_time)
+#     return results_df, event_df
+# if __name__ == '__main__':
+#     main()
