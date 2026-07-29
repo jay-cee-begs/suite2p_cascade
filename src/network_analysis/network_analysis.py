@@ -183,13 +183,15 @@ def load_and_plot_network(suite2p_dict, activity_threshold=0.05, recruitment_fra
         else:
             plt.close()
 
-    create_plots(deltaF_activity, "Raw Amplitude (deltaF/F0)", ylabel="Mean deltaF/F0", ylim=None, axhline_val=activity_threshold)
-    create_plots(af_smooth, "Smoothed Amplitude (deltaF/F0)", ylabel="Mean deltaF/F0", ylim=None, axhline_val=activity_threshold)
+    create_plots(deltaF_activity, "Raw Amplitude", ylabel="Mean deltaF/F0", ylim=None, axhline_val=activity_threshold)
+    create_plots(af_smooth, "Smoothed Amplitude", ylabel="Mean deltaF/F0", ylim=None, axhline_val=activity_threshold)
     create_plots(n_active_cells.astype(float), "Neurons Recruited", ylabel="Active neuron count", ylim=(0, total_cells), axhline_val=recruitment_threshold)
 
-
-
+    image_file = os.path.basename(suite2p_dict['data_folder'])
     results = {
+        'Group': suite2p_dict['Group'],
+        "Replicate_No.": suite2p_dict['sample'],
+        'File_Name': image_file,
         'af_smooth': af_smooth,
         'deltaF_activity':deltaF_activity,
         'network_activity': network_activity,
