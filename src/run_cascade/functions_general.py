@@ -34,6 +34,49 @@ def return_baseline_F(F, Fneu):
 
     return baseline_F
 
+
+def estimate_single_trace_baseline_noise_mad(F_trace, event_threshold = 2):
+    """
+    Estimate noise sigma from baseline-only windows using MAD.
+    
+    Args:
+    -----------
+        F : 1D numpy array
+            Baseline-corrected ΔF/F trace.
+        frame_rate : float
+            Sampling rate (Hz).
+        event_threshold : float
+            Preserved from calculate_deltaF function above.
+            Threshold (in MAD units) to mask obvious events by multiplying by estimated noise standard deviation. 
+            Default: 2 (SD above median)
+            Smaller values will limit the number of baseline points used for correction.
+        min_baseline_sec : float
+            Minimum duration (seconds) of a baseline window.
+            Default: 10 s
+
+    Returns:
+    --------
+        sigma : float
+            Estimated noise standard deviation.
+        baseline_mask : boolean array
+            Mask of samples classified as baseline.
+    """
+
+    trace_median = np.median(F_trace)
+    mad = np.median(np.abs(F_trace - trace_median))
+    sigma = 1.4826 * mad
+    event_mask = np.abs(F_trace - trace_median) > event_threshold * sigma
+
+    trace_baseline = ~event_mask
+
+    baseline_samples = F_trace[trace_baseline]
+    
+    baseline_median = np.median(baseline_samples)
+    baseline_mad = np.median(np.abs(baseline_samples - baseline_median))
+    sigma = 1.4826 * baseline_mad
+    
+    return sigma, baseline_samples
+
 def filter_cascade_predictions(prediction_deltaF_file, config):
     """
     Mask cascade predictions for ROIs based on predicted activity levels. Any ROI with less than 0.1 
