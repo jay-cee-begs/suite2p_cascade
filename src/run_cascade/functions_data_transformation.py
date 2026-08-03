@@ -260,6 +260,7 @@ def get_file_name_list(folder_path, file_ending, supress_printing = False):
         return file_names
     elif file_ending=="samples":
         check_deltaF(file_names, config)  #checks if deltaf exists, else calculates it
+        check_network_deltaF(file_names, config)
         if not supress_printing:
             print(f"{len(file_names)} folders containing {file_ending} found:")
             print(file_names)
@@ -671,7 +672,7 @@ def translate_suite2p_outputs_to_csv(main_folder, config, overwrite=False, check
 
         
         print(f"csv created for {folder}")
-        sync_results = net_analysis.load_and_plot_network(suite2p_dict, activity_threshold=0.05, recruitment_fraction=0.1, bin_window=5, 
+        sync_results = net_analysis.load_and_plot_network(suite2p_dict, recruitment_fraction=0.1, bin_window=5, 
                                            peak_distance=10, save_path = suite2p_dict['data_folder'],
                                            show_plots = False, show_recruitment_diagnostic=False)
         
@@ -730,7 +731,7 @@ def create_experiment_summary(main_folder):
         
 # Include non-numeric columns in the final aggregated dataframe
     main_group = os.path.basename(main_folder)
-    merged_df.to_csv(os.path.join(home, f'{main_group}_experiment_summary.csv'))
+    merged_df.to_csv(os.path.join(home, f'{main_group}_overview_experiment_summary.csv'))
         
     return merged_df
 
@@ -925,7 +926,7 @@ def create_experiment_overview(config, use_iscell):
             neuron_count = len(array)
             
             suite2p_dict = load_suite2p_paths(folder, config, use_iscell = config.analysis_params.use_suite2p_ROI_classifier)
-            synchrony = net_analysis.load_and_plot_network(suite2p_dict, activity_threshold=0.05, recruitment_fraction=0.1,
+            synchrony = net_analysis.load_and_plot_network(suite2p_dict,  recruitment_fraction=0.1,
                                                bin_window=config.general_settings.BIN_WIDTH, peak_distance = 10, save_path = suite2p_dict['data_folder'],
                                                show_plots = False, show_recruitment_diagnostic=False)
             unpacked_sync_event_stats = net_analysis.unpack_sync_event_stats(suite2p_dict, synchrony)
@@ -1022,7 +1023,7 @@ def create_experiment_overview(config, use_iscell):
 
     # Save both raw data and summary statistics to CSV
     experiment_folder = str(config.general_settings.main_folder).split('\\')[-1]
-    df.to_csv(os.path.join(main_folder, f'{experiment_folder}_experiment_summary.csv'), index=False)
+    df.to_csv(os.path.join(main_folder, f'{experiment_folder}_FULL_experiment_summary.csv'), index=False)
     summary_stats.to_pickle(os.path.join(main_folder, 'summary_stats.pkl'))
     summary_stats.to_csv(os.path.join(main_folder, 'summary_stats.csv'), index = True)
 
