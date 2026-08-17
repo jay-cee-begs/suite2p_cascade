@@ -118,9 +118,15 @@ def histogram_total_estimated_spikes(prediction_deltaF_file, output_directory = 
 def plot_somatic_traces(suite2p_dict, list = None, plot_cascade = False, trace_offset = 5, iscell_true = True, save_fig = False):
     # Get boolean mask of valid cells
     if iscell_true:
-        iscell_mask = suite2p_dict['iscell'][:, 0] == 1
+        try:
+            iscell_mask = suite2p_dict['iscell'][:, 0] == 1
+        except TypeError:
+            iscell_mask = suite2p_dict['iscell'] == 1
     else:
-        iscell_mask = suite2p_dict['iscell'][:,0] ==0
+        try:
+            iscell_mask = suite2p_dict['iscell'][:,0] ==0
+        except TypeError:
+            iscell_mask = suite2p_dict['iscell'] == 0
     # Apply mask to deltaF
     masked_dF = suite2p_dict['deltaF'][iscell_mask]
     masked_cascade = suite2p_dict['cascade_predictions'][iscell_mask]
@@ -153,7 +159,7 @@ def plot_somatic_traces(suite2p_dict, list = None, plot_cascade = False, trace_o
             ax.plot(time, offset_trace, color=colors[i % len(colors)], alpha=0.8)
 
     scalebar_time = 10  # seconds
-    scalebar_df = 1     # dF/F units
+    scalebar_df = 0.5     # dF/F units
     x0 = time[-1] + 2
     y0 = -2
 
@@ -428,7 +434,7 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
     Fneu = suite2p_dict["Fneu"]
     try:
         dye_classifier = fdt.load_npy_dict(os.path.join(suite2p_dict['data_folder'], 'suite2p', 'plane0', 'dye_classifier.npy'))
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         print("Not using Pearson's Correlations for dye analysis")
         dye_classifier = None
     MIN_CASCADE_ACTIVITY = config.analysis_params.cascade_activity_threshold
@@ -489,11 +495,11 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
     elif dye_classifier is not None:
         dye_classifications = dye_classifier
         for n in range(stat.shape[0]):
-            if n in dye_classifications['idx_active_cascade']:
+            if n in dye_classifications['idx_active']:
                 nid2idx[n] = len(scatters['x'])
-                if n in dye_classifications['idx_neuro']:
+                if n in dye_classifications['idx_neuro_corr']:
                     nid2idx_neuron[n] = len(scatters['x'])
-                if n in dye_classifications['idx_glia']:
+                if n in dye_classifications['idx_glia_corr']:
                     nid2idx_glia[n] = len(scatters['x'])
             else:
                 nid2idx_rejected[n] = len(scatters['x'])
@@ -568,13 +574,15 @@ def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
                  print("Using dye-based classifier")
                  print("Neurons count:", len(nid2idx_neuron))
                  plotDict(nid2idx_neuron, 'cyan')
-                 ax1.set_title(f"{len(nid2idx_neuron)} neurons used (cyan) out of {len(nid2idx_neuron)+len(nid2idx_glia)} total neurons detected") 
+                 ax1.set_title(f"{len(nid2idx_neuron)} neurons used (cyan) out of {len(nid2idx_neuron)+len(nid2idx_glia)} total cells detected") 
+                 print("Glia count:", len(nid2idx_glia))
+                 plotDict(nid2idx_glia, 'yellow')
              else:
                 print("Neurons count:", len(nid2idx))
                 
                 plotDict(nid2idx, 'cyan')
              #TODO make this editable by the user
-            #  plotDict(nid2idx_rejected, 'm')
+            #  plotDict(nid2idx_rejected, 'y')
                 ax1.set_title(f"{len(nid2idx)} neurons used (cyan) out of {len(nid2idx)+len(nid2idx_rejected)} total neurons detected") 
              if save_path:
                 plt.savefig(save_path)
