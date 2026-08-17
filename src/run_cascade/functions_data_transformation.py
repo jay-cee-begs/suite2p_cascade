@@ -20,7 +20,8 @@ SUITE2P_STRUCTURE = {
     "deltaF": ["suite2p", "plane0", "deltaF.npy"],
     "ops":["suite2p", "plane0", "ops.npy"],
     "cascade_predictions": ["suite2p", "plane0", "predictions_deltaF.npy"],
-    "network_deltaF": ["suite2p", "plane0", "F_network_normalized.npy"]
+    "network_deltaF": ["suite2p", "plane0", "F_network_normalized.npy"],
+    'dye_classifier': ["suite2p", "plane0", "dye_classifier.npy"]
 
 }
 
@@ -447,6 +448,10 @@ def load_suite2p_paths(data_folder, config, use_iscell = False):  ## creates a d
         "network_deltaF": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['network_deltaF']))
 
     }
+    try:
+        suite2p_dict['dye_classifier'] = load_npy_dict(os.path.join(data_folder, *SUITE2P_STRUCTURE['dye_classifier']))
+    except FileNotFoundError:
+        suite2p_dict['dye_classifier'] = None
     if config.analysis_params.use_suite2p_ROI_classifier is False or use_iscell is False:
         fluorescence_keys = []
         stat = suite2p_dict['stat']
@@ -658,12 +663,24 @@ def translate_suite2p_outputs_to_csv(main_folder, config, overwrite=False, check
         updated_iscell = parent_iscell.copy()
         # update_iscell[nid2idx, 0] = 1.0
         # update_iscell[nid2idx_rejected, 0] = 0.0
-        if update_iscell:
+        try:
+                dye_classifier = load_npy_dict(os.path.join(suite2p_dict['data_folder'], 'suite2p', 'plane0', 'dye_classifier.npy'))
+        except FileNotFoundError:
+            print("Not using Pearson's Correlations for dye analysis")
+            dye_classifier = None
+        if update_iscell and dye_classifier is None:
             for idx in nid2idx:
                 updated_iscell[idx, 0] = 1.0  # Update only the first column
             for idxr in nid2idx_rejected:
                 updated_iscell[idxr, 0] = 0.0
 
+            np.save(iscell_path, updated_iscell)
+            print(f"Updated iscell.npy saved for {folder}")
+            
+        if update_iscell and len(nid2idx_neuron) > 0:
+            updated_iscell[:,0] = 0.0
+            for idx in nid2idx_neuron:
+                updated_iscell[idx,0] = 1.0
             np.save(iscell_path, updated_iscell)
             print(f"Updated iscell.npy saved for {folder}")
 
@@ -672,14 +689,16 @@ def translate_suite2p_outputs_to_csv(main_folder, config, overwrite=False, check
 
         
         print(f"csv created for {folder}")
-        sync_results = net_analysis.load_and_plot_network(suite2p_dict, recruitment_fraction=0.1, bin_window=5, 
+        sync_results = net_analysis.load_and_plot_network(suite2p_dict, config, recruitment_fraction=0.1, bin_window=5, 
                                            peak_distance=10, save_path = suite2p_dict['data_folder'],
-                                           show_plots = False, show_recruitment_diagnostic=False)
-        
+                                           show_plots = False, show_recruitment_diagnostic=False, mask_traces = False)
+
         unpacked_events = net_analysis.unpack_sync_event_stats(suite2p_dict, sync_results)
-
+   
         unpacked_events.to_csv(os.path.join(output_path, f"{output_directory}_synchronous_events.csv"))      
-
+        import pickle 
+        with open(os.path.join(main_folder, 'pkl_files',f"{os.path.basename(suite2p_dict['data_folder'])}_network_results.pkl"), 'wb') as f:
+                  pickle.dump(sync_results, f)
         image_save_path = os.path.join(main_folder, f"{folder}_plot.png") #TODO explore changing "input path" to "folder" to save the processing in the same 
         fun_plot.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, nid2idx_neuron, nid2idx_glia,suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
 
@@ -926,9 +945,9 @@ def create_experiment_overview(config, use_iscell):
             neuron_count = len(array)
             
             suite2p_dict = load_suite2p_paths(folder, config, use_iscell = config.analysis_params.use_suite2p_ROI_classifier)
-            synchrony = net_analysis.load_and_plot_network(suite2p_dict,  recruitment_fraction=0.1,
+            synchrony = net_analysis.load_and_plot_network(suite2p_dict,  config, recruitment_fraction=0.1,
                                                bin_window=config.general_settings.BIN_WIDTH, peak_distance = 10, save_path = suite2p_dict['data_folder'],
-                                               show_plots = False, show_recruitment_diagnostic=False)
+                                               show_plots = False, show_recruitment_diagnostic=False, mask_traces = False)
             unpacked_sync_event_stats = net_analysis.unpack_sync_event_stats(suite2p_dict, synchrony)
 
     
