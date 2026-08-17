@@ -10,7 +10,10 @@ import matplotlib.pyplot as plt
 import os
 from scipy.signal import find_peaks
 from scipy.ndimage import label
+from batch_gui import config_loader
 
+_DEFAULT_CONFIG = load_json_config_file()
+config = _DEFAULT_CONFIG
 
 def estimate_single_trace_baseline_noise_mad(F_trace, event_threshold = 2):
     """
@@ -54,9 +57,9 @@ def estimate_single_trace_baseline_noise_mad(F_trace, event_threshold = 2):
     
     return sigma, baseline_samples
 
-def load_and_plot_network(suite2p_dict, recruitment_fraction=0.1,
+def load_and_plot_network(suite2p_dict, config, recruitment_fraction=0.1,
                             bin_window=5, peak_distance=10, save_path=None, show_plots=True,
-                            show_recruitment_diagnostic=True):
+                            show_recruitment_diagnostic=True, mask_traces = True):
     """
     Detect and characterize synchronous network events from normalized (0-1) calcium
     fluorescence traces, using two complementary criteria:
@@ -129,15 +132,17 @@ def load_and_plot_network(suite2p_dict, recruitment_fraction=0.1,
         """
         baselines, sds = [],[]
         masked_cell_activity = []
-        for trace in normalized_traces:
+        cell_activity = []
+        for trace in deltaF_traces:
             sigma, baseline_samples = estimate_single_trace_baseline_noise_mad(trace, event_threshold=2)
             baselines.append(np.median(baseline_samples))
             sds.append(sigma)
-            masked_cell_activity.append(trace > np.median(baseline_samples) + 3*sigma)
-        masked_cell_activity = np.array(masked_cell_activity)
-        network_activity = normalized_traces.mean(axis = 0)
-        deltaF_activity = deltaF_traces.mean(axis=0)
-        n_active_cells = masked_cell_activity.sum(axis=0)
+            cell_activity.append(trace > np.median(baseline_samples) + 2*sigma)
+        
+            masked_cell_activity = np.array(cell_activity)
+            network_activity = normalized_traces.mean(axis = 0)
+            deltaF_activity = deltaF_traces.mean(axis=0)
+            n_active_cells = masked_cell_activity.sum(axis=0)
 
         df_smooth = np.convolve(
             deltaF_activity,
@@ -158,13 +163,43 @@ def load_and_plot_network(suite2p_dict, recruitment_fraction=0.1,
     #
     # Restrict to suite2p-classified cells so numerator/denominator of the
     # recruitment criterion stay consistent with each other.
-
-    iscell_mask = suite2p_dict['iscell'][:, 0] == 1
-    masked_normalized_traces = suite2p_dict['network_deltaF'][iscell_mask]
-    masked_deltaF_traces = suite2p_dict['deltaF'][iscell_mask]
-    total_cells = iscell_mask.sum()
+    suite2p_df = fdt.df_from_suite2p_dict(suite2p_dict, config)
+    
+    if mask_traces:
+        activity_mask = list(suite2p_df['ActiveROI'] == True)
+    else:
+        activity_mask = suite2p_dict['iscell'][:,0] == 1
+    masked_normalized_traces = suite2p_dict['network_deltaF'][activity_mask]
+    masked_deltaF_traces = suite2p_dict['deltaF'][activity_mask]
+    total_cells = masked_deltaF_traces.shape[0]
 
     processed_results = process_normalized_fluorescence(masked_deltaF_traces, masked_normalized_traces)
+
+    # ---------------------------------------------------------
+    # Cell-to-global synchrony
+    # ---------------------------------------------------------
+    # Calculate a leave-one-cell-out global signal for each cell.
+    # This prevents a cell's own activity from artificially
+    # increasing its correlation with the global signal.
+
+    n_cells, n_frames = masked_normalized_traces.shape
+
+    cell_global_corr = np.full(n_cells, np.nan)
+
+    for i in range(n_cells):
+
+        # Global activity of all OTHER cells
+        other_cells = np.delete(masked_normalized_traces, i, axis=0)
+        global_signal_excluding_cell = other_cells.mean(axis=0)
+
+        # Pearson correlation between this cell and the
+        # activity of the rest of the population
+        cell_trace = masked_normalized_traces[i]
+
+        cell_global_corr[i] = np.corrcoef(
+            cell_trace,
+            global_signal_excluding_cell
+        )[0, 1]
 
     if show_recruitment_diagnostic:
         recruited_fraction_per_frame = processed_results['n_active_cells'] / total_cells
@@ -182,16 +217,50 @@ def load_and_plot_network(suite2p_dict, recruitment_fraction=0.1,
         else:
             plt.close()
     af_sd, af_baseline = estimate_single_trace_baseline_noise_mad(processed_results['df_smooth'], event_threshold=2)
-    activity_threshold = np.median(af_baseline) + 3*af_sd
+    activity_threshold = np.median(af_baseline) + 2*af_sd
     peaks, _ = find_peaks(processed_results['df_smooth'], height=activity_threshold, distance=peak_distance)
 
     # --- Two individual criteria ---
     burst_mask = processed_results['df_smooth'] > activity_threshold
     recruitment_threshold = total_cells * recruitment_fraction
     recruitment_mask = processed_results['n_active_cells'] > recruitment_threshold
-
     # --- Combined event mask: both criteria must hold ---
-    event_mask = burst_mask & recruitment_mask
+    event_mask =  recruitment_mask
+    # ---------------------------------------------------------
+    # Cell participation per network event
+    # ---------------------------------------------------------
+    # First identify the discrete network events
+    labeled_events, n_events = label(event_mask)
+
+    # Matrix:
+    #   rows    = cells
+    #   columns = individual network events
+    #
+    # Value = 1 if the cell participated in that event,
+    #         0 if it did not.
+    event_participation = np.zeros(
+        (total_cells, n_events),
+        dtype=bool
+    )
+
+    for event_id in range(1, n_events + 1):
+
+        # Frames belonging to this particular event
+        event_frames = labeled_events == event_id
+
+        for i in range(total_cells):
+
+            # Was this cell active at ANY point during the event?
+            event_participation[i, event_id - 1] = (
+                processed_results['masked_cell_activity'][i, event_frames].any()
+            )
+
+    # Fraction of network events each cell participated in
+    if n_events > 0:
+        event_participation_fraction = event_participation.mean(axis=1)
+    else:
+        event_participation_fraction = np.full(total_cells, np.nan)
+
 
     # --- Label discrete events and summarize each one ---
     labeled_events, n_events = label(event_mask)
@@ -263,6 +332,10 @@ def load_and_plot_network(suite2p_dict, recruitment_fraction=0.1,
         'recruitment_mask': recruitment_mask,
         'event_mask': event_mask,
         'event_stats': event_stats,
+        'cell_global_corr': cell_global_corr,
+        'event_participation': event_participation,
+        'event_participation_fraction': event_participation_fraction
+
     }
     return synchrony_results
 
