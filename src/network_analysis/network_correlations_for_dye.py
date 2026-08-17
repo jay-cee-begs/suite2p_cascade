@@ -175,12 +175,12 @@ def process_suite2p_dict(d):
     for n in range(n_rois):
         trace = deltaF[n]
         cascade_analysis = np.nansum(cascade[n])
-        sigma, baseline = estimate_single_trace_baseline_noise_mad(trace, )
+        sigma, baseline = estimate_single_trace_baseline_noise_mad(trace, 2)
         peaks, properties = find_peaks(trace, height = np.median(baseline) + 4*sigma, distance = 3,
                                        width = (2,50))
-        if len(peaks) == 0 and cascade_analysis <= 0.1:
-            continue
-        idx_active.append(n)
+        if len(peaks) > 0 and cascade_analysis > 0.1 and n not in  idx_fneu_over_f:
+            
+            idx_active.append(n)
         peak_info[n] = {'peaks': peaks, 'propoerties': properties}
 
         median_width = np.median(properties['widths'])
@@ -195,8 +195,16 @@ def process_suite2p_dict(d):
     corr_glob = corr_glob.ZhangFit(lambda_ = 100)
     global_signal = corr_glob
     active_corr = {}
-    for id in idx_active:
-        zero_lag_corr, best_corr, best_lag = glob_roi_corr(deltaF[id], global_signal=global_signal, max_lag= 10)
+    for i, id in enumerate(idx_active):
+        cell_trace = deltaF[id]
+        other_cells = np.delete(active_traces, i, axis=0)
+        global_signal_excluding_cell = other_cells.mean(axis=0)
+
+        # Pearson correlation between this cell and the
+        # activity of the rest of the population
+        cell_trace = deltaF[id]
+
+        zero_lag_corr, best_corr, best_lag = glob_roi_corr(cell_trace, global_signal=global_signal_excluding_cell, max_lag= 10)
         template_score.append(zero_lag_corr)
         active_corr[id] = {
             'zero_lag_corr': zero_lag_corr,
@@ -208,7 +216,7 @@ def process_suite2p_dict(d):
     glob_neuron_corr = []
     glob_glia_idx = []
     glob_glia_corr = []
-
+    
     for roi_id, scores in active_corr.items():
         if scores['zero_lag_corr'] < 0.4:
             glob_glia_idx.append(roi_id)
