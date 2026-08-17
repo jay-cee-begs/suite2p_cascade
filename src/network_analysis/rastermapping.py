@@ -10,7 +10,7 @@ from batch_gui.config_loader import load_json_config_file
 _DEFAULT_CONFIG = load_json_config_file()
 config = _DEFAULT_CONFIG
 
-def simple_raster_plot(suite2p_dict, color_map, save_path = None,frame_rate = None, z_score_activity = False, max_neuron_count = None, show_plot = False):
+def simple_raster_plot(suite2p_dict, color_map, save_path = None,frame_rate = None, z_score_activity = False, max_neuron_count = None, show_plot = True):
     """
     Create a simple rasterplot of a given suite2p processed file
     Args:
@@ -142,7 +142,7 @@ def main(config_file_path = None):
         
         simple_raster_plot(suite2p_dict, color_map = 'binary', save_path = folder,
                            frame_rate = int(config.general_settings.frame_rate),
-                           z_score_activity=False, show_plot=False)
+                           z_score_activity=True, show_plot=False)
 
         # visualize_culture_activity(suite2p_dict, folder)
         # visualize_glia_activity(suite2p_dict, folder)
