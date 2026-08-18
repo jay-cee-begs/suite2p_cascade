@@ -10,14 +10,56 @@ import matplotlib.pyplot as plt
 import os
 from scipy.signal import find_peaks
 from scipy.ndimage import label
+from batch_gui import config_loader
 
+_DEFAULT_CONFIG = load_json_config_file()
+config = _DEFAULT_CONFIG
 
+def estimate_single_trace_baseline_noise_mad(F_trace, event_threshold = 2):
+    """
+    Estimate noise sigma from baseline-only windows using MAD.
+    
+    Args:
+    -----------
+        F : 1D numpy array
+            Baseline-corrected ΔF/F trace.
+        frame_rate : float
+            Sampling rate (Hz).
+        event_threshold : float
+            Preserved from calculate_deltaF function above.
+            Threshold (in MAD units) to mask obvious events by multiplying by estimated noise standard deviation. 
+            Default: 2 (SD above median)
+            Smaller values will limit the number of baseline points used for correction.
+        min_baseline_sec : float
+            Minimum duration (seconds) of a baseline window.
+            Default: 10 s
 
+    Returns:
+    --------
+        sigma : float
+            Estimated noise standard deviation.
+        baseline_mask : boolean array
+            Mask of samples classified as baseline.
+    """
 
+    trace_median = np.median(F_trace)
+    mad = np.median(np.abs(F_trace - trace_median))
+    sigma = 1.4826 * mad
+    event_mask = np.abs(F_trace - trace_median) > event_threshold * sigma
 
-def load_and_plot_network(suite2p_dict, activity_threshold=0.05, recruitment_fraction=0.1,
+    trace_baseline = ~event_mask
+
+    baseline_samples = F_trace[trace_baseline]
+    
+    baseline_median = np.median(baseline_samples)
+    baseline_mad = np.median(np.abs(baseline_samples - baseline_median))
+    sigma = 1.4826 * baseline_mad
+    
+    return sigma, baseline_samples
+
+def load_and_plot_network(suite2p_dict, config, recruitment_fraction=0.1,
                             bin_window=5, peak_distance=10, save_path=None, show_plots=True,
-                            show_recruitment_diagnostic=True):
+                            show_recruitment_diagnostic=True, mask_traces = True):
     """
     Detect and characterize synchronous network events from normalized (0-1) calcium
     fluorescence traces, using two complementary criteria:
@@ -64,7 +106,7 @@ def load_and_plot_network(suite2p_dict, activity_threshold=0.05, recruitment_fra
     Returns:
     --------
         results : dict
-            af_smooth           : smoothed population-activity trace
+            df_smooth           : smoothed population-activity trace
             global_activity     : raw (unsmoothed) population-activity trace
             cell_activity       : boolean array (cells x frames) of per-cell activity
             n_active_cells      : per-frame count of co-active cells
@@ -88,28 +130,79 @@ def load_and_plot_network(suite2p_dict, activity_threshold=0.05, recruitment_fra
         -- since traces are already min-max normalized per-ROI, this threshold is
         comparable across cells without needing z-scoring.
         """
-        network_activity = normalized_traces > np.percentile(normalized_traces, 95, axis=1)[:, None]
-        deltaF_activity = deltaF_traces.mean(axis=0)
-        n_active_cells = network_activity.sum(axis=0)
+        baselines, sds = [],[]
+        masked_cell_activity = []
+        cell_activity = []
+        for trace in deltaF_traces:
+            sigma, baseline_samples = estimate_single_trace_baseline_noise_mad(trace, event_threshold=2)
+            baselines.append(np.median(baseline_samples))
+            sds.append(sigma)
+            cell_activity.append(trace > np.median(baseline_samples) + 2*sigma)
+        
+            masked_cell_activity = np.array(cell_activity)
+            network_activity = normalized_traces.mean(axis = 0)
+            deltaF_activity = deltaF_traces.mean(axis=0)
+            n_active_cells = masked_cell_activity.sum(axis=0)
 
-        af_smooth = np.convolve(
+        df_smooth = np.convolve(
             deltaF_activity,
             np.ones(bin_window) / bin_window,
             mode='same'
         )
-        return af_smooth, deltaF_activity, network_activity, n_active_cells
-
+        results = {
+            'df_smooth': df_smooth,
+            'raw_normalized_activity': network_activity,
+            'raw_deltaF_activity': deltaF_activity,
+            'masked_cell_activity': masked_cell_activity,
+            'n_active_cells': n_active_cells
+        }
+        return results
+    #df_smooth is concolved average fluorescence trace across a recording 
+    #network_activity is the raw average deltaF /F0 trace
+    #masked_cell_activity is when each ROI has fluorescence > baseline_median + 3*SD
+    #
     # Restrict to suite2p-classified cells so numerator/denominator of the
     # recruitment criterion stay consistent with each other.
-    iscell_mask = suite2p_dict['iscell'][:, 0] == 1
-    masked_normalized_traces = suite2p_dict['network_deltaF'][iscell_mask]
-    masked_deltaF_traces = suite2p_dict['deltaF'][iscell_mask]
-    total_cells = iscell_mask.sum()
+    suite2p_df = fdt.df_from_suite2p_dict(suite2p_dict, config)
+    
+    if mask_traces:
+        activity_mask = list(suite2p_df['ActiveROI'] == True)
+    else:
+        activity_mask = suite2p_dict['iscell'][:,0] == 1
+    masked_normalized_traces = suite2p_dict['network_deltaF'][activity_mask]
+    masked_deltaF_traces = suite2p_dict['deltaF'][activity_mask]
+    total_cells = masked_deltaF_traces.shape[0]
 
-    af_smooth, deltaF_activity, network_activity, n_active_cells = process_normalized_fluorescence(masked_deltaF_traces, masked_normalized_traces)
+    processed_results = process_normalized_fluorescence(masked_deltaF_traces, masked_normalized_traces)
+
+    # ---------------------------------------------------------
+    # Cell-to-global synchrony
+    # ---------------------------------------------------------
+    # Calculate a leave-one-cell-out global signal for each cell.
+    # This prevents a cell's own activity from artificially
+    # increasing its correlation with the global signal.
+
+    n_cells, n_frames = masked_normalized_traces.shape
+
+    cell_global_corr = np.full(n_cells, np.nan)
+
+    for i in range(n_cells):
+
+        # Global activity of all OTHER cells
+        other_cells = np.delete(masked_normalized_traces, i, axis=0)
+        global_signal_excluding_cell = other_cells.mean(axis=0)
+
+        # Pearson correlation between this cell and the
+        # activity of the rest of the population
+        cell_trace = masked_normalized_traces[i]
+
+        cell_global_corr[i] = np.corrcoef(
+            cell_trace,
+            global_signal_excluding_cell
+        )[0, 1]
 
     if show_recruitment_diagnostic:
-        recruited_fraction_per_frame = n_active_cells / total_cells
+        recruited_fraction_per_frame = processed_results['n_active_cells'] / total_cells
         plt.figure(figsize=(6, 4))
         plt.hist(recruited_fraction_per_frame, bins=50, color='steelblue', alpha=0.8)
         plt.axvline(recruitment_fraction, color='red', ls='--',
@@ -123,16 +216,51 @@ def load_and_plot_network(suite2p_dict, activity_threshold=0.05, recruitment_fra
             plt.show()
         else:
             plt.close()
-
-    peaks, _ = find_peaks(af_smooth, height=activity_threshold, distance=peak_distance)
+    af_sd, af_baseline = estimate_single_trace_baseline_noise_mad(processed_results['df_smooth'], event_threshold=2)
+    activity_threshold = np.median(af_baseline) + 2*af_sd
+    peaks, _ = find_peaks(processed_results['df_smooth'], height=activity_threshold, distance=peak_distance)
 
     # --- Two individual criteria ---
-    burst_mask = af_smooth > activity_threshold
+    burst_mask = processed_results['df_smooth'] > activity_threshold
     recruitment_threshold = total_cells * recruitment_fraction
-    recruitment_mask = n_active_cells > recruitment_threshold
-
+    recruitment_mask = processed_results['n_active_cells'] > recruitment_threshold
     # --- Combined event mask: both criteria must hold ---
-    event_mask = burst_mask & recruitment_mask
+    event_mask =  recruitment_mask
+    # ---------------------------------------------------------
+    # Cell participation per network event
+    # ---------------------------------------------------------
+    # First identify the discrete network events
+    labeled_events, n_events = label(event_mask)
+
+    # Matrix:
+    #   rows    = cells
+    #   columns = individual network events
+    #
+    # Value = 1 if the cell participated in that event,
+    #         0 if it did not.
+    event_participation = np.zeros(
+        (total_cells, n_events),
+        dtype=bool
+    )
+
+    for event_id in range(1, n_events + 1):
+
+        # Frames belonging to this particular event
+        event_frames = labeled_events == event_id
+
+        for i in range(total_cells):
+
+            # Was this cell active at ANY point during the event?
+            event_participation[i, event_id - 1] = (
+                processed_results['masked_cell_activity'][i, event_frames].any()
+            )
+
+    # Fraction of network events each cell participated in
+    if n_events > 0:
+        event_participation_fraction = event_participation.mean(axis=1)
+    else:
+        event_participation_fraction = np.full(total_cells, np.nan)
+
 
     # --- Label discrete events and summarize each one ---
     labeled_events, n_events = label(event_mask)
@@ -144,8 +272,8 @@ def load_and_plot_network(suite2p_dict, activity_threshold=0.05, recruitment_fra
             'start_frame': int(frames[0]),
             'end_frame': int(frames[-1]),
             'duration_frames': int(len(frames)),
-            'peak_amplitude': float(deltaF_activity[frames].max()),
-            'max_neurons_recruited': int(n_active_cells[frames].max()),
+            'peak_amplitude': float(processed_results['raw_deltaF_activity'][frames].max()),
+            'max_neurons_recruited': int(processed_results['n_active_cells'][frames].max()),
         })
 
     def create_plots(input_trace, plot_title, ylabel="Fraction active", ylim=None, axhline_val=None):
@@ -183,26 +311,33 @@ def load_and_plot_network(suite2p_dict, activity_threshold=0.05, recruitment_fra
         else:
             plt.close()
 
-    create_plots(deltaF_activity, "Raw Amplitude", ylabel="Mean deltaF/F0", ylim=None, axhline_val=activity_threshold)
-    create_plots(af_smooth, "Smoothed Amplitude", ylabel="Mean deltaF/F0", ylim=None, axhline_val=activity_threshold)
-    create_plots(n_active_cells.astype(float), "Neurons Recruited", ylabel="Active neuron count", ylim=(0, total_cells), axhline_val=recruitment_threshold)
+    create_plots(processed_results['raw_deltaF_activity'], "Raw Amplitude", ylabel="Mean deltaF/F0", ylim=None, axhline_val=activity_threshold)
+    create_plots(processed_results['df_smooth'], "Smoothed Amplitude", ylabel="Mean deltaF/F0", ylim=None, axhline_val=activity_threshold)
+    create_plots(processed_results['n_active_cells'].astype(float), "Neurons Recruited", ylabel="Active neuron count", ylim=(0, total_cells), axhline_val=recruitment_threshold)
 
     image_file = os.path.basename(suite2p_dict['data_folder'])
-    results = {
+    synchrony_results = {
         'Group': suite2p_dict['Group'],
         "Replicate_No.": suite2p_dict['sample'],
         'File_Name': image_file,
-        'af_smooth': af_smooth,
-        'deltaF_activity':deltaF_activity,
-        'network_activity': network_activity,
-        'n_active_cells': n_active_cells,
+        'total_cells': total_cells,
+        'recruitment_threshold': recruitment_threshold,
+        'activity_threshold': activity_threshold,
+        'df_smooth': processed_results['df_smooth'],
+        'deltaF_activity':processed_results['raw_deltaF_activity'],
+        'network_activity': processed_results['raw_normalized_activity'],
+        'n_active_cells': processed_results['n_active_cells'],
         'peaks': peaks,
         'burst_mask': burst_mask,
         'recruitment_mask': recruitment_mask,
         'event_mask': event_mask,
         'event_stats': event_stats,
+        'cell_global_corr': cell_global_corr,
+        'event_participation': event_participation,
+        'event_participation_fraction': event_participation_fraction
+
     }
-    return results
+    return synchrony_results
 
 def unpack_sync_event_stats(suite2p_dict, results):
     unpacked_events = []
@@ -229,58 +364,4 @@ def unpack_sync_event_stats(suite2p_dict, results):
         })
     return pd.DataFrame(unpacked_events)
 
-# def process_sync_events(list_of_unpacked_events):
-#     pd_list = []
-#     for events in list_of_unpacked_events:
-#         pd_list.append(events.groupby(["Group", "File_Name"]).agg({
-#         'duration_frames': ['mean','std'],
-#         'peak_amplitude': ['mean','std'],
-#         'max_neurons_recruited': ['mean','std']
-#         }))
-#     final_df = pd.concat(pd_list)
 
-
-# def main(config_file = None):
-#     try:
-#         global config  # <- important
-#         global config_dict
-#         if config_file is not None:
-#             config = load_json_config_file(config_file)
-#             config_dict = load_json_dict(config_file)
-
-#         else:
-#             config = load_json_config_file()
-#             config_dict = load_json_dict()
-#         suite2p_folders = fdt.get_file_name_list(config.general_settings.main_folder, 'samples', supress_printing=True)
-#         all_results = []
-#         all_events = []
-#         for folder in suite2p_folders:
-#             suite2p_dict = fdt.load_suite2p_paths(folder, config, use_iscell = config.analysis_params.use_suite2p_ROI_classifier)
-#             results = load_and_plot_network(suite2p_dict, show_plots = False)
-#             for network_event in results['event_stats']:
-#                 event_with_id = {
-#                     "Group": suite2p_dict['Group'],
-#                     "Replicate_No.": suite2p_dict['sample'],
-#                     "File_Name": os.path.basename(suite2p_dict['data_folder']),
-#                     **network_event,
-#                 }
-#                 all_events.append(event_with_id)
-#             all_results.append(results)
-#         results_df = pd.DataFrame(all_results)
-#         event_df = pd.DataFrame(all_events)
-#     except KeyboardInterrupt as e:
-#         print("Outputs interrupted by user")
-#     finally:
-#         import json
-#         with open(os.path.join(config.general_settings.main_folder, 'analysis_config.json'), 'w') as f:
-#             json.dump(config_dict, f, indent = 4)
-#         print(f"Analysis parameters saved in {config.general_settings.main_folder} as analysis_config.json")
-#         from datetime import datetime
-
-#         now = datetime.now()
-
-#         current_time = now.strftime("%H:%M:%S")
-#         print("Current Time =", current_time)
-#     return results_df, event_df
-# if __name__ == '__main__':
-#     main()

@@ -31,8 +31,8 @@ def main(config_file = None):
     functions_data_transformation.csv_to_pickle(config.general_settings.main_folder, overwrite = True)
     #TODO add an output for final_df for within python stuff
     # create_final_df(config.general_settings.main_folder)
-    functions_data_transformation.create_experiment_overview(config.general_settings.main_folder, config.general_settings.groups, config.analysis_params.use_suite2p_ROI_classifier)
-
+    functions_data_transformation.create_experiment_overview(config, config.analysis_params.use_suite2p_ROI_classifier)
+    functions_data_transformation.create_experiment_summary(config.general_settings.main_folder)
 if __name__=="__main__":
     main()
     rastermapping.main()
