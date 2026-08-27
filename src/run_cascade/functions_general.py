@@ -298,7 +298,7 @@ def calculate_deltaF(F_file, config):
 
     return deltaF
 
-def calculate_network_deltaF(F_file, config):
+def calculate_network_deltaF(F_file, config, overwrite = False):
     savepath = rf"{F_file}".replace("\\F.npy","") ## make savepath original folder, indicates where deltaF.npy is saved
     F = np.load(rf"{F_file}", allow_pickle=True)
     Fneu = np.load(rf"{F_file[:-4]}"+"neu.npy", allow_pickle=True)
@@ -332,11 +332,14 @@ def calculate_network_deltaF(F_file, config):
         network_deltaF.append(normalized_F)
     network_deltaF = np.array(network_deltaF)
     network_deltaF = np.squeeze(network_deltaF)
-    if not os.path.exists(f"{savepath}/network_deltaF.npy"):
+    if overwrite:
         np.save(f"{savepath}/F_network_normalized.npy", network_deltaF, allow_pickle=True)
-        print(f"Normalized F traces saved as F_network_normalized.npy under {savepath}\n")
     else:
-        print(f"deltaF files already exist for {F_file[len(config.general_settings.main_folder)+1:-21]}")
+        if not os.path.exists(f"{savepath}/network_deltaF.npy"):
+        
+            print(f"Normalized F traces saved as F_network_normalized.npy under {savepath}\n")
+        else:
+            print(f"deltaF files already exist for {F_file[len(config.general_settings.main_folder)+1:-21]}")
 
     return network_deltaF
 
