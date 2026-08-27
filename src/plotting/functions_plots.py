@@ -115,7 +115,7 @@ def histogram_total_estimated_spikes(prediction_deltaF_file, output_directory = 
 
 
 
-def plot_somatic_traces(suite2p_dict, list = None, plot_cascade = False, trace_offset = 5, iscell_true = True, save_fig = False):
+def plot_somatic_traces(suite2p_dict, list = None, plot_raw = False, plot_cascade = False, trace_offset = 5, y_scale = 1, iscell_true = True, save_fig = False):
     # Get boolean mask of valid cells
     if iscell_true:
         try:
@@ -130,6 +130,7 @@ def plot_somatic_traces(suite2p_dict, list = None, plot_cascade = False, trace_o
     # Apply mask to deltaF
     masked_dF = suite2p_dict['deltaF'][iscell_mask]
     masked_cascade = suite2p_dict['cascade_predictions'][iscell_mask]
+    masked_F = suite2p_dict['F'][iscell_mask]
     if list is None:
         lst = np.random.choice(masked_dF.shape[0], size=10, replace=False)
     else:
@@ -146,20 +147,28 @@ def plot_somatic_traces(suite2p_dict, list = None, plot_cascade = False, trace_o
     
     frame_rate = 10
     time = np.arange(suite2p_dict["deltaF"].shape[1]) / frame_rate
-    if not plot_cascade:
+    if not plot_cascade and not plot_raw:
         plt_traces = masked_dF[lst]
         for i, trace in enumerate(plt_traces):
             offset_trace = trace + i * trace_offset
             ax.plot(time, offset_trace, color=colors[i % len(colors)], alpha=0.8)
         
-    else:
+    if plot_cascade and not plot_raw:
         plt_traces = masked_cascade[lst]
         for i, trace in enumerate(plt_traces):
-            offset_trace = trace + i * 1
+            offset_trace = trace + i *trace_offset
             ax.plot(time, offset_trace, color=colors[i % len(colors)], alpha=0.8)
 
+    if plot_raw and not plot_cascade:
+        print("plotting(F_traces")
+        plt_traces = masked_F[lst]
+        for i, trace in enumerate(plt_traces):
+                    offset_trace = trace + i * trace_offset
+                    ax.plot(time, offset_trace, color=colors[i % len(colors)], alpha=0.8)
+    if plot_cascade and plot_raw:
+        return print("Too many types of traces indexed")
     scalebar_time = 10  # seconds
-    scalebar_df = 0.5     # dF/F units
+    scalebar_df = y_scale     # dF/F units
     x0 = time[-1] + 2
     y0 = -2
 
@@ -169,10 +178,12 @@ def plot_somatic_traces(suite2p_dict, list = None, plot_cascade = False, trace_o
 
     # Scale bar labels
     ax.text(x0 + scalebar_time / 2, y0 - 0.3, fr"{scalebar_time}$\ s$", ha='center', va='top')
-    if not plot_cascade:
+    if not plot_cascade and not plot_raw:
         ax.text(x0 + scalebar_time + 1, y0 + scalebar_df / 3,  fr"{scalebar_df} $\Delta F / F_0$", va='center', ha='left')
-    else:
+    if plot_cascade:
         ax.text(x0 + scalebar_time + 1, y0 + scalebar_df / 3,  f"{scalebar_df} CASCADE-predicted\nSpikes", va='center', ha='left')
+    if plot_raw:
+        ax.text(x0 + scalebar_time + 1, y0 + scalebar_df / 3,  f"{scalebar_df} Raw Fluorescence\nunits ($a.u.$)", va='center', ha='left')
 
     # --- Minimalist figure: no axes ---
     ax.axis('off')
@@ -460,7 +471,7 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
             sample_Fneu = Fneu[n]
 
             med_pixel_weight = np.median(stat.iloc[n]['lam'])
-            if med_pixel_weight > pixel_weight_threshold and sample_F.min() > sample_Fneu.min():
+            if sample_F.min() > sample_Fneu.min():
                 nid2idx[n] = len(scatters["x"]) # Assign new idx
             else:
                 nid2idx_rejected[n] = len(scatters["x"])
