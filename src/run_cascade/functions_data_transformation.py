@@ -697,6 +697,8 @@ def translate_suite2p_outputs_to_csv(main_folder, config, overwrite=False, check
    
         unpacked_events.to_csv(os.path.join(output_path, f"{output_directory}_synchronous_events.csv"))      
         import pickle 
+        if not os.path.exists(os.path.join(main_folder, 'pkl_files')):
+                os.mkdir(os.path.join(main_folder, 'pkl_files'))
         with open(os.path.join(main_folder, 'pkl_files',f"{os.path.basename(suite2p_dict['data_folder'])}_network_results.pkl"), 'wb') as f:
                   pickle.dump(sync_results, f)
         image_save_path = os.path.join(main_folder, f"{folder}_plot.png") #TODO explore changing "input path" to "folder" to save the processing in the same 
