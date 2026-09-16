@@ -320,6 +320,8 @@ def calculate_network_deltaF(F_file, config, overwrite = False):
                 baseline_corrected = BaselineRemoval(corrected_trace)
                 corrected_trace = baseline_corrected.ZhangFit(lambda_= lambda_window)
             if config.analysis_params.correction_method == "rolling_median":
+                lambda_window = config.analysis_params.lambda_window
+
                 baseline_corrected = remove_bleaching(corrected_trace, 
                                                       baseline_correction='rolling_med', 
                                                       window = lambda_window)
