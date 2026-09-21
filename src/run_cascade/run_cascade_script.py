@@ -84,7 +84,7 @@ def main(config_file = None):
             cascade_suffix = '\\suite2p\\plane0\\predictions_deltaF.npy' #TODO Fix hardcoded '\\' for linux implementation
             cascade_processed_files = []
             for file in predictions_deltaF_files:
-                cascade_processed_files.append(file.split(cascade_suffix)[-1])
+                cascade_processed_files.append(file.split(cascade_suffix)[0])
             for folder in suite2p_folders:
                 if folder not in cascade_processed_files:
                     unprocessed_folders.append(folder)

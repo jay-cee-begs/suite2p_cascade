@@ -175,10 +175,11 @@ def process_suite2p_dict(d):
     for n in range(n_rois):
         trace = deltaF[n]
         cascade_analysis = np.nansum(cascade[n])
+        cascade_max = cascade[n].max()
         sigma, baseline = estimate_single_trace_baseline_noise_mad(trace, 2)
         peaks, properties = find_peaks(trace, height = np.median(baseline) + 4*sigma, distance = 3,
                                        width = (2,50))
-        if len(peaks) > 0 and cascade_analysis > 0.1 and n not in  idx_fneu_over_f:
+        if len(peaks) > 0 and cascade_analysis > 0.1 and cascade_max > 0.01 and n not in  idx_fneu_over_f:
             
             idx_active.append(n)
         peak_info[n] = {'peaks': peaks, 'propoerties': properties}

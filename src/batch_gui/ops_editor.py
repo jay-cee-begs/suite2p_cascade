@@ -135,7 +135,7 @@ class OpsEditor:
         ttk.Combobox(
             self.baseline_frame,
             textvariable=self.correction_method_var,
-            values=["airPLS", "rolling median"],
+            values=["airPLS", "rolling_median"],
             state="readonly",
             width = 15
         ).grid(row=0, column=1)

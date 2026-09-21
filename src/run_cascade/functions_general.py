@@ -95,7 +95,9 @@ def filter_cascade_predictions(prediction_deltaF_file, config):
             Cascade-predicted activity from deconvolution where ROIs below activity threshold are masked to have 0 activity
     """
     cascade_prediction = np.nan_to_num(prediction_deltaF_file)
-    mask = np.sum(cascade_prediction, axis=1) <  float(config.analysis_params.cascade_activity_threshold)
+    #TODO check max spikes per recording to set frame-based threshold instead of video based threshold for adaptability
+    # change cascade_activity_threshold to 0.01 for any frame
+    mask = np.max(cascade_prediction, axis=1) <  float(config.analysis_params.cascade_activity_threshold)
     cascade_prediction[mask] = 0
     return cascade_prediction
 
@@ -298,7 +300,7 @@ def calculate_deltaF(F_file, config):
 
     return deltaF
 
-def calculate_network_deltaF(F_file, config):
+def calculate_network_deltaF(F_file, config, overwrite = False):
     savepath = rf"{F_file}".replace("\\F.npy","") ## make savepath original folder, indicates where deltaF.npy is saved
     F = np.load(rf"{F_file}", allow_pickle=True)
     Fneu = np.load(rf"{F_file[:-4]}"+"neu.npy", allow_pickle=True)
@@ -320,6 +322,8 @@ def calculate_network_deltaF(F_file, config):
                 baseline_corrected = BaselineRemoval(corrected_trace)
                 corrected_trace = baseline_corrected.ZhangFit(lambda_= lambda_window)
             if config.analysis_params.correction_method == "rolling_median":
+                lambda_window = config.analysis_params.lambda_window
+
                 baseline_corrected = remove_bleaching(corrected_trace, 
                                                       baseline_correction='rolling_med', 
                                                       window = lambda_window)
@@ -332,11 +336,14 @@ def calculate_network_deltaF(F_file, config):
         network_deltaF.append(normalized_F)
     network_deltaF = np.array(network_deltaF)
     network_deltaF = np.squeeze(network_deltaF)
-    if not os.path.exists(f"{savepath}/network_deltaF.npy"):
+    if overwrite:
         np.save(f"{savepath}/F_network_normalized.npy", network_deltaF, allow_pickle=True)
-        print(f"Normalized F traces saved as F_network_normalized.npy under {savepath}\n")
     else:
-        print(f"deltaF files already exist for {F_file[len(config.general_settings.main_folder)+1:-21]}")
+        if not os.path.exists(f"{savepath}/network_deltaF.npy"):
+        
+            print(f"Normalized F traces saved as F_network_normalized.npy under {savepath}\n")
+        else:
+            print(f"deltaF files already exist for {F_file[len(config.general_settings.main_folder)+1:-21]}")
 
     return network_deltaF
 
