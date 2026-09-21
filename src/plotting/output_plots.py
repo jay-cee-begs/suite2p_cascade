@@ -16,6 +16,9 @@ def main(config_file = None):
     else:
         config = load_json_config_file()
         config_dict = load_json_dict()
+    suite2p_folders = functions_data_transformation.get_file_name_list(config.general_settings.main_folder, 'samples', supress_printing=True)
+    functions_data_transformation.check_deltaF(suite2p_folders, config)
+    functions_data_transformation.check_network_deltaF(suite2p_folders, config)
 
     predictions_deltaF_files = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "predictions_deltaF.npy") ## get the names of the predicted spike files
     output_directories = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "samples")
