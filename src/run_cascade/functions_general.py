@@ -96,7 +96,7 @@ def filter_cascade_predictions(prediction_deltaF_file, config):
     """
     cascade_prediction = np.nan_to_num(prediction_deltaF_file)
     #TODO check max spikes per recording to set frame-based threshold instead of video based threshold for adaptability
-    mask = np.sum(cascade_prediction, axis=1) <  float(config.analysis_params.cascade_activity_threshold)
+    mask = np.max(cascade_prediction, axis=1) <  float(config.analysis_params.cascade_activity_threshold)
     cascade_prediction[mask] = 0
     return cascade_prediction
 
