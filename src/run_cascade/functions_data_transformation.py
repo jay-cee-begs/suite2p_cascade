@@ -945,7 +945,7 @@ def create_experiment_overview(config, use_iscell):
 
             array = cascade_predictions
             avg_cell_instantaneous_spike_rate, cell_sds, cell_cvs, time_stamp_means, time_stamp_sds, time_stamp_cvs = g_func.basic_stats_per_cell(array)
-            neuron_count = len(array)
+            neuron_count = len(iscell_mask)
             
             suite2p_dict = load_suite2p_paths(folder, config, use_iscell = config.analysis_params.use_suite2p_ROI_classifier)
             synchrony = net_analysis.load_and_plot_network(suite2p_dict,  config, recruitment_fraction=0.1,
@@ -954,24 +954,19 @@ def create_experiment_overview(config, use_iscell):
             unpacked_sync_event_stats = net_analysis.unpack_sync_event_stats(suite2p_dict, synchrony)
 
     
-            if not use_iscell:
-                active_neurons = sum(np.nansum(row) > 0.1 for row in array)
-            # Separate and average the baseline fluorescence
-                inactive_baseline = [cell for row, cell in zip(array, baseline_F) if np.nansum(row) < 0.1]
-                active_baseline = [cell for row, cell in zip(array, baseline_F) if np.nansum(row) >= 0.1]
-                estimated_spikes = [np.nansum(row) for row in array]
+            active_neurons = sum(np.nansum(row) > 0.1 for row in array)
+        # Separate and average the baseline fluorescence
+            inactive_baseline = [cell for row, cell in zip(array, baseline_F) if np.nansum(row) < 0.1]
+            active_baseline = [cell for row, cell in zip(array, baseline_F) if np.nansum(row) >= 0.1]
+            estimated_spikes = [np.nansum(row) for row in array]
 
 
-            else:
-                active_neurons = sum(iscell[:,0] == 1)
-                inactive_baseline = [cell for i, cell in enumerate(baseline_F) if iscell[i, 0] == 0]
-                active_baseline = [cell for i, cell in enumerate(baseline_F) if iscell[i, 0] == 1]
-                estimated_spikes = [np.nansum(row) for row, true_mask in zip(array, iscell_mask) if true_mask]
+            
 
             avg_inactive_cell = np.nanmean(inactive_baseline)
             avg_active_cell = np.nanmean(active_baseline)
             total_estimated_spikes = round(sum(estimated_spikes), 2)
-                    
+            np.std
             dictionary_list.append({
                 'File_Name': str(suite2p_dict['file_name']), 
                 'Neuron_Count': neuron_count,
@@ -987,6 +982,10 @@ def create_experiment_overview(config, use_iscell):
                 "Total_Network_Bursts": len(synchrony['event_stats']),
                 "Avg_Time_of_Burst": unpacked_sync_event_stats['duration_frames'].mean(),
                 "Avg_Neuronal_Recruitment": unpacked_sync_event_stats['max_neurons_recruited'].mean(),
+                "Pct_Neuronal_Recruitment_v_total": unpacked_sync_event_stats['max_neurons_recruited'].mean() / neuron_count,
+                "Pct_Neuronal_Recruitment_v_active_only": unpacked_sync_event_stats['max_neurons_recruited'].mean() / active_neurons,
+                "Pct_SD_Neuronal_Recruitment_v_total": np.std(unpacked_sync_event_stats['max_neurons_recruited'] / neuron_count),
+                "Pct_SD_Neuronal_Recruitment_v_active_only": np.std(unpacked_sync_event_stats['max_neurons_recruited'] / active_neurons),
                 "Avg_Peak_Sync_Amplitude": unpacked_sync_event_stats['peak_amplitude'].mean(),
                 "Group": suite2p_dict['Group'],
                 'Data_Folder': suite2p_dict['data_folder'],
