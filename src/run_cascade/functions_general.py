@@ -270,6 +270,8 @@ def calculate_deltaF(F_file, config):
                 baseline_corrected = BaselineRemoval(corrected_trace)
                 baseline_corrected = baseline_corrected.ZhangFit(lambda_= lambda_window)
             if config.analysis_params.correction_method == "rolling_median":
+                lambda_window = int(config.analysis_params.lambda_window)
+
                 baseline_corrected = remove_bleaching(corrected_trace, 
                                                       baseline_correction='rolling_med', 
                                                       window = lambda_window)
@@ -336,14 +338,13 @@ def calculate_network_deltaF(F_file, config, overwrite = False):
         network_deltaF.append(normalized_F)
     network_deltaF = np.array(network_deltaF)
     network_deltaF = np.squeeze(network_deltaF)
-    if overwrite:
-        np.save(f"{savepath}/F_network_normalized.npy", network_deltaF, allow_pickle=True)
+
+    output_file = os.path.join(savepath, 'F_network_normalized.npy')
+    if overwrite or not os.path.exists(output_file):
+        np.save(output_file, network_deltaF, allow_pickle=True)
+        print(f"Normalized F traces saved as F_network_normalized.npy under {savepath}\n")
     else:
-        if not os.path.exists(f"{savepath}/network_deltaF.npy"):
-        
-            print(f"Normalized F traces saved as F_network_normalized.npy under {savepath}\n")
-        else:
-            print(f"deltaF files already exist for {F_file[len(config.general_settings.main_folder)+1:-21]}")
+        print(f"deltaF files already exist for {F_file[len(config.general_settings.main_folder)+1:-21]}")
 
     return network_deltaF
 
