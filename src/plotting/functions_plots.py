@@ -115,7 +115,7 @@ def histogram_total_estimated_spikes(prediction_deltaF_file, output_directory = 
 
 
 
-def plot_somatic_traces(suite2p_dict, list = None, plot_raw = False, plot_cascade = False, trace_offset = 5, y_scale = 1, iscell_true = True, save_fig = False):
+def plot_somatic_traces(suite2p_dict, list = None, plot_raw = False, plot_cascade = False, plot_network_norm = False, trace_offset = 5, y_scale = 1, iscell_true = True, save_fig = False):
     # Get boolean mask of valid cells
     if iscell_true:
         try:
@@ -131,6 +131,7 @@ def plot_somatic_traces(suite2p_dict, list = None, plot_raw = False, plot_cascad
     masked_dF = suite2p_dict['deltaF'][iscell_mask]
     masked_cascade = suite2p_dict['cascade_predictions'][iscell_mask]
     masked_F = suite2p_dict['F'][iscell_mask]
+    masked_net_F = suite2p_dict['network_deltaF'][iscell_mask]
     if list is None:
         lst = np.random.choice(masked_dF.shape[0], size=10, replace=False)
     else:
@@ -147,25 +148,31 @@ def plot_somatic_traces(suite2p_dict, list = None, plot_raw = False, plot_cascad
     
     frame_rate = 10
     time = np.arange(suite2p_dict["deltaF"].shape[1]) / frame_rate
-    if not plot_cascade and not plot_raw:
+    if not plot_cascade and not plot_raw and not plot_network_norm:
         plt_traces = masked_dF[lst]
         for i, trace in enumerate(plt_traces):
             offset_trace = trace + i * trace_offset
             ax.plot(time, offset_trace, color=colors[i % len(colors)], alpha=0.8)
         
-    if plot_cascade and not plot_raw:
+    if plot_cascade and not plot_raw and not plot_network_norm:
         plt_traces = masked_cascade[lst]
         for i, trace in enumerate(plt_traces):
             offset_trace = trace + i *trace_offset
             ax.plot(time, offset_trace, color=colors[i % len(colors)], alpha=0.8)
 
-    if plot_raw and not plot_cascade:
-        print("plotting(F_traces")
+    if plot_raw and not plot_cascade and not plot_network_norm:
+        print("plotting raw F traces")
         plt_traces = masked_F[lst]
         for i, trace in enumerate(plt_traces):
                     offset_trace = trace + i * trace_offset
                     ax.plot(time, offset_trace, color=colors[i % len(colors)], alpha=0.8)
-    if plot_cascade and plot_raw:
+    if plot_network_norm and not plot_cascade and not plot_raw:
+            print("plotting network normalized F traces")
+            plt_traces = masked_net_F[lst]
+            for i, trace in enumerate(plt_traces):
+                        offset_trace = trace + i * trace_offset
+                        ax.plot(time, offset_trace, color=colors[i % len(colors)], alpha=0.8)
+    if plot_cascade and plot_raw or plot_network_norm and plot_cascade or plot_network_norm and plot_raw:
         return print("Too many types of traces indexed")
     scalebar_time = 10  # seconds
     scalebar_df = y_scale     # dF/F units
@@ -178,12 +185,14 @@ def plot_somatic_traces(suite2p_dict, list = None, plot_raw = False, plot_cascad
 
     # Scale bar labels
     ax.text(x0 + scalebar_time / 2, y0 - 0.3, fr"{scalebar_time}$\ s$", ha='center', va='top')
-    if not plot_cascade and not plot_raw:
+    if not plot_cascade and not plot_raw and not plot_network_norm:
         ax.text(x0 + scalebar_time + 1, y0 + scalebar_df / 3,  fr"{scalebar_df} $\Delta F / F_0$", va='center', ha='left')
     if plot_cascade:
         ax.text(x0 + scalebar_time + 1, y0 + scalebar_df / 3,  f"{scalebar_df} CASCADE-predicted\nSpikes", va='center', ha='left')
     if plot_raw:
         ax.text(x0 + scalebar_time + 1, y0 + scalebar_df / 3,  f"{scalebar_df} Raw Fluorescence\nunits ($a.u.$)", va='center', ha='left')
+    if plot_network_norm:
+        ax.text(x0 + scalebar_time + 1, y0 + scalebar_df / 3,  f"{scalebar_df*100} Percent Change Norm.", va='center', ha='left')
 
     # --- Minimalist figure: no axes ---
     ax.axis('off')
@@ -193,7 +202,7 @@ def plot_somatic_traces(suite2p_dict, list = None, plot_raw = False, plot_cascad
         from pathlib import Path
         import os
         save_path = suite2p_dict['data_folder']
-        plot_name = suite2p_dict['data_folder'].split('\\')[0]
+        plot_name = suite2p_dict['Group']
 
         if iscell_true:
             plt.savefig(os.path.join(save_path, f'{plot_name}_neuron_dF_traces.svg'))
