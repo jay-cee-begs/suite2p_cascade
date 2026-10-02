@@ -60,7 +60,7 @@ def simple_raster_plot(suite2p_dict, color_map, save_path = None,frame_rate = No
     plt.rcParams['font.family'] = 'sans-serif'
     plt.rcParams['font.sans-serif'] = 'Arial'
     xmin = 0
-    xmax = len(suite2p_dict['F'].T)
+    xmax = suite2p_dict['F'].shape[1]
     if frame_rate is None:
         frame_rate = int(config.general_settings.frame_rate)
 
@@ -82,7 +82,10 @@ def simple_raster_plot(suite2p_dict, color_map, save_path = None,frame_rate = No
 
     # plot individual neural activity
     ax2 = plt.subplot(grid[2:, :20])
-    raster = ax2.imshow(spks[xmin:xmax], cmap=color_map, vmin=0, vmax=1, aspect="auto")
+    raster = ax2.imshow(spks[:, xmin:xmax], 
+                        cmap=color_map, 
+                        vmin=0, vmax=1, 
+                        aspect="auto")
                         #, interpolation="nearest")
     #LIMIT plot time
     # xmax = 119 * frame_rate  
@@ -90,7 +93,8 @@ def simple_raster_plot(suite2p_dict, color_map, save_path = None,frame_rate = No
     # ax2.set_xlim([0, xmax])
     # ax2.set_ylim([0,165])
     num_ticks = 8
-    tick_positions = np.linspace(xmin, xmax, num_ticks, dtype=int)
+    n_frames = spks.shape[1]
+    tick_positions = np.linspace(0, xmax-1, num_ticks, dtype=int)
     tick_labels = (tick_positions / frame_rate).astype(int)
     ax2.set_xticks(tick_positions)
     ax2.set_xticklabels(tick_labels)
