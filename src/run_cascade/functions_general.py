@@ -268,7 +268,7 @@ def calculate_deltaF(F_file, config):
             if config.analysis_params.correction_method == "airPLS":
                 lambda_window = int(config.analysis_params.lambda_window)
                 baseline_corrected = BaselineRemoval(corrected_trace)
-                baseline_corrected = baseline_corrected.ZhangFit(lambda_= lambda_window)
+                baseline_corrected = baseline_corrected.ZhangFit(lambda_= lambda_window, repitition=100)
             if config.analysis_params.correction_method == "rolling_median":
                 lambda_window = int(config.analysis_params.lambda_window)
 
@@ -320,11 +320,11 @@ def calculate_network_deltaF(F_file, config, overwrite = False):
         if config.analysis_params.correction_method in ['airPLS', 'rolling_median']:
             
             if config.analysis_params.correction_method == "airPLS":
-                lambda_window = config.analysis_params.lambda_window
+                lambda_window = int(config.analysis_params.lambda_window)
                 baseline_corrected = BaselineRemoval(corrected_trace)
-                corrected_trace = baseline_corrected.ZhangFit(lambda_= lambda_window)
+                corrected_trace = baseline_corrected.ZhangFit(lambda_= lambda_window,repitition=100)
             if config.analysis_params.correction_method == "rolling_median":
-                lambda_window = config.analysis_params.lambda_window
+                lambda_window = int(config.analysis_params.lambda_window)
 
                 baseline_corrected = remove_bleaching(corrected_trace, 
                                                       baseline_correction='rolling_med', 
