@@ -332,12 +332,13 @@ def df_from_suite2p_dict(suite2p_dict, config): ## creates df structure for sing
     activity_threshold = config.analysis_params.cascade_activity_threshold
     
     activity_mask = []
-    for spike_total in estimated_spike_total:
-        activity_mask.append(spike_total >= activity_threshold)
+    for trace in masked_cascade_prediction:
+        activity_mask.append(trace.max() >= activity_threshold)
    
     df = pd.DataFrame({
                        "Baseline_F": F_baseline,
                        "EstimatedSpikes": estimated_spike_total,
+                       'MaxPrediction': suite2p_dict['cascade_predictions'].max(axis = 1),
                        "ActiveROI": estimated_spike_total > 0.1,
                        "SD_Estimated_Spks":basic_cell_stats[1],
                        "cv_Estimated_Spks":basic_cell_stats[2],
@@ -941,7 +942,7 @@ def create_experiment_overview(config, use_iscell):
             unpacked_sync_event_stats = net_analysis.unpack_sync_event_stats(suite2p_dict, synchrony)
 
     
-            active_neurons = sum(np.nansum(row) > 0.1 for row in array)
+            active_neurons = sum(np.nanmax(row) > 0.05 for row in array)
         # Separate and average the baseline fluorescence
             inactive_baseline = [cell for row, cell in zip(array, baseline_F) if np.nansum(row) < 0.1]
             active_baseline = [cell for row, cell in zip(array, baseline_F) if np.nansum(row) >= 0.1]
