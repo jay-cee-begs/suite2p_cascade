@@ -174,22 +174,22 @@ def cascade_this(deltaF_file, config):
         spike_prob[chunks[part_array],:] = cascade.predict(cascade_model_name, traces[chunks[part_array],:])
 
   ## The dF/F traces are shown in blue, the inferred spike probability is plotted in orange (shifted downwards by 1 for better visibility).
-    print(f"\ncurrent file: {deltaF_file}")
-    neuron_indices = np.random.randint(traces.shape[0], size=nb_neurons)
-    time_axis = plot_dFF_traces(traces, neuron_indices, frame_rate, spike_prob, y_range=(-1.5, 3))
-    # plt.show()
+    # print(f"\ncurrent file: {deltaF_file}")
+    # neuron_indices = np.random.randint(traces.shape[0], size=nb_neurons)
+    # time_axis = plot_dFF_traces(traces, neuron_indices, frame_rate, spike_prob, y_range=(-1.5, 3))
+    # # plt.show()
 
 
-    ## Plots randomly drawn excerpts from the ground truth, re-sampled at the same frame rate and noise level as a typical recording of the test dataset.
-    ## The resampled dF/F signal is shown in blue. The true spike rate convolved with a smoothing kernel is shown in orange (shifted downward by 1 for better visibility).
-    ## This allows to directly compare **data quality** and **possible artifacts** of training dataset (ground truth) and test dataset (your calcium imaging data).
+    # ## Plots randomly drawn excerpts from the ground truth, re-sampled at the same frame rate and noise level as a typical recording of the test dataset.
+    # ## The resampled dF/F signal is shown in blue. The true spike rate convolved with a smoothing kernel is shown in orange (shifted downward by 1 for better visibility).
+    # ## This allows to directly compare **data quality** and **possible artifacts** of training dataset (ground truth) and test dataset (your calcium imaging data).
 
-    ## Repeatedly execute this cell to plot new examples.
+    # ## Repeatedly execute this cell to plot new examples.
 
-    median_noise = np.round(np.maximum(2,np.median(noise_levels)))
-    nb_traces = 16
-    duration = max(time_axis) - 64/config.general_settings.frame_rate # seconds
-    plot_noise_matched_ground_truth(config.analysis_params.model_name, median_noise, config.general_settings.frame_rate, nb_traces, duration, config.general_settings.cascade_path)
+    # median_noise = np.round(np.maximum(2,np.median(noise_levels)))
+    # nb_traces = 16
+    # duration = max(time_axis) - 64/config.general_settings.frame_rate # seconds
+    # plot_noise_matched_ground_truth(config.analysis_params.model_name, median_noise, config.general_settings.frame_rate, nb_traces, duration, config.general_settings.cascade_path)
     # plt.show()
 
     #@markdown By default saves as variable **`spike_prob`** both to a *.mat-file and a *.npy-file. You can uncomment the file format that you do not need or leave it as it is.
