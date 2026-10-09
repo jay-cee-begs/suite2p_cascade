@@ -256,42 +256,53 @@ def calculate_deltaF(F_file, config):
             ZhangFit / airPLS automated baseline correction
             deltaF is saved into the suite2p output folder generated from suite2p ROI detection.
     """
-    from BaselineRemoval import BaselineRemoval
+    # from BaselineRemoval import BaselineRemoval
     savepath = rf"{F_file}".replace("\\F.npy","") ## make savepath original folder, indicates where deltaF.npy is saved
     F = np.load(rf"{F_file}", allow_pickle=True)
     Fneu = np.load(rf"{F_file[:-4]}"+"neu.npy", allow_pickle=True)
     deltaF= []
     for f, fneu in zip(F, Fneu):
         corrected_trace = f - (0.7*fneu) ## neuropil correction
-        if config.analysis_params.correction_method in ['airPLS', 'rolling_median']:
-            
-            if config.analysis_params.correction_method == "airPLS":
-                lambda_window = int(config.analysis_params.lambda_window)
-                baseline_corrected = BaselineRemoval(corrected_trace)
-                baseline_corrected = baseline_corrected.ZhangFit(lambda_= lambda_window, repitition=100)
-            if config.analysis_params.correction_method == "rolling_median":
-                lambda_window = int(config.analysis_params.lambda_window)
-
-                baseline_corrected = remove_bleaching(corrected_trace, 
-                                                      baseline_correction='rolling_med', 
-                                                      window = lambda_window)
+        if config.analysis_params.baseline_correction:
+            if config.analysis_params.correction_method in ['airPLS', 'rolling_median']:
                 
-        #Determine baseline F0 value
-        trace_median = np.median(corrected_trace)
-        trace_mad = np.median(np.abs(corrected_trace - trace_median))
-        norm_sigma = 1.4826*trace_mad
-        event_threshold = config.analysis_params.MAD_baseline_filter_threshold
-        baseline_mask = np.abs(corrected_trace - trace_median) < event_threshold * norm_sigma
-        F0 = np.median(corrected_trace[baseline_mask])
+                if config.analysis_params.correction_method == "airPLS":
+                    lambda_window = int(config.analysis_params.lambda_window)
+                    baseline_corrected = BaselineRemoval(corrected_trace)
+                    baseline_corrected = baseline_corrected.ZhangFit(lambda_= lambda_window, repitition=100)
+                if config.analysis_params.correction_method == "rolling_median":
+                    lambda_window = int(config.analysis_params.lambda_window)
 
-        if config.analysis_params.correction_method in ['airPLS','rolling_median']:
+                    baseline_corrected = remove_bleaching(corrected_trace, 
+                                                        baseline_correction='rolling_med', 
+                                                        window = None)
+                    
+            #Determine baseline F0 value
+            trace_median = np.median(corrected_trace)
+            trace_mad = np.median(np.abs(corrected_trace - trace_median))
+            norm_sigma = 1.4826*trace_mad
+            event_threshold = config.analysis_params.MAD_baseline_filter_threshold
+            baseline_mask = np.abs(corrected_trace - trace_median) < event_threshold * norm_sigma
+            F0 = np.median(corrected_trace[baseline_mask])
+
+            if config.analysis_params.correction_method in ['airPLS','rolling_median']:
+                    
+                #calculate dF / F0
+                normalized_F = (F - F0)/F0
+            else: 
+                normalized_F = (corrected_trace-F0) / F0        
+                deltaF.append(normalized_F)
+        else:
+                corrected_trace = remove_bleaching(corrected_trace, baseline_correction="rolling_min", window = None)
+                trace_median = np.median(corrected_trace)
+                trace_mad = np.median(np.abs(corrected_trace - trace_median))
+                norm_sigma = 1.4826*trace_mad
+                event_threshold = config.analysis_params.MAD_baseline_filter_threshold
+                baseline_mask = np.abs(corrected_trace - trace_median) < event_threshold * norm_sigma
+                F0 = np.median(corrected_trace[baseline_mask])
+                normalized_F = (corrected_trace-F0) / F0        
+                deltaF.append(normalized_F)
                 
-            #calculate dF / F0
-            normalized_F = (baseline_corrected)/F0
-        else: 
-            normalized_F = (corrected_trace-F0) / F0        
-        deltaF.append(normalized_F)
-        
     deltaF = np.array(deltaF)
     deltaF = np.squeeze(deltaF)
     if not os.path.exists(f"{savepath}/deltaF.npy"):
@@ -317,20 +328,23 @@ def calculate_network_deltaF(F_file, config, overwrite = False):
     network_deltaF= []
     for f, fneu in zip(F, Fneu):
         corrected_trace = f - (0.7*fneu) ## neuropil correction
-        if config.analysis_params.correction_method in ['airPLS', 'rolling_median']:
-            
-            if config.analysis_params.correction_method == "airPLS":
-                lambda_window = int(config.analysis_params.lambda_window)
-                baseline_corrected = BaselineRemoval(corrected_trace)
-                corrected_trace = baseline_corrected.ZhangFit(lambda_= lambda_window,repitition=100)
-            if config.analysis_params.correction_method == "rolling_median":
-                lambda_window = int(config.analysis_params.lambda_window)
-
-                baseline_corrected = remove_bleaching(corrected_trace, 
-                                                      baseline_correction='rolling_med', 
-                                                      window = lambda_window)
-                corrected_trace = baseline_corrected
+        if config.analysis_params.baseline_correction:
+            if config.analysis_params.correction_method in ['airPLS', 'rolling_median']:
                 
+                if config.analysis_params.correction_method == "airPLS":
+                    lambda_window = int(config.analysis_params.lambda_window)
+                    baseline_corrected = BaselineRemoval(corrected_trace)
+                    corrected_trace = baseline_corrected.ZhangFit(lambda_= lambda_window,repitition=100)
+                if config.analysis_params.correction_method == "rolling_median":
+                    lambda_window = int(config.analysis_params.lambda_window)
+
+                    baseline_corrected = remove_bleaching(corrected_trace, 
+                                                        baseline_correction='rolling_med', 
+                                                        window = None)
+                    corrected_trace = baseline_corrected
+        else:
+            bleach_corrected = remove_bleaching(corrected_trace, baseline_correction='rolling_min', window=None)
+            corrected_trace = bleach_corrected
         #Determine baseline F0 value
         normalized_F = (corrected_trace - corrected_trace.min()) / (corrected_trace.max() - corrected_trace.min())
         
@@ -425,6 +439,26 @@ def rolling_med(input_series, window_size):
     m = r.median()
     return m
 
+def rolling_min(input_series, window_size):
+    """
+    Calculate rolling minimum value (input_series.rolling()) over different windows of the input trace.
+
+    Args:
+    -----------
+        input_series: 1D NumPy array
+            raw_trace / F.npy / deltaF.npy
+        window_size: int
+            Size of window to measure with each iteration
+
+    Returns:
+    -------- 
+        m: int / float
+            Smallest local minimum across all windows
+    """
+    r = input_series.rolling(window_size, min_periods=1)
+    m = r.min()
+    return m
+
 def remove_bleaching(input_trace, baseline_correction = "rolling_med", window = None):
     """
     Basic first-order polynomial function to remove bleaching from single ROI calcium imaging trace
@@ -446,11 +480,15 @@ def remove_bleaching(input_trace, baseline_correction = "rolling_med", window = 
             poly1d fits a 1 dimensional polynomial to the adjusted trace which is subtraced from the raw trace (input_Trace)
 
     """
-    possible_corrections = ['rolling_med']
+    possible_corrections = ['rolling_med', 'rolling_min']
     if baseline_correction not in possible_corrections:
         print(f"Please enter a valid correction method: {possible_corrections}")
         return
-    
+    if baseline_correction == "rolling_min":
+        if window is not None:
+            corr_trace = rolling_min(pd.Series(input_trace), window_size = int(window))
+        else:
+            corr_trace = rolling_min(pd.Series(input_trace), window_size = int(len(input_trace)/10))
     
     if baseline_correction == "rolling_med":
         if window is not None:
