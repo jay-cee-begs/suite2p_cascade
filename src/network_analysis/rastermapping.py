@@ -68,7 +68,7 @@ def simple_raster_plot(suite2p_dict, color_map, save_path = None,frame_rate = No
     fig = plt.figure(figsize=(16,8), dpi=200)
     grid = plt.GridSpec(10, 40, figure=fig, wspace = 0.1, hspace = 0.4)
     
-
+    random_spks = np.random.permutation(len(spks))
     # plot total estimated spikes from total_activity
     ax1 = plt.subplot(grid[1, :20])
     ax1.plot(total_activity[xmin:xmax], color=0.5*np.ones(3))
@@ -79,10 +79,10 @@ def simple_raster_plot(suite2p_dict, color_map, save_path = None,frame_rate = No
     ax1.spines['right'].set_visible(False)
     ax1.spines['bottom'].set_visible(False)
     ax1.set_title("Total Estimated Spikes per Frame")
-
+    
     # plot individual neural activity
     ax2 = plt.subplot(grid[2:, :20])
-    raster = ax2.imshow(spks[:, xmin:xmax], 
+    raster = ax2.imshow(spks[random_spks, xmin:xmax], 
                         cmap=color_map, 
                         vmin=0, vmax=1, 
                         aspect="auto")
