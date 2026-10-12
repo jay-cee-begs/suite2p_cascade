@@ -364,7 +364,7 @@ def calculate_network_deltaF(F_file, config, overwrite = False):
 
 
 ##TODO cut this function
-def calculate_deltaF_airPLS(F_file, config, event_threshold = None, lambda_window = None):
+def calculate_deltaF_airPLS(F_file, config, event_threshold = None, lambda_window = None, save = False):
     """
     Convert raw fluorescence (F.npy) into change in fluorescence compared to baseline (dF / F0).
 
@@ -411,7 +411,65 @@ def calculate_deltaF_airPLS(F_file, config, event_threshold = None, lambda_windo
         
     deltaF = np.array(deltaF)
     deltaF = np.squeeze(deltaF)
-    if not os.path.exists(f"{savepath}/deltaF.npy"):
+    if not os.path.exists(f"{savepath}/deltaF.npy") and save:
+        np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
+        print(f"delta F traces saved as deltaF.npy under {savepath}\n")
+    else:
+        print(f"deltaF files already exist for {F_file[len(config.general_settings.main_folder)+1:-21]}")
+
+    return deltaF
+
+def calculate_deltaF_rolling_med(F_file, config, event_threshold = 2, window_size = None, save = False):
+    """
+    Convert raw fluorescence (F.npy) into change in fluorescence compared to baseline (dF / F0).
+
+    Args:
+    -----------
+        F_file : str
+            Path to NumPy array containing raw flourescence (F.npy) trace from suite2p.
+        
+        event_threshold: float
+            Threshold (in MAD units) to mask obvious events by multiplying threshold by standard deviation. 
+            The Default value is 3; smaller values will limit the number of baseline points used for correction.
+
+    Returns:
+    --------
+        deltaF : 1D numpy array
+            dF/F0 normalized fluorescence
+            MAD baseline estimated
+            ZhangFit / airPLS automated baseline correction
+            deltaF is saved into the suite2p output folder generated from suite2p ROI detection.
+    """
+
+    savepath = rf"{F_file}".replace("\\F.npy","") ## make savepath original folder, indicates where deltaF.npy is saved
+    F = np.load(rf"{F_file}", allow_pickle=True)
+    Fneu = np.load(rf"{F_file[:-4]}"+"neu.npy", allow_pickle=True)
+    deltaF= []
+    for f, fneu in zip(F, Fneu):
+        corrected_trace = f - (0.7*fneu) ## neuropil correction
+
+        #Remove bleaching to generate change in Fluorescence
+        
+        baseline_corrected = remove_bleaching(corrected_trace, 
+                                            baseline_correction='rolling_med', 
+                                            window = window_size)
+        
+
+        #Determine baseline F0 value
+        trace_median = np.median(corrected_trace)
+        trace_mad = np.median(np.abs(corrected_trace - trace_median))
+        norm_sigma = 1.4826*trace_mad
+        baseline_mask = np.abs(corrected_trace - trace_median) < event_threshold * norm_sigma
+        F0 = np.median(corrected_trace[baseline_mask])
+
+        #calculate dF / F0
+        normalized_F = (baseline_corrected - F0)/F0
+        
+        deltaF.append(normalized_F)
+        
+    deltaF = np.array(deltaF)
+    deltaF = np.squeeze(deltaF)
+    if not os.path.exists(f"{savepath}/deltaF.npy") and save:
         np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
         print(f"delta F traces saved as deltaF.npy under {savepath}\n")
     else:
