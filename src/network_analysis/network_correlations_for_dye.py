@@ -114,7 +114,7 @@ def calculate_normalized_deltaF(F, Fneu, baseline_correction = None, lambda_wind
                     if lambda_window is not None:
                         deltaF = fun_g.remove_bleaching(corrected_trace, baseline_correction="rolling_med", window = lambda_window)
                     else:
-                        deltaF = fun_g.remove_bleaching(corrected_trace, baseline_correction='rolling_med',window = 250)
+                        deltaF = fun_g.remove_bleaching(corrected_trace, baseline_correction='rolling_min',window = 250)
     deltaF = np.array(deltaF)
     deltaF = np.squeeze(deltaF)
 
@@ -173,13 +173,13 @@ def process_suite2p_dict(d):
     peak_info = {}
     norm_F = calculate_normalized_deltaF(F, Fneu, by_type="Cell", event_threshold=2)
     for n in range(n_rois):
-        trace = deltaF[n]
+        trace = norm_F[n]
         cascade_analysis = np.nansum(cascade[n])
         cascade_max = cascade[n].max()
         sigma, baseline = estimate_single_trace_baseline_noise_mad(trace, 2)
         peaks, properties = find_peaks(trace, height = np.median(baseline) + 4*sigma, distance = 3,
                                        width = (2,50))
-        if len(peaks) > 0 and cascade_analysis > 0.1 and cascade_max > 0.01 and n not in  idx_fneu_over_f:
+        if len(peaks) > 0 and cascade_analysis > 0.1 and cascade_max > 0.05 and n not in  idx_fneu_over_f:
             
             idx_active.append(n)
         peak_info[n] = {'peaks': peaks, 'propoerties': properties}
@@ -192,8 +192,12 @@ def process_suite2p_dict(d):
     template_score = []
     active_traces = deltaF[idx_active]
     global_signal = np.mean(active_traces,axis = 0)
-    corr_glob = BaselineRemoval(global_signal)
-    corr_glob = corr_glob.ZhangFit(lambda_ = 100)
+    try:
+            
+        corr_glob = BaselineRemoval(global_signal)
+        corr_glob = corr_glob.ZhangFit(lambda_ = 100)
+    except ValueError:
+        corr_glob = global_signal
     global_signal = corr_glob
     active_corr = {}
     for i, id in enumerate(idx_active):
