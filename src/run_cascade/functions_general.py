@@ -286,10 +286,6 @@ def calculate_deltaF(F_file, config):
             F0 = np.median(corrected_trace[baseline_mask])
 
             if config.analysis_params.correction_method in ['airPLS','rolling_median']:
-                    
-                #calculate dF / F0
-                normalized_F = (F - F0)/F0
-            else: 
                 normalized_F = (corrected_trace-F0) / F0        
                 deltaF.append(normalized_F)
         else:
