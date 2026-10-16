@@ -480,7 +480,7 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
             sample_Fneu = Fneu[n]
 
             med_pixel_weight = np.median(stat.iloc[n]['lam'])
-            if sample_F.min() > sample_Fneu.min():
+            if sample_F.min() > sample_Fneu.min() or sample_F.max < sample_F_neu.max():
                 nid2idx[n] = len(scatters["x"]) # Assign new idx
             else:
                 nid2idx_rejected[n] = len(scatters["x"])
@@ -512,26 +512,69 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
             scatters['x'] += [xext]
             scatters['y'] += [yext]
             pixel2neuron[ypix, xpix] = n
+
     elif dye_classifier is not None:
-        dye_classifications = dye_classifier
+
+        # Cell inclusion is controlled exclusively by Suite2p.
+        iscell_mask = iscell[:, 0] == 1
+
+        neuron_ids = set(
+            dye_classifier["idx_neuro_corr"]
+        )
+        glia_ids = set(
+            dye_classifier["idx_glia_corr"]
+        )
+
+        # Ensure that the saved classifier covers exactly the
+        # Suite2p-approved population.
+        suite2p_ids = set(np.flatnonzero(iscell_mask))
+
+        if neuron_ids & glia_ids:
+            raise ValueError(
+                "Some ROIs are classified as both neuron and glia."
+            )
+
+        if neuron_ids | glia_ids != suite2p_ids:
+            raise ValueError(
+                "Neuron/glia classifier does not cover exactly "
+                "the Suite2p iscell population. Regenerate "
+                "dye_classifier.npy using the updated classifier."
+            )
+
         for n in range(stat.shape[0]):
-            if n in dye_classifications['idx_active']:
-                nid2idx[n] = len(scatters['x'])
-                if n in dye_classifications['idx_neuro_corr']:
-                    nid2idx_neuron[n] = len(scatters['x'])
-                if n in dye_classifications['idx_glia_corr']:
-                    nid2idx_glia[n] = len(scatters['x'])
+
+            if iscell_mask[n]:
+                # Every Suite2p cell is accepted for visualization.
+                nid2idx[n] = len(scatters["x"])
+
+                if n in neuron_ids:
+                    nid2idx_neuron[n] = len(scatters["x"])
+
+                elif n in glia_ids:
+                    nid2idx_glia[n] = len(scatters["x"])
+
             else:
-                nid2idx_rejected[n] = len(scatters['x'])
-                
-            ypix = stat.iloc[n]['ypix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
-            xpix = stat.iloc[n]['xpix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
-            valid_idx = (xpix>=0) & (xpix < frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
+                nid2idx_rejected[n] = len(scatters["x"])
+
+            # Keep the existing coordinate/boundary logic here.
+            ypix = stat.iloc[n]["ypix"].flatten() - 1
+            xpix = stat.iloc[n]["xpix"].flatten() - 1
+
+            valid_idx = (
+                (xpix >= 0)
+                & (xpix < frame_shape[1])
+                & (ypix >= 0)
+                & (ypix < frame_shape[0])
+            )
+
             ypix = ypix[valid_idx]
             xpix = xpix[valid_idx]
+
             yext, xext = boundary(ypix, xpix)
-            scatters['x'] += [xext]
-            scatters['y'] += [yext]
+
+            scatters["x"] += [xext]
+            scatters["y"] += [yext]
+
             pixel2neuron[ypix, xpix] = n
 
     return scatters, nid2idx, nid2idx_rejected, pixel2neuron, nid2idx_neuron, nid2idx_glia
@@ -590,20 +633,32 @@ def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
                             
                      sc = ax1.scatter(scatters["x"][idx], scatters['y'][idx], color = color, 
                                       marker='.', s=1)
-             if len(nid2idx_neuron) is not 0:
-                 print("Using dye-based classifier")
-                 print("Neurons count:", len(nid2idx_neuron))
-                 plotDict(nid2idx_neuron, 'cyan')
-                 ax1.set_title(f"{len(nid2idx_neuron)} neurons used (cyan) out of {len(nid2idx_neuron)+len(nid2idx_glia)} total cells detected") 
-                 print("Glia count:", len(nid2idx_glia))
-                 plotDict(nid2idx_glia, 'yellow')
+             if len(nid2idx_neuron) > 0 or len(nid2idx_glia) > 0:
+ 
+                 # Cyan = neurons
+                 plotDict(nid2idx_neuron, "cyan")
+
+                # Yellow = glia
+                 plotDict(nid2idx_glia, "yellow")
+
+                 n_neurons = len(nid2idx_neuron)
+                 n_glia = len(nid2idx_glia)
+                 n_cells = len(set(nid2idx_neuron) | set(nid2idx_glia))
+
+                 ax1.set_title(
+                     f"{n_neurons} neurons (cyan), "
+                     f"{n_glia} glia (yellow), "
+                     f"{n_cells} total Suite2p cells"
+                 )
+
              else:
-                print("Neurons count:", len(nid2idx))
-                
-                plotDict(nid2idx, 'cyan')
-             #TODO make this editable by the user
-            #  plotDict(nid2idx_rejected, 'y')
-                ax1.set_title(f"{len(nid2idx)} neurons used (cyan) out of {len(nid2idx)+len(nid2idx_rejected)} total neurons detected") 
+                # Fallback for plots without a neuron/glia classifier.
+                 plotDict(nid2idx, "cyan")
+
+                 ax1.set_title(
+                     f"{len(nid2idx)} accepted Suite2p cells"
+                 )
+
              if save_path:
                 plt.savefig(save_path)
                 plt.close(fig)
