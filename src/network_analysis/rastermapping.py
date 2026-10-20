@@ -372,8 +372,8 @@ def PCA_raster(
     fig.tight_layout()
 
     if save_path is not None:
-        fig.savefig(os.path.join(save_path, f'{os.path.basename(suite2p_dict['data_folder'])}_PCA_raster_summary.svg'), bbox_inches="tight", dpi=300)
-        fig.savefig(os.path.join(save_path, f'{os.path.basename(suite2p_dict['data_folder'])}_PCA_raster_summary.png'), bbox_inches="tight", dpi=300)
+        fig.savefig(os.path.join(save_path, f'{os.path.basename(suite2p_dict["data_folder"])}_PCA_raster_summary.svg'), bbox_inches="tight", dpi=300)
+        fig.savefig(os.path.join(save_path, f'{os.path.basename(suite2p_dict["data_folder"])}_PCA_raster_summary.png'), bbox_inches="tight", dpi=300)
 
     if show_plot:
         plt.show()
