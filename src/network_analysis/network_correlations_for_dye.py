@@ -257,6 +257,7 @@ def process_suite2p_dict(d):
         glia_corr.append(np.nan)
 
     # Confirm that every Suite2p-classified cell has exactly one label.
+    print(d['Group'])
     assert set(idx_neuro_corr).isdisjoint(set(idx_glia_corr))
     assert set(idx_neuro_corr) | set(idx_glia_corr) == set(iscell_ids)
 
@@ -284,3 +285,26 @@ def process_suite2p_dict(d):
     }
     return results, active_corr, global_signal
 
+def analyze_with_dyes(config_file):
+    from plotting import output_plots
+    from batch_gui import config_loader
+    c = config_loader.load_json_config_file(config_file)
+    from run_cascade import functions_data_transformation as fdt 
+    import numpy as np
+    import os
+    from network_analysis import network_correlations_for_dye as ncd
+    from network_analysis import rastermapping
+    folders = fdt.get_file_name_list(c.general_settings.main_folder, 'samples')
+    for f in folders:
+        data = fdt.load_local_suite2p_output(f)
+        global_trace = np.mean(data['network_deltaF'], axis = 0)
+        trace_correlations = []
+        results, active_corr, global_signal =process_suite2p_dict(data)
+        
+        np.save(os.path.join(data['data_folder'], *fdt.SUITE2P_STRUCTURE['dye_classifier']), results)
+        np.save(os.path.join(data['data_folder'], 'suite2p', 'plane0', 'Global_Trace.npy'), global_signal)
+
+    output_plots.main(config_file=config_file)
+    for f in folders:
+        data = fdt.load_local_suite2p_output(f)
+        rastermapping.simple_raster_plot(data, 'binary', save_path = data['data_folder'],show_plot = True, frame_rate = 10)
