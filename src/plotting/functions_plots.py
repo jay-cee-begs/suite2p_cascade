@@ -480,7 +480,7 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
             sample_Fneu = Fneu[n]
 
             med_pixel_weight = np.median(stat.iloc[n]['lam'])
-            if sample_F.min() > sample_Fneu.min() or sample_F.max < sample_F_neu.max():
+            if sample_F.min() > sample_Fneu.min() or sample_F.max < sample_Fneu.max():
                 nid2idx[n] = len(scatters["x"]) # Assign new idx
             else:
                 nid2idx_rejected[n] = len(scatters["x"])
