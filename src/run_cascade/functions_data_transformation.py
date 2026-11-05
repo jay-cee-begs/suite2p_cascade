@@ -954,35 +954,70 @@ def create_experiment_overview(config, use_iscell):
             avg_inactive_cell = np.nanmean(inactive_baseline)
             avg_active_cell = np.nanmean(active_baseline)
             total_estimated_spikes = round(sum(estimated_spikes), 2)
-            np.std
-            dictionary_list.append({
-                'File_Name': str(suite2p_dict['file_name']), 
-                'Neuron_Count': neuron_count,
-                'Active_Neuron_Count': active_neurons, 
-                'Active_Neuron_Proportion': round(active_neurons/neuron_count * 100, 2),
-                'Active_Neuron_F0': avg_active_cell,
-                "Inactive_Neuron_F0": avg_inactive_cell,
-                'Total_Estimated_Spikes': total_estimated_spikes, 
-                "Total_Estimated_Spikes_proportion_scaled": total_estimated_spikes / (active_neurons/neuron_count),
-                'Avg_Estimated_Spikes_per_cell': total_estimated_spikes / active_neurons,
-                "SC_Avg_Instantaneous_Firing_Rate(Hz)": avg_cell_instantaneous_spike_rate,
-                "Instantaneous_Spikes_CV": cell_cvs,
-                "Total_Network_Bursts": len(synchrony['event_stats']),
-                "Avg_Time_of_Burst": unpacked_sync_event_stats['duration_frames'].mean(),
-                "Avg_Neuronal_Recruitment": unpacked_sync_event_stats['max_neurons_recruited'].mean(),
-                "Pct_Neuronal_Recruitment_v_total": unpacked_sync_event_stats['max_neurons_recruited'].mean() / neuron_count,
-                "Pct_Neuronal_Recruitment_v_active_only": unpacked_sync_event_stats['max_neurons_recruited'].mean() / active_neurons,
-                "Pct_SD_Neuronal_Recruitment_v_total": np.std(unpacked_sync_event_stats['max_neurons_recruited'] / neuron_count),
-                "Pct_SD_Neuronal_Recruitment_v_active_only": np.std(unpacked_sync_event_stats['max_neurons_recruited'] / active_neurons),
-                "Avg_Peak_Sync_Amplitude": unpacked_sync_event_stats['peak_amplitude'].mean(),
-                "Group": suite2p_dict['Group'],
-                'Data_Folder': suite2p_dict['data_folder'],
-                "Replicate_No.": suite2p_dict['sample']
-            })
-    
+            try:
+                dye_classifier = load_npy_dict(os.path.join(suite2p_dict['data_folder'], 'suite2p','plane0','dye_classifier.npy'))
+                
+                suite2p_img = fun_plot.getImg(suite2p_dict['ops'])
+                scatters, nid2idx, nid2idx_rejected, pixel2neuron, nid2idx_neuron, nid2idx_glia =fun_plot.getStats(suite2p_dict, frame_shape=suite2p_img.shape,  output_df=None, config = config, use_iscell=True)
+                dictionary_list.append({
+                                'File_Name': str(suite2p_dict['file_name']), 
+                                'Cell_Count': neuron_count,
+                                'Active_Cell_Count': active_neurons,
+                                'Neuron_Count': len(nid2idx_neuron), 
+                                'Glia_Count': len(nid2idx_glia), 
+                                'Neuron_Proportion': round(len(nid2idx_neuron)/neuron_count * 100, 2),
+                                'Glia_Proportion': round(len(nid2idx_glia)/neuron_count * 100, 2),
+                                'Active_Neuron_F0': avg_active_cell,
+                                "Inactive_Neuron_F0": avg_inactive_cell,
+                                'Total_Estimated_Spikes': total_estimated_spikes, 
+                                "Total_Estimated_Spikes_proportion_scaled": total_estimated_spikes / (active_neurons/neuron_count),
+                                'Avg_Estimated_Spikes_per_cell': total_estimated_spikes / active_neurons,
+                                "SC_Avg_Instantaneous_Firing_Rate(Hz)": avg_cell_instantaneous_spike_rate,
+                                "Instantaneous_Spikes_CV": cell_cvs,
+                                "Total_Network_Bursts": len(synchrony['event_stats']),
+                                "Avg_Time_of_Burst": unpacked_sync_event_stats['duration_frames'].mean(),
+                                "Avg_Neuronal_Recruitment": unpacked_sync_event_stats['max_neurons_recruited'].mean(),
+                                "Pct_Neuronal_Recruitment_v_total": unpacked_sync_event_stats['max_neurons_recruited'].mean() / neuron_count,
+                                "Pct_Neuronal_Recruitment_v_active_only": unpacked_sync_event_stats['max_neurons_recruited'].mean() / active_neurons,
+                                "Pct_SD_Neuronal_Recruitment_v_total": np.std(unpacked_sync_event_stats['max_neurons_recruited'] / neuron_count),
+                                "Pct_SD_Neuronal_Recruitment_v_active_only": np.std(unpacked_sync_event_stats['max_neurons_recruited'] / active_neurons),
+                                "Avg_Peak_Sync_Amplitude": unpacked_sync_event_stats['peak_amplitude'].mean(),
+                                "Group": suite2p_dict['Group'],
+                                'Data_Folder': suite2p_dict['data_folder'],
+                                "Replicate_No.": suite2p_dict['sample']
+                            })
+                    
+            except FileNotFoundError:
+                print("Error with dye based image processing")
+                dictionary_list.append({
+                    'File_Name': str(suite2p_dict['file_name']), 
+                    'Neuron_Count': neuron_count,
+                    'Active_Neuron_Count': active_neurons, 
+                    'Active_Neuron_Proportion': round(active_neurons/neuron_count * 100, 2),
+                    'Active_Neuron_F0': avg_active_cell,
+                    "Inactive_Neuron_F0": avg_inactive_cell,
+                    'Total_Estimated_Spikes': total_estimated_spikes, 
+                    "Total_Estimated_Spikes_proportion_scaled": total_estimated_spikes / (active_neurons/neuron_count),
+                    'Avg_Estimated_Spikes_per_cell': total_estimated_spikes / active_neurons,
+                    "SC_Avg_Instantaneous_Firing_Rate(Hz)": avg_cell_instantaneous_spike_rate,
+                    "Instantaneous_Spikes_CV": cell_cvs,
+                    "Total_Network_Bursts": len(synchrony['event_stats']),
+                    "Avg_Time_of_Burst": unpacked_sync_event_stats['duration_frames'].mean(),
+                    "Avg_Neuronal_Recruitment": unpacked_sync_event_stats['max_neurons_recruited'].mean(),
+                    "Pct_Neuronal_Recruitment_v_total": unpacked_sync_event_stats['max_neurons_recruited'].mean() / neuron_count,
+                    "Pct_Neuronal_Recruitment_v_active_only": unpacked_sync_event_stats['max_neurons_recruited'].mean() / active_neurons,
+                    "Pct_SD_Neuronal_Recruitment_v_total": np.std(unpacked_sync_event_stats['max_neurons_recruited'] / neuron_count),
+                    "Pct_SD_Neuronal_Recruitment_v_active_only": np.std(unpacked_sync_event_stats['max_neurons_recruited'] / active_neurons),
+                    "Avg_Peak_Sync_Amplitude": unpacked_sync_event_stats['peak_amplitude'].mean(),
+                    "Group": suite2p_dict['Group'],
+                    'Data_Folder': suite2p_dict['data_folder'],
+                    "Replicate_No.": suite2p_dict['sample']
+                })
+        
     # Create DataFrame from dictionary list
     df = pd.DataFrame(dictionary_list)
-
+    experiment_folder = str(config.general_settings.main_folder).split('\\')[-1]
+    df.to_csv(os.path.join(main_folder, f'{experiment_folder}_FULL_experiment_summary.csv'), index=False)
     # unique_prefixes = get_unique_prefixes(df['Group'])
 
     # Create a dynamic categorization function
@@ -1013,27 +1048,27 @@ def create_experiment_overview(config, use_iscell):
     # Ensure 'N/A' categories are handled
     # df = df[df['Time_Point'] != 'N/A']
     # Calculate summary statistics for each unique group
-    summary_stats = df.groupby(['Group']).agg({
-        'Neuron_Count': ['mean', 'std','median'],
-        'Active_Neuron_Count': ['mean', 'std','median'],
-        'Active_Neuron_Proportion': ['mean', 'std','median'],
-        'Active_Neuron_F0': ['mean', 'std','median'],
-        'Inactive_Neuron_F0': ['mean', 'std','median'],
-        'Total_Estimated_Spikes': ['mean', 'std','median'],
-        'Total_Estimated_Spikes_proportion_scaled': ['mean', 'std','median'],
-        'Avg_Estimated_Spikes_per_cell': ['mean', 'std','median'],
-        "SC_Avg_Instantaneous_Firing_Rate(Hz)": ['mean', 'std','median'],
-        "Instantaneous_Spikes_CV": ['mean', 'std','median'],
-        "Total_Network_Bursts": ['mean', 'std','median'],
-        "Avg_Time_of_Burst": ['mean', 'std','median'],
-        "Avg_Neuronal_Recruitment": ['mean', 'std','median'],
-        "Avg_Peak_Sync_Amplitude": ['mean', 'std','median']
-    })
-
+    if not os.path.exists(os.path.join(suite2p_dict['data_folder'], *SUITE2P_STRUCTURE['dye_classifier'])):
+        summary_stats = df.groupby(['Group']).agg({
+            'Neuron_Count': ['mean', 'std','median'],
+            'Active_Neuron_Count': ['mean', 'std','median'],
+            'Active_Neuron_Proportion': ['mean', 'std','median'],
+            'Active_Neuron_F0': ['mean', 'std','median'],
+            'Inactive_Neuron_F0': ['mean', 'std','median'],
+            'Total_Estimated_Spikes': ['mean', 'std','median'],
+            'Total_Estimated_Spikes_proportion_scaled': ['mean', 'std','median'],
+            'Avg_Estimated_Spikes_per_cell': ['mean', 'std','median'],
+            "SC_Avg_Instantaneous_Firing_Rate(Hz)": ['mean', 'std','median'],
+            "Instantaneous_Spikes_CV": ['mean', 'std','median'],
+            "Total_Network_Bursts": ['mean', 'std','median'],
+            "Avg_Time_of_Burst": ['mean', 'std','median'],
+            "Avg_Neuronal_Recruitment": ['mean', 'std','median'],
+            "Avg_Peak_Sync_Amplitude": ['mean', 'std','median']
+        })
+        summary_stats.to_pickle(os.path.join(main_folder, 'summary_stats.pkl'))
+        summary_stats.to_csv(os.path.join(main_folder, 'summary_stats.csv'), index = True)
     # Save both raw data and summary statistics to CSV
-    experiment_folder = str(config.general_settings.main_folder).split('\\')[-1]
-    df.to_csv(os.path.join(main_folder, f'{experiment_folder}_FULL_experiment_summary.csv'), index=False)
-    summary_stats.to_pickle(os.path.join(main_folder, 'summary_stats.pkl'))
-    summary_stats.to_csv(os.path.join(main_folder, 'summary_stats.csv'), index = True)
 
-    return df, summary_stats
+
+        return df, summary_stats
+    return df
