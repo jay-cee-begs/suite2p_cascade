@@ -469,51 +469,52 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
     nid2idx_neuron = {}
     print(f"Number of detected ROIs: {stat.shape[0]}")
     
-    if not use_iscell and dye_classifier is None:
+    if dye_classifier is None:
+        if not use_iscell:
+                
+            for n in range(stat.shape[0]):
+                estimated_spikes = output_df.iloc[n]["EstimatedSpikes"]
+                radius = stat.iloc[n]['radius']
+                skew = stat.iloc[n]['skew']
 
-        for n in range(stat.shape[0]):
-            estimated_spikes = output_df.iloc[n]["EstimatedSpikes"]
-            radius = stat.iloc[n]['radius']
-            skew = stat.iloc[n]['skew']
+                sample_F = F[n]
+                sample_Fneu = Fneu[n]
 
-            sample_F = F[n]
-            sample_Fneu = Fneu[n]
+                med_pixel_weight = np.median(stat.iloc[n]['lam'])
+                if sample_F.min() > sample_Fneu.min() or sample_F.max < sample_Fneu.max():
+                    nid2idx[n] = len(scatters["x"]) # Assign new idx
+                else:
+                    nid2idx_rejected[n] = len(scatters["x"])
+                ypix = stat.iloc[n]['ypix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+                xpix = stat.iloc[n]['xpix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
 
-            med_pixel_weight = np.median(stat.iloc[n]['lam'])
-            if sample_F.min() > sample_Fneu.min() or sample_F.max < sample_Fneu.max():
-                nid2idx[n] = len(scatters["x"]) # Assign new idx
-            else:
-                nid2idx_rejected[n] = len(scatters["x"])
-            ypix = stat.iloc[n]['ypix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
-            xpix = stat.iloc[n]['xpix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+                valid_idx = (xpix>=0) & (xpix < frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
+                ypix = ypix[valid_idx]
+                xpix = xpix[valid_idx]
+                yext, xext = boundary(ypix, xpix)
+                scatters['x'] += [xext]
+                scatters['y'] += [yext]
+                pixel2neuron[ypix, xpix] = n
+        else:
+            for n in range(stat.shape[0]):
 
-            valid_idx = (xpix>=0) & (xpix < frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
-            ypix = ypix[valid_idx]
-            xpix = xpix[valid_idx]
-            yext, xext = boundary(ypix, xpix)
-            scatters['x'] += [xext]
-            scatters['y'] += [yext]
-            pixel2neuron[ypix, xpix] = n
-    elif use_iscell:
-        for n in range(stat.shape[0]):
+                if iscell[n,0] == 1 or iscell[n,0] == 1.0 or iscell[n,0] == True:
+                    nid2idx[n] = len(scatters["x"]) # Assign new idx
+                else:
+                    nid2idx_rejected[n] = len(scatters["x"])
 
-            if iscell[n,0] == 1 or iscell[n,0] == 1.0 or iscell[n,0] == True:
-                nid2idx[n] = len(scatters["x"]) # Assign new idx
-            else:
-                nid2idx_rejected[n] = len(scatters["x"])
+                ypix = stat.iloc[n]['ypix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+                xpix = stat.iloc[n]['xpix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
 
-            ypix = stat.iloc[n]['ypix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
-            xpix = stat.iloc[n]['xpix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+                valid_idx = (xpix>=0) & (xpix < frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
+                ypix = ypix[valid_idx]
+                xpix = xpix[valid_idx]
+                yext, xext = boundary(ypix, xpix)
+                scatters['x'] += [xext]
+                scatters['y'] += [yext]
+                pixel2neuron[ypix, xpix] = n
 
-            valid_idx = (xpix>=0) & (xpix < frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
-            ypix = ypix[valid_idx]
-            xpix = xpix[valid_idx]
-            yext, xext = boundary(ypix, xpix)
-            scatters['x'] += [xext]
-            scatters['y'] += [yext]
-            pixel2neuron[ypix, xpix] = n
-
-    elif dye_classifier is not None:
+    else:
 
         # Cell inclusion is controlled exclusively by Suite2p.
         iscell_mask = iscell[:, 0] == 1
