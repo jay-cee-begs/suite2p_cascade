@@ -153,25 +153,12 @@ def check_deltaF(folder_name_list, config):
         location = os.path.join(folder, *SUITE2P_STRUCTURE["deltaF"])
         if os.path.exists(location):
             continue
-        elif not config.analysis_params.baseline_correction:
+        else: 
             g_func.calculate_deltaF(location.replace("deltaF.npy","F.npy"), config=config)
             if os.path.exists(location):
                 continue
-        elif config.analysis_params.baseline_correction and config.analysis_params.correction_method == 'airPLS':
-            g_func.calculate_deltaF_airPLS(location.replace("deltaF.npy","F.npy"), config=config, 
-                                           event_threshold=config.analysis_params.MAD_baseline_filter_threshold,
-                                           lambda_window=config.analysis_params.lambda_window)
-            if os.path.exists(location):
-                continue
-        elif config.analysis_params.baseline_correction and config.analysis_params.correction_method == 'rolling median':
-            g_func.rolling_correction_deltaF(location.replace("deltaF.npy","F.npy"), config = config,
-                                             event_threshold= config.analysis_params.MAD_baseline_filter_threshold,
-                                             lambda_window=config.analysis_params.lambda_window)
-            if os.path.exists(location):
-                continue
-            else:
-                print("something went wrong, please calculate delta F manually by inserting the following code above: \n F_files = get_file_name_list(folder_path = main_folder, file_ending = 'F.npy') \n for file in F_files: calculate_deltaF(file)")
 
+        
 def check_network_deltaF(folder_name_list, config):
     """
     Checks if a `network_deltaF.npy` file exists in each folder in a list. If network_deltaF.npy does not exist the pipeline will calculate and generate it.
@@ -345,12 +332,13 @@ def df_from_suite2p_dict(suite2p_dict, config): ## creates df structure for sing
     activity_threshold = config.analysis_params.cascade_activity_threshold
     
     activity_mask = []
-    for spike_total in estimated_spike_total:
-        activity_mask.append(spike_total >= activity_threshold)
+    for trace in masked_cascade_prediction:
+        activity_mask.append(trace.max() >= activity_threshold)
    
     df = pd.DataFrame({
                        "Baseline_F": F_baseline,
                        "EstimatedSpikes": estimated_spike_total,
+                       'MaxPrediction': suite2p_dict['cascade_predictions'].max(axis = 1),
                        "ActiveROI": estimated_spike_total > 0.1,
                        "SD_Estimated_Spks":basic_cell_stats[1],
                        "cv_Estimated_Spks":basic_cell_stats[2],
@@ -954,7 +942,7 @@ def create_experiment_overview(config, use_iscell):
             unpacked_sync_event_stats = net_analysis.unpack_sync_event_stats(suite2p_dict, synchrony)
 
     
-            active_neurons = sum(np.nansum(row) > 0.1 for row in array)
+            active_neurons = sum(np.nanmax(row) > 0.05 for row in array)
         # Separate and average the baseline fluorescence
             inactive_baseline = [cell for row, cell in zip(array, baseline_F) if np.nansum(row) < 0.1]
             active_baseline = [cell for row, cell in zip(array, baseline_F) if np.nansum(row) >= 0.1]
@@ -966,35 +954,70 @@ def create_experiment_overview(config, use_iscell):
             avg_inactive_cell = np.nanmean(inactive_baseline)
             avg_active_cell = np.nanmean(active_baseline)
             total_estimated_spikes = round(sum(estimated_spikes), 2)
-            np.std
-            dictionary_list.append({
-                'File_Name': str(suite2p_dict['file_name']), 
-                'Neuron_Count': neuron_count,
-                'Active_Neuron_Count': active_neurons, 
-                'Active_Neuron_Proportion': round(active_neurons/neuron_count * 100, 2),
-                'Active_Neuron_F0': avg_active_cell,
-                "Inactive_Neuron_F0": avg_inactive_cell,
-                'Total_Estimated_Spikes': total_estimated_spikes, 
-                "Total_Estimated_Spikes_proportion_scaled": total_estimated_spikes / (active_neurons/neuron_count),
-                'Avg_Estimated_Spikes_per_cell': total_estimated_spikes / active_neurons,
-                "SC_Avg_Instantaneous_Firing_Rate(Hz)": avg_cell_instantaneous_spike_rate,
-                "Instantaneous_Spikes_CV": cell_cvs,
-                "Total_Network_Bursts": len(synchrony['event_stats']),
-                "Avg_Time_of_Burst": unpacked_sync_event_stats['duration_frames'].mean(),
-                "Avg_Neuronal_Recruitment": unpacked_sync_event_stats['max_neurons_recruited'].mean(),
-                "Pct_Neuronal_Recruitment_v_total": unpacked_sync_event_stats['max_neurons_recruited'].mean() / neuron_count,
-                "Pct_Neuronal_Recruitment_v_active_only": unpacked_sync_event_stats['max_neurons_recruited'].mean() / active_neurons,
-                "Pct_SD_Neuronal_Recruitment_v_total": np.std(unpacked_sync_event_stats['max_neurons_recruited'] / neuron_count),
-                "Pct_SD_Neuronal_Recruitment_v_active_only": np.std(unpacked_sync_event_stats['max_neurons_recruited'] / active_neurons),
-                "Avg_Peak_Sync_Amplitude": unpacked_sync_event_stats['peak_amplitude'].mean(),
-                "Group": suite2p_dict['Group'],
-                'Data_Folder': suite2p_dict['data_folder'],
-                "Replicate_No.": suite2p_dict['sample']
-            })
-    
+            try:
+                dye_classifier = load_npy_dict(os.path.join(suite2p_dict['data_folder'], 'suite2p','plane0','dye_classifier.npy'))
+                
+                suite2p_img = fun_plot.getImg(suite2p_dict['ops'])
+                scatters, nid2idx, nid2idx_rejected, pixel2neuron, nid2idx_neuron, nid2idx_glia =fun_plot.getStats(suite2p_dict, frame_shape=suite2p_img.shape,  output_df=None, config = config, use_iscell=True)
+                dictionary_list.append({
+                                'File_Name': str(suite2p_dict['file_name']), 
+                                'Cell_Count': neuron_count,
+                                'Active_Cell_Count': active_neurons,
+                                'Neuron_Count': len(nid2idx_neuron), 
+                                'Glia_Count': len(nid2idx_glia), 
+                                'Neuron_Proportion': round(len(nid2idx_neuron)/neuron_count * 100, 2),
+                                'Glia_Proportion': round(len(nid2idx_glia)/neuron_count * 100, 2),
+                                'Active_Neuron_F0': avg_active_cell,
+                                "Inactive_Neuron_F0": avg_inactive_cell,
+                                'Total_Estimated_Spikes': total_estimated_spikes, 
+                                "Total_Estimated_Spikes_proportion_scaled": total_estimated_spikes / (active_neurons/neuron_count),
+                                'Avg_Estimated_Spikes_per_cell': total_estimated_spikes / active_neurons,
+                                "SC_Avg_Instantaneous_Firing_Rate(Hz)": avg_cell_instantaneous_spike_rate,
+                                "Instantaneous_Spikes_CV": cell_cvs,
+                                "Total_Network_Bursts": len(synchrony['event_stats']),
+                                "Avg_Time_of_Burst": unpacked_sync_event_stats['duration_frames'].mean(),
+                                "Avg_Neuronal_Recruitment": unpacked_sync_event_stats['max_neurons_recruited'].mean(),
+                                "Pct_Neuronal_Recruitment_v_total": unpacked_sync_event_stats['max_neurons_recruited'].mean() / neuron_count,
+                                "Pct_Neuronal_Recruitment_v_active_only": unpacked_sync_event_stats['max_neurons_recruited'].mean() / active_neurons,
+                                "Pct_SD_Neuronal_Recruitment_v_total": np.std(unpacked_sync_event_stats['max_neurons_recruited'] / neuron_count),
+                                "Pct_SD_Neuronal_Recruitment_v_active_only": np.std(unpacked_sync_event_stats['max_neurons_recruited'] / active_neurons),
+                                "Avg_Peak_Sync_Amplitude": unpacked_sync_event_stats['peak_amplitude'].mean(),
+                                "Group": suite2p_dict['Group'],
+                                'Data_Folder': suite2p_dict['data_folder'],
+                                "Replicate_No.": suite2p_dict['sample']
+                            })
+                    
+            except FileNotFoundError:
+                print("Error with dye based image processing")
+                dictionary_list.append({
+                    'File_Name': str(suite2p_dict['file_name']), 
+                    'Neuron_Count': neuron_count,
+                    'Active_Neuron_Count': active_neurons, 
+                    'Active_Neuron_Proportion': round(active_neurons/neuron_count * 100, 2),
+                    'Active_Neuron_F0': avg_active_cell,
+                    "Inactive_Neuron_F0": avg_inactive_cell,
+                    'Total_Estimated_Spikes': total_estimated_spikes, 
+                    "Total_Estimated_Spikes_proportion_scaled": total_estimated_spikes / (active_neurons/neuron_count),
+                    'Avg_Estimated_Spikes_per_cell': total_estimated_spikes / active_neurons,
+                    "SC_Avg_Instantaneous_Firing_Rate(Hz)": avg_cell_instantaneous_spike_rate,
+                    "Instantaneous_Spikes_CV": cell_cvs,
+                    "Total_Network_Bursts": len(synchrony['event_stats']),
+                    "Avg_Time_of_Burst": unpacked_sync_event_stats['duration_frames'].mean(),
+                    "Avg_Neuronal_Recruitment": unpacked_sync_event_stats['max_neurons_recruited'].mean(),
+                    "Pct_Neuronal_Recruitment_v_total": unpacked_sync_event_stats['max_neurons_recruited'].mean() / neuron_count,
+                    "Pct_Neuronal_Recruitment_v_active_only": unpacked_sync_event_stats['max_neurons_recruited'].mean() / active_neurons,
+                    "Pct_SD_Neuronal_Recruitment_v_total": np.std(unpacked_sync_event_stats['max_neurons_recruited'] / neuron_count),
+                    "Pct_SD_Neuronal_Recruitment_v_active_only": np.std(unpacked_sync_event_stats['max_neurons_recruited'] / active_neurons),
+                    "Avg_Peak_Sync_Amplitude": unpacked_sync_event_stats['peak_amplitude'].mean(),
+                    "Group": suite2p_dict['Group'],
+                    'Data_Folder': suite2p_dict['data_folder'],
+                    "Replicate_No.": suite2p_dict['sample']
+                })
+        
     # Create DataFrame from dictionary list
     df = pd.DataFrame(dictionary_list)
-
+    experiment_folder = str(config.general_settings.main_folder).split('\\')[-1]
+    df.to_csv(os.path.join(main_folder, f'{experiment_folder}_FULL_experiment_summary.csv'), index=False)
     # unique_prefixes = get_unique_prefixes(df['Group'])
 
     # Create a dynamic categorization function
@@ -1025,27 +1048,27 @@ def create_experiment_overview(config, use_iscell):
     # Ensure 'N/A' categories are handled
     # df = df[df['Time_Point'] != 'N/A']
     # Calculate summary statistics for each unique group
-    summary_stats = df.groupby(['Group']).agg({
-        'Neuron_Count': ['mean', 'std','median'],
-        'Active_Neuron_Count': ['mean', 'std','median'],
-        'Active_Neuron_Proportion': ['mean', 'std','median'],
-        'Active_Neuron_F0': ['mean', 'std','median'],
-        'Inactive_Neuron_F0': ['mean', 'std','median'],
-        'Total_Estimated_Spikes': ['mean', 'std','median'],
-        'Total_Estimated_Spikes_proportion_scaled': ['mean', 'std','median'],
-        'Avg_Estimated_Spikes_per_cell': ['mean', 'std','median'],
-        "SC_Avg_Instantaneous_Firing_Rate(Hz)": ['mean', 'std','median'],
-        "Instantaneous_Spikes_CV": ['mean', 'std','median'],
-        "Total_Network_Bursts": ['mean', 'std','median'],
-        "Avg_Time_of_Burst": ['mean', 'std','median'],
-        "Avg_Neuronal_Recruitment": ['mean', 'std','median'],
-        "Avg_Peak_Sync_Amplitude": ['mean', 'std','median']
-    })
-
+    if not os.path.exists(os.path.join(suite2p_dict['data_folder'], *SUITE2P_STRUCTURE['dye_classifier'])):
+        summary_stats = df.groupby(['Group']).agg({
+            'Neuron_Count': ['mean', 'std','median'],
+            'Active_Neuron_Count': ['mean', 'std','median'],
+            'Active_Neuron_Proportion': ['mean', 'std','median'],
+            'Active_Neuron_F0': ['mean', 'std','median'],
+            'Inactive_Neuron_F0': ['mean', 'std','median'],
+            'Total_Estimated_Spikes': ['mean', 'std','median'],
+            'Total_Estimated_Spikes_proportion_scaled': ['mean', 'std','median'],
+            'Avg_Estimated_Spikes_per_cell': ['mean', 'std','median'],
+            "SC_Avg_Instantaneous_Firing_Rate(Hz)": ['mean', 'std','median'],
+            "Instantaneous_Spikes_CV": ['mean', 'std','median'],
+            "Total_Network_Bursts": ['mean', 'std','median'],
+            "Avg_Time_of_Burst": ['mean', 'std','median'],
+            "Avg_Neuronal_Recruitment": ['mean', 'std','median'],
+            "Avg_Peak_Sync_Amplitude": ['mean', 'std','median']
+        })
+        summary_stats.to_pickle(os.path.join(main_folder, 'summary_stats.pkl'))
+        summary_stats.to_csv(os.path.join(main_folder, 'summary_stats.csv'), index = True)
     # Save both raw data and summary statistics to CSV
-    experiment_folder = str(config.general_settings.main_folder).split('\\')[-1]
-    df.to_csv(os.path.join(main_folder, f'{experiment_folder}_FULL_experiment_summary.csv'), index=False)
-    summary_stats.to_pickle(os.path.join(main_folder, 'summary_stats.pkl'))
-    summary_stats.to_csv(os.path.join(main_folder, 'summary_stats.csv'), index = True)
 
-    return df, summary_stats
+
+        return df, summary_stats
+    return df

@@ -48,7 +48,7 @@ def calculate_peaks(deltaF):
     from scipy.signal import find_peaks
     sigma, baseline_samples = estimate_single_trace_baseline_noise_mad(deltaF)
     peaks, properties = find_peaks(deltaF, height = np.median(baseline_samples) + 4.5*sigma, distance = 5, 
-                          prominence=np.median(baseline_samples) + 2*sigma,
+                          prominence= 2*sigma,
                           width = (2,50))
     peak_count = len(peaks)
 
@@ -114,7 +114,7 @@ def calculate_normalized_deltaF(F, Fneu, baseline_correction = None, lambda_wind
                     if lambda_window is not None:
                         deltaF = fun_g.remove_bleaching(corrected_trace, baseline_correction="rolling_med", window = lambda_window)
                     else:
-                        deltaF = fun_g.remove_bleaching(corrected_trace, baseline_correction='rolling_med',window = 250)
+                        deltaF = fun_g.remove_bleaching(corrected_trace, baseline_correction='rolling_min',window = 250)
     deltaF = np.array(deltaF)
     deltaF = np.squeeze(deltaF)
 
@@ -146,8 +146,17 @@ def glob_roi_corr(trace, global_signal, max_lag = 10):
 
         corrs.append(np.corrcoef(a,b)[0,1])
 
-    corrs = np.array(corrs)
-    best_idx = np.nanargmax(corrs)
+    corrs = np.asarray(corrs, dtype=float)
+
+    valid = np.isfinite(corrs)
+
+    if not np.any(valid):
+        # No valid correlation at any lag.
+        return zero_lag_corr, np.nan, 0
+
+    # Find the highest valid correlation.
+    valid_indices = np.flatnonzero(valid)
+    best_idx = valid_indices[np.argmax(corrs[valid])]
 
     return zero_lag_corr, corrs[best_idx], list(lags)[best_idx]
 
@@ -173,13 +182,13 @@ def process_suite2p_dict(d):
     peak_info = {}
     norm_F = calculate_normalized_deltaF(F, Fneu, by_type="Cell", event_threshold=2)
     for n in range(n_rois):
-        trace = deltaF[n]
+        trace = norm_F[n]
         cascade_analysis = np.nansum(cascade[n])
         cascade_max = cascade[n].max()
         sigma, baseline = estimate_single_trace_baseline_noise_mad(trace, 2)
         peaks, properties = find_peaks(trace, height = np.median(baseline) + 4*sigma, distance = 3,
                                        width = (2,50))
-        if len(peaks) > 0 and cascade_analysis > 0.1 and cascade_max > 0.01 and n not in  idx_fneu_over_f:
+        if len(peaks) > 0 and cascade_analysis > 0.1 and cascade_max > 0.05:
             
             idx_active.append(n)
         peak_info[n] = {'peaks': peaks, 'propoerties': properties}
@@ -190,59 +199,112 @@ def process_suite2p_dict(d):
         else:
             idx_glia.append(n)
     template_score = []
-    active_traces = deltaF[idx_active]
-    global_signal = np.mean(active_traces,axis = 0)
-    corr_glob = BaselineRemoval(global_signal)
-    corr_glob = corr_glob.ZhangFit(lambda_ = 100)
-    global_signal = corr_glob
+        # Include ALL Suite2p-classified cells in the cell-type classifier.
+    iscell_mask = np.asarray(iscell)[:, 0] == 1
+    iscell_ids = np.flatnonzero(iscell_mask)
+
+    classified_traces = deltaF[iscell_ids]
+    global_signal = np.mean(classified_traces,axis = 0)
+
+    idx_neuro_corr = []
+    idx_glia_corr = []
+    neuro_corr = []
+    glia_corr = []
     active_corr = {}
-    for i, id in enumerate(idx_active):
-        cell_trace = deltaF[id]
-        other_cells = np.delete(active_traces, i, axis=0)
-        global_signal_excluding_cell = other_cells.mean(axis=0)
 
-        # Pearson correlation between this cell and the
-        # activity of the rest of the population
-        cell_trace = deltaF[id]
+    if len(iscell_ids) > 1:
+        for i, roi_id in enumerate(iscell_ids):
 
-        zero_lag_corr, best_corr, best_lag = glob_roi_corr(cell_trace, global_signal=global_signal_excluding_cell, max_lag= 10)
-        template_score.append(zero_lag_corr)
-        active_corr[id] = {
-            'zero_lag_corr': zero_lag_corr,
-            'best_corr': best_corr,
-            'best_lag': best_lag
-        }
+            cell_trace = deltaF[roi_id]
 
-    glob_neuron_idx = []
-    glob_neuron_corr = []
-    glob_glia_idx = []
-    glob_glia_corr = []
-    
-    for roi_id, scores in active_corr.items():
-        if scores['zero_lag_corr'] < 0.4:
-            glob_glia_idx.append(roi_id)
-            glob_glia_corr.append(scores['zero_lag_corr'])
-        else:
-            glob_neuron_idx.append(roi_id)
-            glob_neuron_corr.append(scores['zero_lag_corr'])
+            # Mean activity of all other Suite2p-classified cells.
+            other_cells = np.delete(classified_traces, i, axis=0)
+
+            # Ignore NaNs when calculating the population signal.
+            with np.errstate(invalid="ignore"):
+                global_signal_excluding_cell = np.nanmean(other_cells, axis=0)
+
+            try:
+                zero_lag_corr, best_corr, best_lag = glob_roi_corr(
+                    cell_trace,
+                    global_signal=global_signal_excluding_cell,
+                    max_lag=10,
+                )
+            except (ValueError, FloatingPointError):
+                # The ROI has no usable correlation.
+                zero_lag_corr = np.nan
+                best_corr = np.nan
+                best_lag = 0
+
+            active_corr[int(roi_id)] = {
+                "zero_lag_corr": zero_lag_corr,
+                "best_corr": best_corr,
+                "best_lag": best_lag,
+            }
+
+            if np.isfinite(zero_lag_corr) and zero_lag_corr >= 0.4:
+                idx_neuro_corr.append(int(roi_id))
+                neuro_corr.append(zero_lag_corr)
+            else:
+                # Fallback for cells that cannot be classified by correlation.
+                idx_glia_corr.append(int(roi_id))
+                glia_corr.append(zero_lag_corr)
+
+    elif len(iscell_ids) == 1:
+        # A single cell cannot be correlated with the other cells.
+        # Explicit fallback; consider reviewing this ROI separately.
+        idx_glia_corr.append(int(iscell_ids[0]))
+        glia_corr.append(np.nan)
+
+    # Confirm that every Suite2p-classified cell has exactly one label.
+    print(d['Group'])
+    assert set(idx_neuro_corr).isdisjoint(set(idx_glia_corr))
+    assert set(idx_neuro_corr) | set(idx_glia_corr) == set(iscell_ids)
+
     results = {
-        "Group": d['Group'],
-        'File': d['data_folder'],
-        'nROIs': n_rois,
-        "n_faulty": len(idx_fneu_over_f),
-        "n_faulty_idx": idx_fneu_over_f,
-        "n_active": len(idx_active),
-        "idx_active": idx_active,
-        'n_neuro': len(idx_neuron),
-        'idx_neuro': idx_neuron,
-        'idx_neuro_corr': glob_neuron_idx,
-        'neuro_corr': glob_neuron_corr,
-        'n_glia': len(idx_glia),
-        'idx_glia': idx_glia,
-        'idx_glia_corr': glob_glia_idx,
-        'glia_corr': glob_glia_corr,
+    "Group": d["Group"],
+    "File": d["data_folder"],
+    "nROIs": n_rois,
+    "n_iscell": len(iscell_ids),
+    "n_active": len(idx_active),
+    "idx_active": idx_active,
 
-    
+    # Existing width-based classification; keep separate.
+    "n_neuro": len(idx_neuron),
+    "idx_neuro": idx_neuron,
+    "n_glia": len(idx_glia),
+    "idx_glia": idx_glia,
+
+    # Authoritative neuron/glia classification for plotting.
+    "n_neuro_corr": len(idx_neuro_corr),
+    "idx_neuro_corr": idx_neuro_corr,
+    "neuro_corr": neuro_corr,
+    "n_glia_corr": len(idx_glia_corr),
+    "idx_glia_corr": idx_glia_corr,
+    "glia_corr": glia_corr,
     }
     return results, active_corr, global_signal
 
+def analyze_with_dyes(config_file):
+    from plotting import output_plots
+    from batch_gui import config_loader
+    c = config_loader.load_json_config_file(config_file)
+    from run_cascade import functions_data_transformation as fdt 
+    import numpy as np
+    import os
+    from network_analysis import network_correlations_for_dye as ncd
+    from network_analysis import rastermapping
+    folders = fdt.get_file_name_list(c.general_settings.main_folder, 'samples')
+    for f in folders:
+        data = fdt.load_local_suite2p_output(f)
+        global_trace = np.mean(data['network_deltaF'], axis = 0)
+        trace_correlations = []
+        results, active_corr, global_signal =process_suite2p_dict(data)
+        
+        np.save(os.path.join(data['data_folder'], *fdt.SUITE2P_STRUCTURE['dye_classifier']), results)
+        np.save(os.path.join(data['data_folder'], 'suite2p', 'plane0', 'Global_Trace.npy'), global_signal)
+
+    output_plots.main(config_file=config_file)
+    for f in folders:
+        data = fdt.load_local_suite2p_output(f)
+        rastermapping.simple_raster_plot(data, 'binary', save_path = data['data_folder'],show_plot = True, frame_rate = 10)

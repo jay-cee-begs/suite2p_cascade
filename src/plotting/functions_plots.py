@@ -115,7 +115,7 @@ def histogram_total_estimated_spikes(prediction_deltaF_file, output_directory = 
 
 
 
-def plot_somatic_traces(suite2p_dict, list = None, plot_raw = False, plot_cascade = False, trace_offset = 5, y_scale = 1, iscell_true = True, save_fig = False):
+def plot_somatic_traces(suite2p_dict, list = None, plot_raw = False, plot_cascade = False, plot_network_norm = False, trace_offset = 5, y_scale = 1, iscell_true = True, save_fig = False):
     # Get boolean mask of valid cells
     if iscell_true:
         try:
@@ -131,6 +131,7 @@ def plot_somatic_traces(suite2p_dict, list = None, plot_raw = False, plot_cascad
     masked_dF = suite2p_dict['deltaF'][iscell_mask]
     masked_cascade = suite2p_dict['cascade_predictions'][iscell_mask]
     masked_F = suite2p_dict['F'][iscell_mask]
+    masked_net_F = suite2p_dict['network_deltaF'][iscell_mask]
     if list is None:
         lst = np.random.choice(masked_dF.shape[0], size=10, replace=False)
     else:
@@ -147,25 +148,31 @@ def plot_somatic_traces(suite2p_dict, list = None, plot_raw = False, plot_cascad
     
     frame_rate = 10
     time = np.arange(suite2p_dict["deltaF"].shape[1]) / frame_rate
-    if not plot_cascade and not plot_raw:
+    if not plot_cascade and not plot_raw and not plot_network_norm:
         plt_traces = masked_dF[lst]
         for i, trace in enumerate(plt_traces):
             offset_trace = trace + i * trace_offset
             ax.plot(time, offset_trace, color=colors[i % len(colors)], alpha=0.8)
         
-    if plot_cascade and not plot_raw:
+    if plot_cascade and not plot_raw and not plot_network_norm:
         plt_traces = masked_cascade[lst]
         for i, trace in enumerate(plt_traces):
             offset_trace = trace + i *trace_offset
             ax.plot(time, offset_trace, color=colors[i % len(colors)], alpha=0.8)
 
-    if plot_raw and not plot_cascade:
-        print("plotting(F_traces")
+    if plot_raw and not plot_cascade and not plot_network_norm:
+        print("plotting raw F traces")
         plt_traces = masked_F[lst]
         for i, trace in enumerate(plt_traces):
                     offset_trace = trace + i * trace_offset
                     ax.plot(time, offset_trace, color=colors[i % len(colors)], alpha=0.8)
-    if plot_cascade and plot_raw:
+    if plot_network_norm and not plot_cascade and not plot_raw:
+            print("plotting network normalized F traces")
+            plt_traces = masked_net_F[lst]
+            for i, trace in enumerate(plt_traces):
+                        offset_trace = trace + i * trace_offset
+                        ax.plot(time, offset_trace, color=colors[i % len(colors)], alpha=0.8)
+    if plot_cascade and plot_raw or plot_network_norm and plot_cascade or plot_network_norm and plot_raw:
         return print("Too many types of traces indexed")
     scalebar_time = 10  # seconds
     scalebar_df = y_scale     # dF/F units
@@ -178,12 +185,14 @@ def plot_somatic_traces(suite2p_dict, list = None, plot_raw = False, plot_cascad
 
     # Scale bar labels
     ax.text(x0 + scalebar_time / 2, y0 - 0.3, fr"{scalebar_time}$\ s$", ha='center', va='top')
-    if not plot_cascade and not plot_raw:
+    if not plot_cascade and not plot_raw and not plot_network_norm:
         ax.text(x0 + scalebar_time + 1, y0 + scalebar_df / 3,  fr"{scalebar_df} $\Delta F / F_0$", va='center', ha='left')
     if plot_cascade:
         ax.text(x0 + scalebar_time + 1, y0 + scalebar_df / 3,  f"{scalebar_df} CASCADE-predicted\nSpikes", va='center', ha='left')
     if plot_raw:
         ax.text(x0 + scalebar_time + 1, y0 + scalebar_df / 3,  f"{scalebar_df} Raw Fluorescence\nunits ($a.u.$)", va='center', ha='left')
+    if plot_network_norm:
+        ax.text(x0 + scalebar_time + 1, y0 + scalebar_df / 3,  f"{scalebar_df*100} Percent Change Norm.", va='center', ha='left')
 
     # --- Minimalist figure: no axes ---
     ax.axis('off')
@@ -193,7 +202,7 @@ def plot_somatic_traces(suite2p_dict, list = None, plot_raw = False, plot_cascad
         from pathlib import Path
         import os
         save_path = suite2p_dict['data_folder']
-        plot_name = suite2p_dict['data_folder'].split('\\')[0]
+        plot_name = suite2p_dict['Group']
 
         if iscell_true:
             plt.savefig(os.path.join(save_path, f'{plot_name}_neuron_dF_traces.svg'))
@@ -460,69 +469,113 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
     nid2idx_neuron = {}
     print(f"Number of detected ROIs: {stat.shape[0]}")
     
-    if not use_iscell and dye_classifier is None:
-
-        for n in range(stat.shape[0]):
-            estimated_spikes = output_df.iloc[n]["EstimatedSpikes"]
-            radius = stat.iloc[n]['radius']
-            skew = stat.iloc[n]['skew']
-
-            sample_F = F[n]
-            sample_Fneu = Fneu[n]
-
-            med_pixel_weight = np.median(stat.iloc[n]['lam'])
-            if sample_F.min() > sample_Fneu.min():
-                nid2idx[n] = len(scatters["x"]) # Assign new idx
-            else:
-                nid2idx_rejected[n] = len(scatters["x"])
-            ypix = stat.iloc[n]['ypix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
-            xpix = stat.iloc[n]['xpix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
-
-            valid_idx = (xpix>=0) & (xpix < frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
-            ypix = ypix[valid_idx]
-            xpix = xpix[valid_idx]
-            yext, xext = boundary(ypix, xpix)
-            scatters['x'] += [xext]
-            scatters['y'] += [yext]
-            pixel2neuron[ypix, xpix] = n
-    elif use_iscell:
-        for n in range(stat.shape[0]):
-
-            if iscell[n,0] == 1 or iscell[n,0] == 1.0 or iscell[n,0] == True:
-                nid2idx[n] = len(scatters["x"]) # Assign new idx
-            else:
-                nid2idx_rejected[n] = len(scatters["x"])
-
-            ypix = stat.iloc[n]['ypix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
-            xpix = stat.iloc[n]['xpix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
-
-            valid_idx = (xpix>=0) & (xpix < frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
-            ypix = ypix[valid_idx]
-            xpix = xpix[valid_idx]
-            yext, xext = boundary(ypix, xpix)
-            scatters['x'] += [xext]
-            scatters['y'] += [yext]
-            pixel2neuron[ypix, xpix] = n
-    elif dye_classifier is not None:
-        dye_classifications = dye_classifier
-        for n in range(stat.shape[0]):
-            if n in dye_classifications['idx_active']:
-                nid2idx[n] = len(scatters['x'])
-                if n in dye_classifications['idx_neuro_corr']:
-                    nid2idx_neuron[n] = len(scatters['x'])
-                if n in dye_classifications['idx_glia_corr']:
-                    nid2idx_glia[n] = len(scatters['x'])
-            else:
-                nid2idx_rejected[n] = len(scatters['x'])
+    if dye_classifier is None:
+        if not use_iscell:
                 
-            ypix = stat.iloc[n]['ypix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
-            xpix = stat.iloc[n]['xpix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
-            valid_idx = (xpix>=0) & (xpix < frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
+            for n in range(stat.shape[0]):
+                estimated_spikes = output_df.iloc[n]["EstimatedSpikes"]
+                radius = stat.iloc[n]['radius']
+                skew = stat.iloc[n]['skew']
+
+                sample_F = F[n]
+                sample_Fneu = Fneu[n]
+
+                med_pixel_weight = np.median(stat.iloc[n]['lam'])
+                if sample_F.min() > sample_Fneu.min() or sample_F.max < sample_Fneu.max():
+                    nid2idx[n] = len(scatters["x"]) # Assign new idx
+                else:
+                    nid2idx_rejected[n] = len(scatters["x"])
+                ypix = stat.iloc[n]['ypix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+                xpix = stat.iloc[n]['xpix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+
+                valid_idx = (xpix>=0) & (xpix < frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
+                ypix = ypix[valid_idx]
+                xpix = xpix[valid_idx]
+                yext, xext = boundary(ypix, xpix)
+                scatters['x'] += [xext]
+                scatters['y'] += [yext]
+                pixel2neuron[ypix, xpix] = n
+        else:
+            for n in range(stat.shape[0]):
+
+                if iscell[n,0] == 1 or iscell[n,0] == 1.0 or iscell[n,0] == True:
+                    nid2idx[n] = len(scatters["x"]) # Assign new idx
+                else:
+                    nid2idx_rejected[n] = len(scatters["x"])
+
+                ypix = stat.iloc[n]['ypix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+                xpix = stat.iloc[n]['xpix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+
+                valid_idx = (xpix>=0) & (xpix < frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
+                ypix = ypix[valid_idx]
+                xpix = xpix[valid_idx]
+                yext, xext = boundary(ypix, xpix)
+                scatters['x'] += [xext]
+                scatters['y'] += [yext]
+                pixel2neuron[ypix, xpix] = n
+
+    else:
+
+        # Cell inclusion is controlled exclusively by Suite2p.
+        iscell_mask = iscell[:, 0] == 1
+
+        neuron_ids = set(
+            dye_classifier["idx_neuro_corr"]
+        )
+        glia_ids = set(
+            dye_classifier["idx_glia_corr"]
+        )
+
+        # Ensure that the saved classifier covers exactly the
+        # Suite2p-approved population.
+        suite2p_ids = set(np.flatnonzero(iscell_mask))
+
+        if neuron_ids & glia_ids:
+            raise ValueError(
+                "Some ROIs are classified as both neuron and glia."
+            )
+
+        if neuron_ids | glia_ids != suite2p_ids:
+            raise ValueError(
+                "Neuron/glia classifier does not cover exactly "
+                "the Suite2p iscell population. Regenerate "
+                "dye_classifier.npy using the updated classifier."
+            )
+
+        for n in range(stat.shape[0]):
+
+            if iscell_mask[n]:
+                # Every Suite2p cell is accepted for visualization.
+                nid2idx[n] = len(scatters["x"])
+
+                if n in neuron_ids:
+                    nid2idx_neuron[n] = len(scatters["x"])
+
+                elif n in glia_ids:
+                    nid2idx_glia[n] = len(scatters["x"])
+
+            else:
+                nid2idx_rejected[n] = len(scatters["x"])
+
+            # Keep the existing coordinate/boundary logic here.
+            ypix = stat.iloc[n]["ypix"].flatten() - 1
+            xpix = stat.iloc[n]["xpix"].flatten() - 1
+
+            valid_idx = (
+                (xpix >= 0)
+                & (xpix < frame_shape[1])
+                & (ypix >= 0)
+                & (ypix < frame_shape[0])
+            )
+
             ypix = ypix[valid_idx]
             xpix = xpix[valid_idx]
+
             yext, xext = boundary(ypix, xpix)
-            scatters['x'] += [xext]
-            scatters['y'] += [yext]
+
+            scatters["x"] += [xext]
+            scatters["y"] += [yext]
+
             pixel2neuron[ypix, xpix] = n
 
     return scatters, nid2idx, nid2idx_rejected, pixel2neuron, nid2idx_neuron, nid2idx_glia
@@ -581,20 +634,32 @@ def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
                             
                      sc = ax1.scatter(scatters["x"][idx], scatters['y'][idx], color = color, 
                                       marker='.', s=1)
-             if len(nid2idx_neuron) is not 0:
-                 print("Using dye-based classifier")
-                 print("Neurons count:", len(nid2idx_neuron))
-                 plotDict(nid2idx_neuron, 'cyan')
-                 ax1.set_title(f"{len(nid2idx_neuron)} neurons used (cyan) out of {len(nid2idx_neuron)+len(nid2idx_glia)} total cells detected") 
-                 print("Glia count:", len(nid2idx_glia))
-                 plotDict(nid2idx_glia, 'yellow')
+             if len(nid2idx_neuron) > 0 or len(nid2idx_glia) > 0:
+ 
+                 # Cyan = neurons
+                 plotDict(nid2idx_neuron, "cyan")
+
+                # Yellow = glia
+                 plotDict(nid2idx_glia, "yellow")
+
+                 n_neurons = len(nid2idx_neuron)
+                 n_glia = len(nid2idx_glia)
+                 n_cells = len(set(nid2idx_neuron) | set(nid2idx_glia))
+
+                 ax1.set_title(
+                     f"{n_neurons} neurons (cyan), "
+                     f"{n_glia} glia (yellow), "
+                     f"{n_cells} total Suite2p cells"
+                 )
+
              else:
-                print("Neurons count:", len(nid2idx))
-                
-                plotDict(nid2idx, 'cyan')
-             #TODO make this editable by the user
-            #  plotDict(nid2idx_rejected, 'y')
-                ax1.set_title(f"{len(nid2idx)} neurons used (cyan) out of {len(nid2idx)+len(nid2idx_rejected)} total neurons detected") 
+                # Fallback for plots without a neuron/glia classifier.
+                 plotDict(nid2idx, "cyan")
+
+                 ax1.set_title(
+                     f"{len(nid2idx)} accepted Suite2p cells"
+                 )
+
              if save_path:
                 plt.savefig(save_path)
                 plt.close(fig)

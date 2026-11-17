@@ -70,7 +70,7 @@ def main(config_file = None):
             deltaF = functions_data_transformation.get_file_name_list(folder_path = config.general_settings.main_folder, file_ending = "deltaF.npy", supress_printing = True)
 
             for file in deltaF:
-                CASCADE_functions.plots_and_basic_info(file, config)
+                # CASCADE_functions.plots_and_basic_info(file, config)
                 CASCADE_functions.cascade_this(file, config)
 
         else:
